@@ -1,11 +1,13 @@
 import { useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import UserActionsMenu from "./UserActionsMenu";
 
 interface Message {
   id: string;
   content: string;
   created_at: string;
+  user_id: string;
   profiles: {
     username: string;
   };
@@ -14,9 +16,10 @@ interface Message {
 interface MessageListProps {
   messages: Message[];
   currentUserId: string | undefined;
+  currentUserDbId: string | undefined;
 }
 
-const MessageList = ({ messages, currentUserId }: MessageListProps) => {
+const MessageList = ({ messages, currentUserId, currentUserDbId }: MessageListProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,11 +38,20 @@ const MessageList = ({ messages, currentUserId }: MessageListProps) => {
               key={message.id}
               className={`flex gap-3 ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}
             >
-              <Avatar className="h-8 w-8 border-2 border-primary">
-                <AvatarFallback className="bg-secondary text-foreground text-xs">
-                  {message.profiles?.username?.charAt(0).toUpperCase() || "?"}
-                </AvatarFallback>
-              </Avatar>
+              <div className="flex items-start gap-2">
+                <Avatar className="h-8 w-8 border-2 border-primary">
+                  <AvatarFallback className="bg-secondary text-foreground text-xs">
+                    {message.profiles?.username?.charAt(0).toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                {!isCurrentUser && currentUserDbId && (
+                  <UserActionsMenu
+                    userId={message.user_id}
+                    username={message.profiles?.username || "Unknown"}
+                    currentUserId={currentUserDbId}
+                  />
+                )}
+              </div>
               <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"}`}>
                 <span className="text-xs text-muted-foreground mb-1">
                   {message.profiles?.username || "Unknown"}

@@ -23,6 +23,7 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [username, setUsername] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,20 +50,49 @@ const Index = () => {
       return;
     }
 
-    // Fetch username
-    const fetchUsername = async () => {
-      const { data } = await supabase
+    // Check if user is banned
+    const checkBan = async () => {
+      const { data: ban } = await supabase
+        .from("user_bans")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (ban) {
+        await supabase.auth.signOut();
+        toast.error("Your account has been banned");
+        navigate("/auth");
+        return false;
+      }
+      return true;
+    };
+
+    // Fetch username and check admin status
+    const fetchUserData = async () => {
+      const notBanned = await checkBan();
+      if (!notBanned) return;
+
+      const { data: profile } = await supabase
         .from("profiles")
         .select("username")
         .eq("id", user.id)
         .single();
       
-      if (data) {
-        setUsername(data.username);
+      if (profile) {
+        setUsername(profile.username);
       }
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .single();
+
+      setIsAdmin(!!roles);
     };
 
-    fetchUsername();
+    fetchUserData();
   }, [user, navigate]);
 
   useEffect(() => {
@@ -146,12 +176,19 @@ const Index = () => {
           <h1 className="text-2xl font-bold text-primary">Cross Chat</h1>
           <p className="text-sm text-muted-foreground">@{username}</p>
         </div>
-        <Button onClick={handleLogout} variant="secondary" size="sm">
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
-        </Button>
+        <div className="flex gap-2">
+          {isAdmin && (
+            <Button onClick={() => navigate("/admin")} variant="secondary" size="sm">
+              Admin Panel
+            </Button>
+          )}
+          <Button onClick={handleLogout} variant="secondary" size="sm">
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+        </div>
       </header>
-      <MessageList messages={messages} currentUserId={username} />
+      <MessageList messages={messages} currentUserId={username} currentUserDbId={user?.id} />
       <MessageInput onSend={handleSendMessage} />
     </div>
   );

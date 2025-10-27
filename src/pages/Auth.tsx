@@ -19,20 +19,40 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Generate valid internal email from username
+      const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@internal.crosschat.app`;
+
       if (isLogin) {
         // Login
         const { error } = await supabase.auth.signInWithPassword({
-          email: `${username}@crosschat.app`,
+          email,
           password,
         });
 
         if (error) throw error;
+        
+        // Check if user is banned
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: ban } = await supabase
+            .from("user_bans")
+            .select("*")
+            .eq("user_id", user.id)
+            .single();
+
+          if (ban) {
+            await supabase.auth.signOut();
+            toast.error("Your account has been banned");
+            return;
+          }
+        }
+
         toast.success("Welcome back!");
         navigate("/");
       } else {
         // Sign up
         const { error } = await supabase.auth.signUp({
-          email: `${username}@crosschat.app`,
+          email,
           password,
           options: {
             data: {
