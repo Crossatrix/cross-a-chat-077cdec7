@@ -52,6 +52,9 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    // Don't redirect while still loading auth state
+    if (loading) return;
+    
     if (!user) {
       navigate("/auth");
       return;
@@ -100,7 +103,7 @@ const Index = () => {
     };
 
     fetchUserData();
-  }, [user, navigate]);
+  }, [user, navigate, loading]);
 
   useEffect(() => {
     if (!user || !selectedConversationId) return;
