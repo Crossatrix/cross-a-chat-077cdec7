@@ -7,6 +7,8 @@ import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
+import ConversationsList from "@/components/ConversationsList";
+import UsersList from "@/components/UsersList";
 
 interface Message {
   id: string;
@@ -25,6 +27,8 @@ const Index = () => {
   const [username, setUsername] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedUsername, setSelectedUsername] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -99,13 +103,14 @@ const Index = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !selectedConversationId) return;
 
-    // Fetch initial messages
+    // Fetch initial messages for the selected conversation
     const fetchMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
         .select("*, profiles(username)")
+        .eq("conversation_id", selectedConversationId)
         .order("created_at", { ascending: true });
 
       if (error) {
@@ -119,15 +124,16 @@ const Index = () => {
 
     fetchMessages();
 
-    // Subscribe to new messages
+    // Subscribe to new messages in this conversation
     const channel = supabase
-      .channel("messages")
+      .channel(`conversation-${selectedConversationId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "messages",
+          filter: `conversation_id=eq.${selectedConversationId}`,
         },
         async (payload) => {
           // Fetch the complete message with profile data
@@ -147,19 +153,52 @@ const Index = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, selectedConversationId]);
 
   const handleSendMessage = async (content: string) => {
-    if (!user) return;
+    if (!user || !selectedConversationId) return;
 
     const { error } = await supabase.from("messages").insert({
       user_id: user.id,
       content,
+      conversation_id: selectedConversationId,
     });
 
     if (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
+    }
+  };
+
+  const handleSelectConversation = (conversationId: string, otherUsername: string) => {
+    setSelectedConversationId(conversationId);
+    setSelectedUsername(otherUsername);
+    setMessages([]);
+  };
+
+  const handleSelectUser = async (otherUserId: string) => {
+    try {
+      const { data, error } = await supabase.rpc("find_or_create_conversation", {
+        other_user_id: otherUserId,
+      });
+
+      if (error) throw error;
+
+      // Fetch the other user's username
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", otherUserId)
+        .single();
+
+      if (profile) {
+        setSelectedConversationId(data);
+        setSelectedUsername(profile.username);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      toast.error("Failed to start conversation");
     }
   };
 
@@ -173,26 +212,47 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <header className="flex items-center justify-between p-4 border-b border-border bg-card">
-        <div>
-          <h1 className="text-2xl font-bold text-primary">Cross Chat</h1>
-          <p className="text-sm text-muted-foreground">@{username}</p>
-        </div>
-        <div className="flex gap-2">
-          {isAdmin && (
-            <Button onClick={() => navigate("/admin")} variant="secondary" size="sm">
-              Admin Panel
+    <div className="flex h-screen bg-background">
+      <ConversationsList
+        currentUserId={user?.id || ""}
+        onSelectConversation={handleSelectConversation}
+        selectedConversationId={selectedConversationId}
+      />
+      <div className="flex flex-col flex-1">
+        <header className="flex items-center justify-between p-4 border-b border-border bg-card">
+          <div>
+            <h1 className="text-2xl font-bold text-primary">
+              {selectedUsername ? `Chat with @${selectedUsername}` : "Cross Chat"}
+            </h1>
+            <p className="text-sm text-muted-foreground">@{username}</p>
+          </div>
+          <div className="flex gap-2">
+            <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
+            {isAdmin && (
+              <Button onClick={() => navigate("/admin")} variant="secondary" size="sm">
+                Admin Panel
+              </Button>
+            )}
+            <Button onClick={handleLogout} variant="secondary" size="sm">
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
             </Button>
-          )}
-          <Button onClick={handleLogout} variant="secondary" size="sm">
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
-        </div>
-      </header>
-      <MessageList messages={messages} currentUserId={username} currentUserDbId={user?.id} />
-      <MessageInput onSend={handleSendMessage} />
+          </div>
+        </header>
+        {selectedConversationId ? (
+          <>
+            <MessageList messages={messages} currentUserId={username} currentUserDbId={user?.id} />
+            <MessageInput onSend={handleSendMessage} />
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold mb-2">Welcome to Cross Chat</h2>
+              <p>Select a conversation or start a new chat</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
