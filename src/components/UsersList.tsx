@@ -1,41 +1,80 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Users } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-
-interface User {
-  id: string;
-  username: string;
-}
+import { toast } from "sonner";
+import { z } from "zod";
 
 interface UsersListProps {
   currentUserId: string;
   onSelectUser: (userId: string) => void;
 }
 
+const usernameSchema = z.string()
+  .trim()
+  .min(1, "Username is required")
+  .max(50, "Username must be less than 50 characters")
+  .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores");
+
 const UsersList = ({ currentUserId, onSelectUser }: UsersListProps) => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [username, setUsername] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const { data } = await supabase
+  const handleStartChat = async () => {
+    try {
+      // Validate username
+      const validatedUsername = usernameSchema.parse(username);
+      
+      setLoading(true);
+
+      // Find user by exact username match
+      const { data: profile, error } = await supabase
         .from("profiles")
-        .select("id, username")
-        .neq("id", currentUserId);
+        .select("id")
+        .eq("username", validatedUsername)
+        .neq("id", currentUserId)
+        .single();
 
-      if (data) {
-        setUsers(data);
+      if (error || !profile) {
+        toast.error("User not found");
+        setLoading(false);
+        return;
       }
-    };
 
-    fetchUsers();
-  }, [currentUserId]);
+      // Check if user is blocked
+      const { data: block } = await supabase
+        .from("user_blocks")
+        .select("*")
+        .eq("blocker_id", currentUserId)
+        .eq("blocked_user_id", profile.id)
+        .single();
+
+      if (block) {
+        toast.error("You have blocked this user");
+        setLoading(false);
+        return;
+      }
+
+      onSelectUser(profile.id);
+      setUsername("");
+      setIsOpen(false);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error("Failed to start chat");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button variant="secondary" size="sm">
           <Users className="h-4 w-4 mr-2" />
@@ -46,27 +85,33 @@ const UsersList = ({ currentUserId, onSelectUser }: UsersListProps) => {
         <SheetHeader>
           <SheetTitle>Start a Conversation</SheetTitle>
         </SheetHeader>
-        <ScrollArea className="h-[calc(100vh-8rem)] mt-4">
+        <div className="space-y-4 mt-6">
           <div className="space-y-2">
-            {users.map((user) => (
-              <Button
-                key={user.id}
-                variant="ghost"
-                className="w-full justify-start gap-3 h-auto py-3"
-                onClick={() => onSelectUser(user.id)}
-              >
-                <Avatar className="h-10 w-10 border-2 border-primary">
-                  <AvatarFallback className="bg-secondary text-foreground">
-                    {user.username.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 text-left">
-                  <div className="font-medium">{user.username}</div>
-                </div>
-              </Button>
-            ))}
+            <Label htmlFor="username">Enter Username</Label>
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="username"
+              disabled={loading}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !loading) {
+                  handleStartChat();
+                }
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Type the exact username to start chatting
+            </p>
           </div>
-        </ScrollArea>
+          <Button 
+            onClick={handleStartChat} 
+            disabled={loading || !username.trim()}
+            className="w-full"
+          >
+            {loading ? "Searching..." : "Start Chat"}
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   );

@@ -9,6 +9,7 @@ import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
 import ConversationsList from "@/components/ConversationsList";
 import UsersList from "@/components/UsersList";
+import UserActionsMenu from "@/components/UserActionsMenu";
 
 interface Message {
   id: string;
@@ -29,6 +30,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedUsername, setSelectedUsername] = useState<string>("");
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -173,10 +175,21 @@ const Index = () => {
     }
   };
 
-  const handleSelectConversation = (conversationId: string, otherUsername: string) => {
+  const handleSelectConversation = async (conversationId: string, otherUsername: string) => {
     setSelectedConversationId(conversationId);
     setSelectedUsername(otherUsername);
     setMessages([]);
+
+    // Fetch the other user's ID
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", otherUsername)
+      .single();
+
+    if (profile) {
+      setSelectedUserId(profile.id);
+    }
   };
 
   const handleSelectUser = async (otherUserId: string) => {
@@ -197,6 +210,7 @@ const Index = () => {
       if (profile) {
         setSelectedConversationId(data);
         setSelectedUsername(profile.username);
+        setSelectedUserId(otherUserId);
         setMessages([]);
       }
     } catch (error) {
@@ -223,11 +237,20 @@ const Index = () => {
       />
       <div className="flex flex-col flex-1">
         <header className="flex items-center justify-between p-4 border-b border-border bg-card">
-          <div>
-            <h1 className="text-2xl font-bold text-primary">
-              {selectedUsername ? `Chat with @${selectedUsername}` : "Cross Chat"}
-            </h1>
-            <p className="text-sm text-muted-foreground">@{username}</p>
+          <div className="flex items-center gap-2">
+            <div>
+              <h1 className="text-2xl font-bold text-primary">
+                {selectedUsername ? `Chat with @${selectedUsername}` : "Cross Chat"}
+              </h1>
+              <p className="text-sm text-muted-foreground">@{username}</p>
+            </div>
+            {selectedUsername && selectedUserId && user?.id && (
+              <UserActionsMenu
+                userId={selectedUserId}
+                username={selectedUsername}
+                currentUserId={user.id}
+              />
+            )}
           </div>
           <div className="flex gap-2">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
