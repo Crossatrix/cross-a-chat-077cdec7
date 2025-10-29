@@ -282,6 +282,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      demote_from_admin: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       find_or_create_conversation: {
         Args: { other_user_id: string }
         Returns: string
@@ -293,6 +297,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      promote_to_admin: { Args: { target_user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

@@ -10,6 +10,7 @@ import MessageInput from "@/components/MessageInput";
 import ConversationsList from "@/components/ConversationsList";
 import UsersList from "@/components/UsersList";
 import UserActionsMenu from "@/components/UserActionsMenu";
+import BlockedUsers from "@/components/BlockedUsers";
 
 interface Message {
   id: string;
@@ -256,6 +257,7 @@ const Index = () => {
           </div>
           <div className="flex gap-1 md:gap-2 shrink-0">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
+            <BlockedUsers currentUserId={user?.id || ""} />
             {isAdmin && (
               <Button onClick={() => navigate("/admin")} variant="secondary" size="sm" className="hidden md:flex">
                 Admin Panel

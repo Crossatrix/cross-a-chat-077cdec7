@@ -15,6 +15,7 @@ interface User {
   username: string;
   created_at: string;
   banned?: boolean;
+  isAdmin?: boolean;
 }
 
 const UsersList = () => {
@@ -43,14 +44,21 @@ const UsersList = () => {
       .from("user_bans")
       .select("user_id");
 
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .eq("role", "admin");
+
     const bannedIds = new Set(bans?.map(b => b.user_id) || []);
+    const adminIds = new Set(roles?.map(r => r.user_id) || []);
     
-    const usersWithBanStatus = profiles?.map(p => ({
+    const usersWithStatus = profiles?.map(p => ({
       ...p,
-      banned: bannedIds.has(p.id)
+      banned: bannedIds.has(p.id),
+      isAdmin: adminIds.has(p.id)
     })) || [];
 
-    setUsers(usersWithBanStatus);
+    setUsers(usersWithStatus);
     setLoading(false);
   };
 
@@ -96,6 +104,34 @@ const UsersList = () => {
     fetchUsers();
   };
 
+  const handlePromoteToAdmin = async (userId: string) => {
+    const { error } = await supabase.rpc("promote_to_admin", {
+      target_user_id: userId
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to promote user");
+      return;
+    }
+
+    toast.success("User promoted to admin");
+    fetchUsers();
+  };
+
+  const handleDemoteFromAdmin = async (userId: string) => {
+    const { error } = await supabase.rpc("demote_from_admin", {
+      target_user_id: userId
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to demote user");
+      return;
+    }
+
+    toast.success("User demoted to regular user");
+    fetchUsers();
+  };
+
   if (loading) {
     return <p className="text-muted-foreground">Loading users...</p>;
   }
@@ -112,15 +148,18 @@ const UsersList = () => {
                   Joined {new Date(user.created_at).toLocaleDateString()}
                 </CardDescription>
               </div>
-              {user.banned ? (
-                <Badge variant="destructive">Banned</Badge>
-              ) : (
-                <Badge variant="secondary">Active</Badge>
-              )}
+              <div className="flex gap-2">
+                {user.isAdmin && <Badge variant="default">Admin</Badge>}
+                {user.banned ? (
+                  <Badge variant="destructive">Banned</Badge>
+                ) : (
+                  <Badge variant="secondary">Active</Badge>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {user.banned ? (
                 <Button
                   onClick={() => handleUnban(user.id)}
@@ -171,6 +210,25 @@ const UsersList = () => {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+              )}
+              
+              {user.isAdmin ? (
+                <Button
+                  onClick={() => handleDemoteFromAdmin(user.id)}
+                  variant="outline"
+                  size="sm"
+                >
+                  Remove Admin
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => handlePromoteToAdmin(user.id)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Make Admin
+                </Button>
               )}
             </div>
           </CardContent>
