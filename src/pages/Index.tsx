@@ -229,20 +229,22 @@ const Index = () => {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <ConversationsList
-        currentUserId={user?.id || ""}
-        onSelectConversation={handleSelectConversation}
-        selectedConversationId={selectedConversationId}
-      />
-      <div className="flex flex-col flex-1">
-        <header className="flex items-center justify-between p-4 border-b border-border bg-card">
-          <div className="flex items-center gap-2">
-            <div>
-              <h1 className="text-2xl font-bold text-primary">
-                {selectedUsername ? `Chat with @${selectedUsername}` : "Cross Chat"}
+    <div className="flex h-screen bg-background overflow-hidden">
+      <div className="hidden md:block">
+        <ConversationsList
+          currentUserId={user?.id || ""}
+          onSelectConversation={handleSelectConversation}
+          selectedConversationId={selectedConversationId}
+        />
+      </div>
+      <div className="flex flex-col flex-1 min-w-0">
+        <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-2xl font-bold text-primary truncate">
+                {selectedUsername ? `@${selectedUsername}` : "Cross Chat"}
               </h1>
-              <p className="text-sm text-muted-foreground">@{username}</p>
+              <p className="text-xs md:text-sm text-muted-foreground truncate">@{username}</p>
             </div>
             {selectedUsername && selectedUserId && user?.id && (
               <UserActionsMenu
@@ -252,16 +254,16 @@ const Index = () => {
               />
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1 md:gap-2 shrink-0">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
             {isAdmin && (
-              <Button onClick={() => navigate("/admin")} variant="secondary" size="sm">
+              <Button onClick={() => navigate("/admin")} variant="secondary" size="sm" className="hidden md:flex">
                 Admin Panel
               </Button>
             )}
             <Button onClick={handleLogout} variant="secondary" size="sm">
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              <LogOut className="h-4 w-4" />
+              <span className="hidden md:inline ml-2">Logout</span>
             </Button>
           </div>
         </header>

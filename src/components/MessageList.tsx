@@ -29,8 +29,8 @@ const MessageList = ({ messages, currentUserId, currentUserDbId }: MessageListPr
   }, [messages]);
 
   return (
-    <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-      <div className="space-y-4">
+    <ScrollArea className="flex-1 p-2 md:p-4" ref={scrollRef}>
+      <div className="space-y-2 md:space-y-4">
         {messages.map((message) => {
           const isCurrentUser = message.profiles?.username === currentUserId;
           return (
@@ -38,9 +38,9 @@ const MessageList = ({ messages, currentUserId, currentUserDbId }: MessageListPr
               key={message.id}
               className={`flex gap-3 ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}
             >
-              <div className="flex items-start gap-2">
-                <Avatar className="h-8 w-8 border-2 border-primary">
-                  <AvatarFallback className="bg-secondary text-foreground text-xs">
+              <div className="flex items-start gap-1 md:gap-2">
+                <Avatar className="h-6 w-6 md:h-8 md:w-8 border-2 border-primary">
+                  <AvatarFallback className="bg-secondary text-foreground text-[10px] md:text-xs">
                     {message.profiles?.username?.charAt(0).toUpperCase() || "?"}
                   </AvatarFallback>
                 </Avatar>
@@ -53,11 +53,11 @@ const MessageList = ({ messages, currentUserId, currentUserDbId }: MessageListPr
                 )}
               </div>
               <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"}`}>
-                <span className="text-xs text-muted-foreground mb-1">
+                <span className="text-[10px] md:text-xs text-muted-foreground mb-0.5 md:mb-1">
                   {message.profiles?.username || "Unknown"}
                 </span>
                 <div
-                  className={`rounded-2xl px-4 py-2 max-w-xs break-words ${
+                  className={`rounded-2xl px-2 py-1 md:px-4 md:py-2 max-w-[70vw] md:max-w-xs break-words text-sm md:text-base ${
                     isCurrentUser
                       ? "bg-primary text-primary-foreground"
                       : "bg-card text-card-foreground border border-border"
@@ -65,7 +65,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId }: MessageListPr
                 >
                   {message.content}
                 </div>
-                <span className="text-xs text-muted-foreground mt-1">
+                <span className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
                   {new Date(message.created_at).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
