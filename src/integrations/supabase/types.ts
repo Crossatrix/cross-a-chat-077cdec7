@@ -297,6 +297,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_conversation_member: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
+      }
       promote_to_admin: { Args: { target_user_id: string }; Returns: undefined }
     }
     Enums: {
