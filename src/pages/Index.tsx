@@ -147,7 +147,7 @@ const Index = () => {
             .from("messages")
             .select("*, profiles(username)")
             .eq("id", payload.new.id)
-            .single();
+            .maybeSingle();
 
           if (data) {
             setMessages((prev) => [...prev, data]);
