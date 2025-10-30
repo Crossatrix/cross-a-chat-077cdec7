@@ -231,16 +231,30 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <div className="hidden md:block">
+      <div className={`${selectedConversationId ? 'hidden md:flex' : 'flex'} md:flex flex-col h-screen`}>
         <ConversationsList
           currentUserId={user?.id || ""}
           onSelectConversation={handleSelectConversation}
           selectedConversationId={selectedConversationId}
         />
       </div>
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className={`flex flex-col flex-1 min-w-0 ${!selectedConversationId ? 'hidden md:flex' : 'flex'}`}>
         <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0">
           <div className="flex items-center gap-2 min-w-0">
+            {selectedConversationId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden shrink-0"
+                onClick={() => {
+                  setSelectedConversationId(null);
+                  setSelectedUsername(null);
+                  setSelectedUserId(null);
+                }}
+              >
+                ← Back
+              </Button>
+            )}
             <div className="min-w-0">
               <h1 className="text-lg md:text-2xl font-bold text-primary truncate">
                 {selectedUsername ? `@${selectedUsername}` : "Cross Chat"}
@@ -275,10 +289,11 @@ const Index = () => {
             <MessageInput onSend={handleSendMessage} />
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+          <div className="flex-1 flex items-center justify-center text-muted-foreground p-4">
             <div className="text-center">
               <h2 className="text-xl font-semibold mb-2">Welcome to Cross Chat</h2>
-              <p>Select a conversation or start a new chat</p>
+              <p className="mb-4">Click on a chat to view messages</p>
+              <p className="text-sm">or use the "New Chat" button to start a conversation</p>
             </div>
           </div>
         )}
