@@ -231,14 +231,14 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <div className={`${selectedConversationId ? 'hidden md:flex' : 'flex'} md:flex flex-col h-screen`}>
+      <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen`}>
         <ConversationsList
           currentUserId={user?.id || ""}
           onSelectConversation={handleSelectConversation}
           selectedConversationId={selectedConversationId}
         />
       </div>
-      <div className={`flex flex-col flex-1 min-w-0 ${!selectedConversationId ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex flex-col flex-1 min-w-0 h-full ${!selectedConversationId ? 'hidden md:flex' : 'flex'}`}>
         <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             {selectedConversationId && (

@@ -72,10 +72,10 @@ const ConversationsList = ({
 
       otherParticipants?.forEach((p: any) => {
         const conv = conversationsMap.get(p.conversation_id);
-        if (conv) {
+        if (conv && p.profiles) {
           conv.otherUser = {
             id: p.user_id,
-            username: p.profiles.username,
+            username: p.profiles.username || "Unknown",
           };
         }
       });
