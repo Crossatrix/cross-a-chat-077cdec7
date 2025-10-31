@@ -11,6 +11,7 @@ import ConversationsList from "@/components/ConversationsList";
 import UsersList from "@/components/UsersList";
 import UserActionsMenu from "@/components/UserActionsMenu";
 import BlockedUsersList from "@/components/BlockedUsersList";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 
 interface Message {
   id: string;
@@ -232,6 +233,27 @@ const Index = () => {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen`}>
+        <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0 md:hidden">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-primary truncate">Cross Chat</h1>
+              <p className="text-xs text-muted-foreground truncate">@{username}</p>
+            </div>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
+            <BlockedUsersList currentUserId={user?.id || ""} />
+            <FeedbackDialog />
+            {isAdmin && (
+              <Button onClick={() => navigate("/admin")} variant="secondary" size="sm">
+                Admin
+              </Button>
+            )}
+            <Button onClick={handleLogout} variant="secondary" size="sm">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </header>
         <ConversationsList
           currentUserId={user?.id || ""}
           onSelectConversation={handleSelectConversation}
@@ -272,6 +294,7 @@ const Index = () => {
           <div className="flex gap-1 md:gap-2 shrink-0">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
             <BlockedUsersList currentUserId={user?.id || ""} />
+            <FeedbackDialog />
             {isAdmin && (
               <Button onClick={() => navigate("/admin")} variant="secondary" size="sm" className="hidden md:flex">
                 Admin Panel
