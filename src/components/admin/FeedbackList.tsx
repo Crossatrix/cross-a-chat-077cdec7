@@ -49,7 +49,9 @@ const FeedbackList = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching feedback:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching feedback:", error);
+      }
       toast.error("Failed to load feedback");
       return;
     }
@@ -81,7 +83,9 @@ const FeedbackList = () => {
       .eq("id", id);
 
     if (error) {
-      console.error("Error updating feedback:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error updating feedback:", error);
+      }
       toast.error("Failed to update feedback");
       return;
     }

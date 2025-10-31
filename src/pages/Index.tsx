@@ -121,7 +121,9 @@ const Index = () => {
         .order("created_at", { ascending: true });
 
       if (error) {
-        console.error("Error fetching messages:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error fetching messages:", error);
+        }
         toast.error("Failed to load messages");
         return;
       }
@@ -172,7 +174,9 @@ const Index = () => {
     });
 
     if (error) {
-      console.error("Error sending message:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error sending message:", error);
+      }
       toast.error("Failed to send message");
     }
   };
@@ -216,7 +220,9 @@ const Index = () => {
         setMessages([]);
       }
     } catch (error) {
-      console.error("Error creating conversation:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error creating conversation:", error);
+      }
       toast.error("Failed to start conversation");
     }
   };

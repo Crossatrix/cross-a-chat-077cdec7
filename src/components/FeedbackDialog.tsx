@@ -38,7 +38,9 @@ export const FeedbackDialog = () => {
     setLoading(false);
 
     if (error) {
-      console.error("Error submitting feedback:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error submitting feedback:", error);
+      }
       toast.error("Failed to submit feedback");
       return;
     }

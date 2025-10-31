@@ -31,7 +31,9 @@ const BlockedUsersList = ({ currentUserId }: BlockedUsersListProps) => {
       .eq("blocker_id", currentUserId);
 
     if (error) {
-      console.error("Error fetching blocked users:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching blocked users:", error);
+      }
       toast.error("Failed to load blocked users");
       setLoading(false);
       return;
@@ -49,7 +51,9 @@ const BlockedUsersList = ({ currentUserId }: BlockedUsersListProps) => {
       .in("id", blocks.map(b => b.blocked_user_id));
 
     if (profilesError) {
-      console.error("Error fetching profiles:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching profiles:", profilesError);
+      }
       setBlockedUsers([]);
       setLoading(false);
       return;

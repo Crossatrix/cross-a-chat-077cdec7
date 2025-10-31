@@ -37,7 +37,9 @@ const BlockedUsers = ({ currentUserId }: BlockedUsersProps) => {
       .eq("blocker_id", currentUserId);
 
     if (error) {
-      console.error("Error fetching blocked users:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching blocked users:", error);
+      }
       toast.error("Failed to load blocked users");
       return;
     }

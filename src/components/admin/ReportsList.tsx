@@ -38,7 +38,9 @@ const ReportsList = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching reports:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching reports:", error);
+      }
       toast.error("Failed to load reports");
       return;
     }

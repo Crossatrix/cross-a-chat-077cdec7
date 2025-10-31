@@ -37,7 +37,9 @@ const UsersList = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching users:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching users:", error);
+      }
       toast.error("Failed to load users");
       return;
     }
