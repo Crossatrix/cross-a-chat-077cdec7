@@ -122,8 +122,8 @@ const ConversationsList = ({
   }, [currentUserId]);
 
   return (
-    <div className="w-full md:w-80 border-r border-border bg-card flex flex-col">
-      <div className="p-2 md:p-4 border-b border-border shrink-0">
+    <div className="w-full md:w-80 border-r border-border bg-card flex flex-col h-full">
+      <div className="px-4 py-3 border-b border-border shrink-0">
         <h2 className="text-base md:text-lg font-semibold">Chats</h2>
       </div>
       <ScrollArea className="flex-1">
@@ -134,7 +134,7 @@ const ConversationsList = ({
             <p className="text-xs mt-1">Click on a username to start chatting</p>
           </div>
         ) : (
-          <div className="space-y-1 p-2">
+          <div className="space-y-0.5 p-2">
             {conversations.map((conv) => (
               <Button
                 key={conv.id}
@@ -142,13 +142,13 @@ const ConversationsList = ({
                 className="w-full justify-start gap-3 h-auto py-3"
                 onClick={() => onSelectConversation(conv.id, conv.otherUser?.username || "Unknown")}
               >
-                <Avatar className="h-10 w-10 border-2 border-primary">
+                <Avatar className="h-10 w-10 border-2 border-primary shrink-0">
                   <AvatarFallback className="bg-secondary text-foreground">
                     {conv.otherUser?.username?.charAt(0).toUpperCase() || "?"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 text-left overflow-hidden">
-                  <div className="font-medium">{conv.otherUser?.username || "Unknown"}</div>
+                <div className="flex-1 text-left overflow-hidden min-w-0">
+                  <div className="font-medium truncate">{conv.otherUser?.username || "Unknown"}</div>
                   {conv.lastMessage && (
                     <div className="text-xs text-muted-foreground truncate mt-1">
                       {conv.lastMessage}
