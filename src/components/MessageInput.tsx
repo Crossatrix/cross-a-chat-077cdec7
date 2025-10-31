@@ -2,21 +2,28 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
+import { z } from "zod";
+import { toast } from "sonner";
 
 interface MessageInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
 }
 
+const messageSchema = z.string().trim().min(1, "Message cannot be empty").max(2000, "Message too long (max 2000 characters)");
+
 const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
   const [message, setMessage] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      onSend(message.trim());
-      setMessage("");
+    const validation = messageSchema.safeParse(message);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
     }
+    onSend(validation.data);
+    setMessage("");
   };
 
   return (

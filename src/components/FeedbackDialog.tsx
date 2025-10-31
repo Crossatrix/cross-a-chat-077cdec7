@@ -13,6 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const feedbackSchema = z.string().trim().min(1, "Please enter your feedback").max(5000, "Feedback too long (max 5000 characters)");
 
 export const FeedbackDialog = () => {
   const [open, setOpen] = useState(false);
@@ -20,14 +23,15 @@ export const FeedbackDialog = () => {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!message.trim()) {
-      toast.error("Please enter your feedback");
+    const validation = feedbackSchema.safeParse(message);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
     setLoading(true);
     const { error } = await supabase.from("feedback").insert({
-      message: message.trim(),
+      message: validation.data,
       user_id: (await supabase.auth.getUser()).data.user?.id,
     });
 
@@ -66,7 +70,11 @@ export const FeedbackDialog = () => {
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
             className="resize-none"
+            maxLength={5000}
           />
+          <p className="text-xs text-muted-foreground mt-2 text-right">
+            {message.length}/5000
+          </p>
         </div>
         <DialogFooter>
           <Button

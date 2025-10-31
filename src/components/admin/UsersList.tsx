@@ -8,6 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Ban, Shield } from "lucide-react";
+import { z } from "zod";
+
+const banReasonSchema = z.string().trim().min(10, "Please provide more details (min 10 characters)").max(1000, "Reason too long (max 1000 characters)");
 
 interface User {
   id: string;
@@ -64,8 +67,9 @@ const UsersList = () => {
   const handleBan = async (userId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     
-    if (!banReason.trim()) {
-      toast.error("Please provide a reason for the ban");
+    const validation = banReasonSchema.safeParse(banReason);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
@@ -74,7 +78,7 @@ const UsersList = () => {
       .insert({
         user_id: userId,
         banned_by: user?.id,
-        reason: banReason
+        reason: validation.data
       });
 
     if (error) {
@@ -196,7 +200,11 @@ const UsersList = () => {
                           onChange={(e) => setBanReason(e.target.value)}
                           placeholder="Enter reason..."
                           rows={4}
+                          maxLength={1000}
                         />
+                        <p className="text-xs text-muted-foreground text-right">
+                          {banReason.length}/1000 (minimum 10 characters)
+                        </p>
                       </div>
                     </div>
                     <DialogFooter>
