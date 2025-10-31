@@ -51,7 +51,7 @@ const ConversationsList = ({
       // Get other participants
       const { data: otherParticipants } = await supabase
         .from("conversation_participants")
-        .select("conversation_id, user_id, profiles!inner(username)")
+        .select("conversation_id, user_id, profiles(username)")
         .in("conversation_id", conversationIds)
         .neq("user_id", currentUserId);
 
