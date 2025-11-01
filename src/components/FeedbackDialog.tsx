@@ -53,9 +53,9 @@ export const FeedbackDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary" size="sm">
-          <MessageSquare className="h-4 w-4" />
-          <span className="hidden md:inline ml-2">Feedback</span>
+        <Button variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Feedback">
+          <MessageSquare className="h-3.5 w-3.5 md:h-4 md:w-4" />
+          <span className="hidden md:inline md:ml-2">Feedback</span>
         </Button>
       </DialogTrigger>
       <DialogContent>

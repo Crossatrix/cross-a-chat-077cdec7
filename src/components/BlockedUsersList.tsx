@@ -93,9 +93,9 @@ const BlockedUsersList = ({ currentUserId }: BlockedUsersListProps) => {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm">
-          <UserX className="h-4 w-4 mr-2" />
-          Blocked Users
+        <Button variant="outline" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Blocked Users">
+          <UserX className="h-3.5 w-3.5 md:h-4 md:w-4" />
+          <span className="hidden md:inline md:ml-2">Blocked</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-full sm:max-w-md overflow-y-auto">
