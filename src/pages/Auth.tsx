@@ -6,6 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const usernameSchema = z.string()
+  .trim()
+  .min(3, "Username must be at least 3 characters")
+  .max(20, "Username must be less than 20 characters")
+  .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores");
+
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -30,8 +44,24 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Validate username
+      const usernameValidation = usernameSchema.safeParse(username);
+      if (!usernameValidation.success) {
+        toast.error(usernameValidation.error.errors[0].message);
+        setLoading(false);
+        return;
+      }
+
+      // Validate password
+      const passwordValidation = passwordSchema.safeParse(password);
+      if (!passwordValidation.success) {
+        toast.error(passwordValidation.error.errors[0].message);
+        setLoading(false);
+        return;
+      }
+
       // Generate valid internal email from username
-      const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@internal.crosschat.app`;
+      const email = `${usernameValidation.data.toLowerCase()}@internal.crosschat.app`;
 
       if (isLogin) {
         // Login
@@ -67,7 +97,7 @@ const Auth = () => {
           password,
           options: {
             data: {
-              username,
+              username: usernameValidation.data,
             },
             emailRedirectTo: `${window.location.origin}/`,
           },
@@ -119,8 +149,10 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
-                minLength={6}
               />
+              <p className="text-xs text-muted-foreground">
+                Must be 8+ characters with uppercase, lowercase, number, and special character
+              </p>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Loading..." : isLogin ? "Login" : "Sign Up"}

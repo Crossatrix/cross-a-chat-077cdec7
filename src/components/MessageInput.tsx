@@ -10,7 +10,14 @@ interface MessageInputProps {
   disabled?: boolean;
 }
 
-const messageSchema = z.string().trim().min(1, "Message cannot be empty").max(2000, "Message too long (max 2000 characters)");
+const messageSchema = z.string()
+  .trim()
+  .min(1, "Message cannot be empty")
+  .max(2000, "Message too long (max 2000 characters)")
+  .refine(
+    (val) => !/<script|<iframe|javascript:|onerror=|onload=/i.test(val),
+    "Message contains invalid content"
+  );
 
 const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
   const [message, setMessage] = useState("");
