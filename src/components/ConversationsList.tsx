@@ -51,9 +51,19 @@ const ConversationsList = ({
       // Get other participants
       const { data: otherParticipants } = await supabase
         .from("conversation_participants")
-        .select("conversation_id, user_id, profiles(username)")
+        .select("conversation_id, user_id")
         .in("conversation_id", conversationIds)
         .neq("user_id", currentUserId);
+
+      // Fetch usernames for other participants
+      const otherUserIds = Array.from(new Set((otherParticipants || []).map((p: any) => p.user_id)));
+      const { data: otherProfiles } = otherUserIds.length
+        ? await supabase
+            .from("profiles")
+            .select("id, username")
+            .in("id", otherUserIds)
+        : { data: [] as any[] };
+      const userMap = new Map((otherProfiles || []).map((pr: any) => [pr.id, pr.username]));
 
       // Get last messages for each conversation
       const { data: lastMessages } = await supabase
@@ -72,10 +82,10 @@ const ConversationsList = ({
 
       otherParticipants?.forEach((p: any) => {
         const conv = conversationsMap.get(p.conversation_id);
-        if (conv && p.profiles) {
+        if (conv) {
           conv.otherUser = {
             id: p.user_id,
-            username: p.profiles.username || "Unknown",
+            username: userMap.get(p.user_id) || "Unknown",
           };
         }
       });
