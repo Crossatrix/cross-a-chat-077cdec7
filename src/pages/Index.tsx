@@ -246,17 +246,17 @@ const Index = () => {
               <p className="text-xs text-muted-foreground truncate">@{username}</p>
             </div>
           </div>
-          <div className="flex gap-1 shrink-0">
+          <div className="flex gap-0.5 md:gap-1 shrink-0">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
             {isAdmin && (
-              <Button onClick={() => navigate("/admin")} variant="secondary" size="sm">
-                Admin
+              <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8">
+                <span className="text-xs">A</span>
               </Button>
             )}
-            <Button onClick={handleLogout} variant="secondary" size="sm">
-              <LogOut className="h-4 w-4" />
+            <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8">
+              <LogOut className="h-3.5 w-3.5" />
             </Button>
           </div>
         </header>
@@ -276,8 +276,8 @@ const Index = () => {
                 className="md:hidden shrink-0"
                 onClick={() => {
                   setSelectedConversationId(null);
-                  setSelectedUsername(null);
-                  setSelectedUserId(null);
+                  setSelectedUsername("");
+                  setSelectedUserId("");
                 }}
               >
                 ← Back
@@ -297,18 +297,18 @@ const Index = () => {
               />
             )}
           </div>
-          <div className="flex gap-1 md:gap-2 shrink-0">
+          <div className="flex gap-0.5 md:gap-2 shrink-0">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
             {isAdmin && (
-              <Button onClick={() => navigate("/admin")} variant="secondary" size="sm" className="hidden md:flex">
-                Admin Panel
+              <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3">
+                <span className="text-xs md:text-sm">Admin</span>
               </Button>
             )}
-            <Button onClick={handleLogout} variant="secondary" size="sm">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden md:inline ml-2">Logout</span>
+            <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3">
+              <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden md:inline md:ml-2">Logout</span>
             </Button>
           </div>
         </header>
