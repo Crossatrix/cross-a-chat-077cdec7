@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 import { toast } from "sonner";
 import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
@@ -246,16 +246,16 @@ const Index = () => {
               <p className="text-xs text-muted-foreground truncate">@{username}</p>
             </div>
           </div>
-          <div className="flex gap-0.5 md:gap-1 shrink-0">
+          <div className="flex gap-0.5 md:gap-1 shrink-0 overflow-x-auto items-center">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
             {isAdmin && (
-              <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8">
-                <span className="text-xs">A</span>
+              <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8" aria-label="Admin Panel">
+                <Shield className="h-3.5 w-3.5" />
               </Button>
             )}
-            <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8">
+            <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -297,16 +297,17 @@ const Index = () => {
               />
             )}
           </div>
-          <div className="flex gap-0.5 md:gap-2 shrink-0">
+          <div className="flex gap-0.5 md:gap-2 shrink-0 overflow-x-auto items-center">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
             {isAdmin && (
-              <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3">
-                <span className="text-xs md:text-sm">Admin</span>
+              <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Admin Panel">
+                <Shield className="h-3.5 w-3.5 md:hidden" />
+                <span className="hidden md:inline md:text-sm">Admin</span>
               </Button>
             )}
-            <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3">
+            <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden md:inline md:ml-2">Logout</span>
             </Button>
