@@ -84,7 +84,8 @@ const Auth = () => {
 
           if (ban) {
             await supabase.auth.signOut();
-            toast.error("Your account has been banned");
+            toast.error("Your account has been banned. Contact support if you believe this is an error.");
+            setLoading(false);
             return;
           }
         }
@@ -105,6 +106,24 @@ const Auth = () => {
         });
 
         if (error) throw error;
+        
+        // Check if user is banned (shouldn't happen for new signups, but just in case)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: ban } = await supabase
+            .from("user_bans")
+            .select("*")
+            .eq("user_id", user.id)
+            .single();
+
+          if (ban) {
+            await supabase.auth.signOut();
+            toast.error("Your account has been banned. Contact support if you believe this is an error.");
+            setLoading(false);
+            return;
+          }
+        }
+        
         toast.success("Account created! Welcome to Cross Chat!");
         navigate("/");
       }
