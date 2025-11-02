@@ -51,12 +51,14 @@ const Auth = () => {
         return;
       }
 
-      // Validate password
-      const passwordValidation = passwordSchema.safeParse(password);
-      if (!passwordValidation.success) {
-        toast.error(passwordValidation.error.errors[0].message);
-        setLoading(false);
-        return;
+      // Validate password only for signup
+      if (!isLogin) {
+        const passwordValidation = passwordSchema.safeParse(password);
+        if (!passwordValidation.success) {
+          toast.error(passwordValidation.error.errors[0].message);
+          setLoading(false);
+          return;
+        }
       }
 
       // Generate valid internal email from username
@@ -149,9 +151,11 @@ const Auth = () => {
                 required
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">
-                Must be 8+ characters with uppercase, lowercase, and number
-              </p>
+              {!isLogin && (
+                <p className="text-xs text-muted-foreground">
+                  Must be 8+ characters with uppercase, lowercase, and number
+                </p>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Loading..." : isLogin ? "Login" : "Sign Up"}
