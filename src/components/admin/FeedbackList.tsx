@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Star, Trash2 } from "lucide-react";
 
 interface Feedback {
   id: string;
@@ -12,6 +13,7 @@ interface Feedback {
   message: string;
   status: string;
   created_at: string;
+  important: boolean;
   username?: string;
 }
 
@@ -93,6 +95,40 @@ const FeedbackList = () => {
     toast.success("Feedback status updated");
   };
 
+  const toggleImportant = async (id: string, currentImportant: boolean) => {
+    const { error } = await supabase
+      .from("feedback")
+      .update({ important: !currentImportant })
+      .eq("id", id);
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error("Error updating feedback:", error);
+      }
+      toast.error("Failed to update feedback");
+      return;
+    }
+
+    toast.success(currentImportant ? "Removed from important" : "Marked as important");
+  };
+
+  const deleteFeedback = async (id: string) => {
+    const { error } = await supabase
+      .from("feedback")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error("Error deleting feedback:", error);
+      }
+      toast.error("Failed to delete feedback");
+      return;
+    }
+
+    toast.success("Feedback deleted");
+  };
+
   if (loading) {
     return <div className="p-4 text-center">Loading feedback...</div>;
   }
@@ -104,13 +140,18 @@ const FeedbackList = () => {
   return (
     <div className="space-y-4">
       {feedback.map((item) => (
-        <Card key={item.id}>
+        <Card key={item.id} className={item.important ? "border-primary" : ""}>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">
-                @{item.username || "Unknown"}
-              </CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
+                <CardTitle className="text-base">
+                  @{item.username || "Unknown"}
+                </CardTitle>
+                {item.important && (
+                  <Star className="h-4 w-4 fill-primary text-primary" />
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge
                   variant={
                     item.status === "resolved"
@@ -130,7 +171,7 @@ const FeedbackList = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm mb-4 whitespace-pre-wrap">{item.message}</p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {item.status === "pending" && (
                 <Button
                   size="sm"
@@ -148,6 +189,22 @@ const FeedbackList = () => {
                   Reopen
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant={item.important ? "outline" : "secondary"}
+                onClick={() => toggleImportant(item.id, item.important)}
+              >
+                <Star className="h-4 w-4 mr-1" />
+                {item.important ? "Unmark" : "Important"}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => deleteFeedback(item.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
             </div>
           </CardContent>
         </Card>
