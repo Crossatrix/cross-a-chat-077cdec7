@@ -80,13 +80,23 @@ const Auth = () => {
             .from("user_bans")
             .select("*")
             .eq("user_id", user.id)
-            .single();
+            .maybeSingle();
 
           if (ban) {
-            await supabase.auth.signOut();
-            toast.error("Your account has been banned. Contact support if you believe this is an error.");
-            setLoading(false);
-            return;
+            // Check if ban has expired
+            if (ban.expires_at && new Date(ban.expires_at) < new Date()) {
+              // Ban has expired, remove it
+              await supabase.from("user_bans").delete().eq("id", ban.id);
+            } else {
+              // Ban is still active
+              await supabase.auth.signOut();
+              const banMessage = ban.expires_at 
+                ? `Your account is temporarily banned until ${new Date(ban.expires_at).toLocaleString()}. Contact support if you believe this is an error.`
+                : "Your account has been banned. Contact support if you believe this is an error.";
+              toast.error(banMessage);
+              setLoading(false);
+              return;
+            }
           }
         }
 
@@ -114,13 +124,23 @@ const Auth = () => {
             .from("user_bans")
             .select("*")
             .eq("user_id", user.id)
-            .single();
+            .maybeSingle();
 
           if (ban) {
-            await supabase.auth.signOut();
-            toast.error("Your account has been banned. Contact support if you believe this is an error.");
-            setLoading(false);
-            return;
+            // Check if ban has expired
+            if (ban.expires_at && new Date(ban.expires_at) < new Date()) {
+              // Ban has expired, remove it
+              await supabase.from("user_bans").delete().eq("id", ban.id);
+            } else {
+              // Ban is still active
+              await supabase.auth.signOut();
+              const banMessage = ban.expires_at 
+                ? `Your account is temporarily banned until ${new Date(ban.expires_at).toLocaleString()}. Contact support if you believe this is an error.`
+                : "Your account has been banned. Contact support if you believe this is an error.";
+              toast.error(banMessage);
+              setLoading(false);
+              return;
+            }
           }
         }
         

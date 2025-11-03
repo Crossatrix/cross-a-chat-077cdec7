@@ -70,13 +70,24 @@ const Index = () => {
         .from("user_bans")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (ban) {
-        await supabase.auth.signOut();
-        toast.error("Your account has been banned");
-        navigate("/auth");
-        return false;
+        // Check if ban has expired
+        if (ban.expires_at && new Date(ban.expires_at) < new Date()) {
+          // Ban has expired, remove it
+          await supabase.from("user_bans").delete().eq("id", ban.id);
+          return true;
+        } else {
+          // Ban is still active
+          await supabase.auth.signOut();
+          const banMessage = ban.expires_at 
+            ? `Your account is temporarily banned until ${new Date(ban.expires_at).toLocaleString()}.`
+            : "Your account has been banned";
+          toast.error(banMessage);
+          navigate("/auth");
+          return false;
+        }
       }
       return true;
     };

@@ -17,6 +17,7 @@ interface User {
   username: string;
   created_at: string;
   banned?: boolean;
+  banExpiresAt?: string | null;
   isAdmin?: boolean;
 }
 
@@ -46,19 +47,20 @@ const UsersList = () => {
 
     const { data: bans } = await supabase
       .from("user_bans")
-      .select("user_id");
+      .select("user_id, expires_at");
 
     const { data: roles } = await supabase
       .from("user_roles")
       .select("user_id, role")
       .eq("role", "admin");
 
-    const bannedIds = new Set(bans?.map(b => b.user_id) || []);
+    const banMap = new Map(bans?.map(b => [b.user_id, b.expires_at]) || []);
     const adminIds = new Set(roles?.map(r => r.user_id) || []);
     
     const usersWithStatus = profiles?.map(p => ({
       ...p,
-      banned: bannedIds.has(p.id),
+      banned: banMap.has(p.id),
+      banExpiresAt: banMap.get(p.id),
       isAdmin: adminIds.has(p.id)
     })) || [];
 
@@ -153,10 +155,16 @@ const UsersList = () => {
                   Joined {new Date(user.created_at).toLocaleDateString()}
                 </CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {user.isAdmin && <Badge variant="default">Admin</Badge>}
                 {user.banned ? (
-                  <Badge variant="destructive">Banned</Badge>
+                  user.banExpiresAt ? (
+                    <Badge variant="destructive">
+                      Temp Ban (expires {new Date(user.banExpiresAt).toLocaleDateString()})
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive">Permanently Banned</Badge>
+                  )
                 ) : (
                   <Badge variant="secondary">Active</Badge>
                 )}
