@@ -4,7 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Report {
   id: string;
@@ -70,6 +81,21 @@ const ReportsList = () => {
     fetchReports();
   };
 
+  const handleDelete = async (reportId: string) => {
+    const { error } = await supabase
+      .from("user_reports")
+      .delete()
+      .eq("id", reportId);
+
+    if (error) {
+      toast.error("Failed to delete report");
+      return;
+    }
+
+    toast.success("Report deleted");
+    fetchReports();
+  };
+
   if (loading) {
     return <p className="text-muted-foreground">Loading reports...</p>;
   }
@@ -106,16 +132,40 @@ const ReportsList = () => {
                 <p className="text-xs text-muted-foreground">
                   {new Date(report.created_at).toLocaleString()}
                 </p>
-                {report.status === "pending" && (
-                  <Button
-                    onClick={() => handleResolve(report.id)}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Resolve
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {report.status === "pending" && (
+                    <Button
+                      onClick={() => handleResolve(report.id)}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Resolve
+                    </Button>
+                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Report</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this report? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(report.id)}>
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </CardContent>
           </Card>

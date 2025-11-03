@@ -25,6 +25,7 @@ interface Feedback {
   status: string;
   created_at: string;
   important: boolean;
+  rating?: number | null;
   username?: string;
 }
 
@@ -181,6 +182,20 @@ const FeedbackList = () => {
             </div>
           </CardHeader>
           <CardContent>
+            {item.rating && (
+              <div className="flex items-center gap-1 mb-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`h-4 w-4 ${
+                      star <= item.rating!
+                        ? "fill-primary text-primary"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
             <p className="text-sm mb-4 whitespace-pre-wrap">{item.message}</p>
             <div className="flex flex-wrap gap-2">
               {item.status === "pending" && (

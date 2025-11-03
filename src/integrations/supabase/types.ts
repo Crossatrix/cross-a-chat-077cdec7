@@ -67,6 +67,7 @@ export type Database = {
           id: string
           important: boolean
           message: string
+          rating: number | null
           status: string
           user_id: string
         }
@@ -75,6 +76,7 @@ export type Database = {
           id?: string
           important?: boolean
           message: string
+          rating?: number | null
           status?: string
           user_id: string
         }
@@ -83,6 +85,7 @@ export type Database = {
           id?: string
           important?: boolean
           message?: string
+          rating?: number | null
           status?: string
           user_id?: string
         }
