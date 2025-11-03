@@ -79,13 +79,8 @@ const Index = () => {
           await supabase.from("user_bans").delete().eq("id", ban.id);
           return true;
         } else {
-          // Ban is still active
-          await supabase.auth.signOut();
-          const banMessage = ban.expires_at 
-            ? `Your account is temporarily banned until ${new Date(ban.expires_at).toLocaleString()}.`
-            : "Your account has been banned";
-          toast.error(banMessage);
-          navigate("/auth");
+          // Ban is still active, redirect to banned page
+          navigate("/banned");
           return false;
         }
       }

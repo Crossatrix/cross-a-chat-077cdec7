@@ -88,13 +88,9 @@ const Auth = () => {
               // Ban has expired, remove it
               await supabase.from("user_bans").delete().eq("id", ban.id);
             } else {
-              // Ban is still active
-              await supabase.auth.signOut();
-              const banMessage = ban.expires_at 
-                ? `Your account is temporarily banned until ${new Date(ban.expires_at).toLocaleString()}. Contact support if you believe this is an error.`
-                : "Your account has been banned. Contact support if you believe this is an error.";
-              toast.error(banMessage);
+              // Ban is still active, redirect to banned page
               setLoading(false);
+              navigate("/banned");
               return;
             }
           }
@@ -132,13 +128,9 @@ const Auth = () => {
               // Ban has expired, remove it
               await supabase.from("user_bans").delete().eq("id", ban.id);
             } else {
-              // Ban is still active
-              await supabase.auth.signOut();
-              const banMessage = ban.expires_at 
-                ? `Your account is temporarily banned until ${new Date(ban.expires_at).toLocaleString()}. Contact support if you believe this is an error.`
-                : "Your account has been banned. Contact support if you believe this is an error.";
-              toast.error(banMessage);
+              // Ban is still active, redirect to banned page
               setLoading(false);
+              navigate("/banned");
               return;
             }
           }
