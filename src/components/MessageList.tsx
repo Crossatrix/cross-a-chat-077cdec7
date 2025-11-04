@@ -8,6 +8,7 @@ interface Message {
   content: string;
   created_at: string;
   user_id: string;
+  image_url?: string;
   profiles: {
     username: string;
   };
@@ -63,7 +64,15 @@ const MessageList = ({ messages, currentUserId, currentUserDbId }: MessageListPr
                       : "bg-card text-card-foreground border border-border"
                   }`}
                 >
-                  {message.content}
+                  {message.image_url && (
+                    <img
+                      src={message.image_url}
+                      alt="Shared image"
+                      className="rounded-lg max-w-full h-auto mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => window.open(message.image_url, '_blank')}
+                    />
+                  )}
+                  {message.content && <div>{message.content}</div>}
                 </div>
                 <span className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
                   {new Date(message.created_at).toLocaleTimeString([], {

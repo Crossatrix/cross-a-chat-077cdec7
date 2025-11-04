@@ -18,6 +18,7 @@ interface Message {
   content: string;
   created_at: string;
   user_id: string;
+  image_url?: string;
   profiles: {
     username: string;
   };
@@ -170,13 +171,41 @@ const Index = () => {
     };
   }, [user, selectedConversationId]);
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, imageFile?: File) => {
     if (!user || !selectedConversationId) return;
+
+    let imageUrl: string | null = null;
+
+    // Upload image if present
+    if (imageFile) {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('chat-images')
+        .upload(fileName, imageFile);
+
+      if (uploadError) {
+        if (import.meta.env.DEV) {
+          console.error("Error uploading image:", uploadError);
+        }
+        toast.error("Failed to upload image");
+        return;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(fileName);
+      
+      imageUrl = publicUrl;
+    }
 
     const { error } = await supabase.from("messages").insert({
       user_id: user.id,
       content,
       conversation_id: selectedConversationId,
+      image_url: imageUrl,
     });
 
     if (error) {
