@@ -19,6 +19,7 @@ interface Message {
   created_at: string;
   user_id: string;
   image_url?: string;
+  voice_url?: string;
   profiles: {
     username: string;
   };
@@ -171,10 +172,11 @@ const Index = () => {
     };
   }, [user, selectedConversationId]);
 
-  const handleSendMessage = async (content: string, imageFile?: File) => {
+  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob) => {
     if (!user || !selectedConversationId) return;
 
     let imageUrl: string | null = null;
+    let voiceUrl: string | null = null;
 
     // Upload image if present
     if (imageFile) {
@@ -193,7 +195,6 @@ const Index = () => {
         return;
       }
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('chat-images')
         .getPublicUrl(fileName);
@@ -201,11 +202,37 @@ const Index = () => {
       imageUrl = publicUrl;
     }
 
+    // Upload voice message if present
+    if (voiceBlob) {
+      const fileName = `${user.id}/${Date.now()}.webm`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('voice-messages')
+        .upload(fileName, voiceBlob, {
+          contentType: 'audio/webm',
+        });
+
+      if (uploadError) {
+        if (import.meta.env.DEV) {
+          console.error("Error uploading voice message:", uploadError);
+        }
+        toast.error("Failed to upload voice message");
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('voice-messages')
+        .getPublicUrl(fileName);
+      
+      voiceUrl = publicUrl;
+    }
+
     const { error } = await supabase.from("messages").insert({
       user_id: user.id,
       content,
       conversation_id: selectedConversationId,
       image_url: imageUrl,
+      voice_url: voiceUrl,
     });
 
     if (error) {

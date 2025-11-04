@@ -9,6 +9,7 @@ interface Message {
   created_at: string;
   user_id: string;
   image_url?: string;
+  voice_url?: string;
   profiles: {
     username: string;
   };
@@ -70,6 +71,14 @@ const MessageList = ({ messages, currentUserId, currentUserDbId }: MessageListPr
                       alt="Shared image"
                       className="rounded-lg max-w-full h-auto mb-2 cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => window.open(message.image_url, '_blank')}
+                    />
+                  )}
+                  {message.voice_url && (
+                    <audio
+                      controls
+                      src={message.voice_url}
+                      className="w-full max-w-xs"
+                      preload="metadata"
                     />
                   )}
                   {message.content && <div>{message.content}</div>}
