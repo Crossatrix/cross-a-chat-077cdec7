@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 import UserActionsMenu from "./UserActionsMenu";
 
 interface Message {
@@ -19,9 +21,10 @@ interface MessageListProps {
   messages: Message[];
   currentUserId: string | undefined;
   currentUserDbId: string | undefined;
+  onDeleteMessage: (messageId: string, imageUrl?: string, voiceUrl?: string) => void;
 }
 
-const MessageList = ({ messages, currentUserId, currentUserDbId }: MessageListProps) => {
+const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage }: MessageListProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,10 +57,22 @@ const MessageList = ({ messages, currentUserId, currentUserDbId }: MessageListPr
                   />
                 )}
               </div>
-              <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"}`}>
-                <span className="text-[10px] md:text-xs text-muted-foreground mb-0.5 md:mb-1">
-                  {message.profiles?.username || "Unknown"}
-                </span>
+              <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"} flex-1`}>
+                <div className="flex items-center gap-2 mb-0.5 md:mb-1">
+                  <span className="text-[10px] md:text-xs text-muted-foreground">
+                    {message.profiles?.username || "Unknown"}
+                  </span>
+                  {isCurrentUser && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteMessage(message.id, message.image_url, message.voice_url)}
+                      className="h-4 w-4 p-0 hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  )}
+                </div>
                 <div
                   className={`rounded-2xl px-2 py-1 md:px-4 md:py-2 max-w-[70vw] md:max-w-xs break-words text-sm md:text-base ${
                     isCurrentUser

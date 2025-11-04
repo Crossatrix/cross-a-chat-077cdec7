@@ -172,6 +172,38 @@ const Index = () => {
     };
   }, [user, selectedConversationId]);
 
+  const handleDeleteMessage = async (messageId: string, imageUrl?: string, voiceUrl?: string) => {
+    try {
+      // Delete the message from database
+      const { error: deleteError } = await supabase
+        .from("messages")
+        .delete()
+        .eq("id", messageId);
+
+      if (deleteError) throw deleteError;
+
+      // Delete associated files from storage
+      if (imageUrl) {
+        const imagePath = imageUrl.split('/').slice(-2).join('/');
+        await supabase.storage.from('chat-images').remove([imagePath]);
+      }
+
+      if (voiceUrl) {
+        const voicePath = voiceUrl.split('/').slice(-2).join('/');
+        await supabase.storage.from('voice-messages').remove([voicePath]);
+      }
+
+      // Update local state
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+      toast.success("Message deleted");
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error("Error deleting message:", error);
+      }
+      toast.error("Failed to delete message");
+    }
+  };
+
   const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob) => {
     if (!user || !selectedConversationId) return;
 
@@ -377,7 +409,12 @@ const Index = () => {
         </header>
         {selectedConversationId ? (
           <>
-            <MessageList messages={messages} currentUserId={username} currentUserDbId={user?.id} />
+            <MessageList 
+              messages={messages} 
+              currentUserId={username} 
+              currentUserDbId={user?.id}
+              onDeleteMessage={handleDeleteMessage}
+            />
             <MessageInput onSend={handleSendMessage} />
           </>
         ) : (
