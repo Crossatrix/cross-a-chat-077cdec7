@@ -20,6 +20,7 @@ interface Message {
   user_id: string;
   image_url?: string;
   voice_url?: string;
+  video_url?: string;
   profiles: {
     username: string;
   };
@@ -172,7 +173,7 @@ const Index = () => {
     };
   }, [user, selectedConversationId]);
 
-  const handleDeleteMessage = async (messageId: string, imageUrl?: string, voiceUrl?: string) => {
+  const handleDeleteMessage = async (messageId: string, imageUrl?: string, voiceUrl?: string, videoUrl?: string) => {
     try {
       // Delete the message from database
       const { error: deleteError } = await supabase
@@ -193,6 +194,11 @@ const Index = () => {
         await supabase.storage.from('voice-messages').remove([voicePath]);
       }
 
+      if (videoUrl) {
+        const videoPath = videoUrl.split('/').slice(-2).join('/');
+        await supabase.storage.from('chat-videos').remove([videoPath]);
+      }
+
       // Update local state
       setMessages(prev => prev.filter(m => m.id !== messageId));
       toast.success("Message deleted");
@@ -204,11 +210,12 @@ const Index = () => {
     }
   };
 
-  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob) => {
+  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File) => {
     if (!user || !selectedConversationId) return;
 
     let imageUrl: string | null = null;
     let voiceUrl: string | null = null;
+    let videoUrl: string | null = null;
 
     // Upload image if present
     if (imageFile) {
@@ -259,12 +266,37 @@ const Index = () => {
       voiceUrl = publicUrl;
     }
 
+    // Upload video if present
+    if (videoFile) {
+      const fileExt = videoFile.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('chat-videos')
+        .upload(fileName, videoFile);
+
+      if (uploadError) {
+        if (import.meta.env.DEV) {
+          console.error("Error uploading video:", uploadError);
+        }
+        toast.error("Failed to upload video");
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-videos')
+        .getPublicUrl(fileName);
+      
+      videoUrl = publicUrl;
+    }
+
     const { error } = await supabase.from("messages").insert({
       user_id: user.id,
       content,
       conversation_id: selectedConversationId,
       image_url: imageUrl,
       voice_url: voiceUrl,
+      video_url: videoUrl,
     });
 
     if (error) {

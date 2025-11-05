@@ -12,6 +12,7 @@ interface Message {
   user_id: string;
   image_url?: string;
   voice_url?: string;
+  video_url?: string;
   profiles: {
     username: string;
   };
@@ -21,7 +22,7 @@ interface MessageListProps {
   messages: Message[];
   currentUserId: string | undefined;
   currentUserDbId: string | undefined;
-  onDeleteMessage: (messageId: string, imageUrl?: string, voiceUrl?: string) => void;
+  onDeleteMessage: (messageId: string, imageUrl?: string, voiceUrl?: string, videoUrl?: string) => void;
 }
 
 const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage }: MessageListProps) => {
@@ -66,7 +67,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDeleteMessage(message.id, message.image_url, message.voice_url)}
+                      onClick={() => onDeleteMessage(message.id, message.image_url, message.voice_url, message.video_url)}
                       className="h-4 w-4 p-0 hover:bg-destructive/10"
                     >
                       <Trash2 className="h-3 w-3 text-destructive" />
@@ -86,6 +87,14 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                       alt="Shared image"
                       className="rounded-lg max-w-full h-auto mb-2 cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => window.open(message.image_url, '_blank')}
+                    />
+                  )}
+                  {message.video_url && (
+                    <video
+                      controls
+                      src={message.video_url}
+                      className="rounded-lg max-w-full h-auto mb-2"
+                      preload="metadata"
                     />
                   )}
                   {message.voice_url && (

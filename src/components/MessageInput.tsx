@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Image, Mic, StopCircle, X } from "lucide-react";
+import { Send, Image, Video, Mic, StopCircle, X } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 
 interface MessageInputProps {
-  onSend: (message: string, imageFile?: File, voiceFile?: Blob) => void;
+  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File) => void;
   disabled?: boolean;
 }
 
@@ -21,41 +21,54 @@ const messageSchema = z.string()
 const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      toast.error("Invalid file type. Please select a JPG, PNG, GIF, or WEBP image.");
-      return;
+    if (file) {
+      const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Please select an image file (JPEG, PNG, GIF, or WEBP)");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image must be less than 5MB");
+        return;
+      }
+      setSelectedImage(file);
     }
+  };
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image too large. Maximum size is 5MB.");
-      return;
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const validTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo", "video/x-matroska"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Please select a video file (MP4, WebM, MOV, AVI, or MKV)");
+        return;
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error("Video must be less than 50MB");
+        return;
+      }
+      setSelectedVideo(file);
     }
-
-    setSelectedImage(file);
   };
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm',
-      });
-
+      const mediaRecorder = new MediaRecorder(stream);
       chunksRef.current = [];
-      
+
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunksRef.current.push(e.data);
@@ -113,8 +126,8 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!message.trim() && !selectedImage && !recordedBlob) {
-      toast.error("Please enter a message, select an image, or record a voice message");
+    if (!message.trim() && !selectedImage && !selectedVideo && !recordedBlob) {
+      toast.error("Please enter a message, select an image/video, or record a voice message");
       return;
     }
 
@@ -126,13 +139,17 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
       }
     }
 
-    onSend(message || "", selectedImage || undefined, recordedBlob || undefined);
+    onSend(message || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined);
     setMessage("");
     setSelectedImage(null);
+    setSelectedVideo(null);
     setRecordedBlob(null);
     setRecordingTime(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
     }
   };
 
@@ -150,6 +167,26 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
               setSelectedImage(null);
               if (fileInputRef.current) {
                 fileInputRef.current.value = "";
+              }
+            }}
+            className="h-6 px-2"
+          >
+            Remove
+          </Button>
+        </div>
+      )}
+      {selectedVideo && (
+        <div className="flex items-center gap-2 p-2 bg-secondary rounded-md">
+          <Video className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm flex-1 truncate">{selectedVideo.name}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedVideo(null);
+              if (videoInputRef.current) {
+                videoInputRef.current.value = "";
               }
             }}
             className="h-6 px-2"
@@ -212,10 +249,28 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
         >
           <Image className="h-4 w-4" />
         </Button>
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska"
+          onChange={handleVideoSelect}
+          className="hidden"
+          disabled={disabled || isRecording}
+        />
+        <Button
+          type="button"
+          onClick={() => videoInputRef.current?.click()}
+          disabled={disabled || isRecording || !!recordedBlob}
+          size="icon"
+          variant="outline"
+          className="shrink-0"
+        >
+          <Video className="h-4 w-4" />
+        </Button>
         <Button
           type="button"
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={disabled || !!selectedImage || !!recordedBlob}
+          disabled={disabled || !!selectedImage || !!selectedVideo || !!recordedBlob}
           size="icon"
           variant={isRecording ? "destructive" : "outline"}
           className="shrink-0"
@@ -231,7 +286,7 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
         />
         <Button 
           type="submit" 
-          disabled={disabled || isRecording || (!message.trim() && !selectedImage && !recordedBlob)} 
+          disabled={disabled || isRecording || (!message.trim() && !selectedImage && !selectedVideo && !recordedBlob)} 
           size="icon" 
           className="shrink-0"
         >
