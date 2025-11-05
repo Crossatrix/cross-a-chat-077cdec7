@@ -213,6 +213,9 @@ const Index = () => {
   const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File) => {
     if (!user || !selectedConversationId) return;
 
+    const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
+    const isAIChat = selectedUserId === AI_BOT_ID;
+
     let imageUrl: string | null = null;
     let voiceUrl: string | null = null;
     let videoUrl: string | null = null;
@@ -304,6 +307,27 @@ const Index = () => {
         console.error("Error sending message:", error);
       }
       toast.error("Failed to send message");
+      return;
+    }
+
+    // If this is an AI chat, call the AI edge function
+    if (isAIChat) {
+      try {
+        const { error: aiError } = await supabase.functions.invoke('ai-chat', {
+          body: { 
+            conversationId: selectedConversationId,
+            userMessage: content 
+          }
+        });
+
+        if (aiError) {
+          console.error('AI chat error:', aiError);
+          toast.error('AI response failed. Please try again.');
+        }
+      } catch (aiError) {
+        console.error('AI chat error:', aiError);
+        toast.error('AI response failed. Please try again.');
+      }
     }
   };
 
