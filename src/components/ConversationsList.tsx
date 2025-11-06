@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 
@@ -11,6 +11,7 @@ interface Conversation {
   otherUser: {
     id: string;
     username: string;
+    avatar_url?: string;
   };
   lastMessage?: string;
 }
@@ -60,10 +61,10 @@ const ConversationsList = ({
       const { data: otherProfiles } = otherUserIds.length
         ? await supabase
             .from("profiles")
-            .select("id, username")
+            .select("id, username, avatar_url")
             .in("id", otherUserIds)
         : { data: [] as any[] };
-      const userMap = new Map((otherProfiles || []).map((pr: any) => [pr.id, pr.username]));
+      const userMap = new Map((otherProfiles || []).map((pr: any) => [pr.id, { username: pr.username, avatar_url: pr.avatar_url }]));
 
       // Get last messages for each conversation
       const { data: lastMessages } = await supabase
@@ -82,10 +83,12 @@ const ConversationsList = ({
 
       otherParticipants?.forEach((p: any) => {
         const conv = conversationsMap.get(p.conversation_id);
+        const userInfo = userMap.get(p.user_id);
         if (conv) {
           conv.otherUser = {
             id: p.user_id,
-            username: userMap.get(p.user_id) || "Unknown",
+            username: userInfo?.username || "Unknown",
+            avatar_url: userInfo?.avatar_url,
           };
         }
       });
@@ -153,6 +156,7 @@ const ConversationsList = ({
                 onClick={() => onSelectConversation(conv.id, conv.otherUser?.username || "Unknown")}
               >
                 <Avatar className="h-10 w-10 border-2 border-primary shrink-0">
+                  <AvatarImage src={conv.otherUser?.avatar_url || ""} alt={conv.otherUser?.username} />
                   <AvatarFallback className="bg-secondary text-foreground">
                     {conv.otherUser?.username?.charAt(0).toUpperCase() || "?"}
                   </AvatarFallback>

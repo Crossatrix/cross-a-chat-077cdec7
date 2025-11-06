@@ -23,6 +23,7 @@ interface Message {
   video_url?: string;
   profiles: {
     username: string;
+    avatar_url?: string;
   };
 }
 
@@ -125,7 +126,7 @@ const Index = () => {
     const fetchMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
-        .select("*, profiles(username)")
+        .select("*, profiles(username, avatar_url)")
         .eq("conversation_id", selectedConversationId)
         .order("created_at", { ascending: true });
 
@@ -157,7 +158,7 @@ const Index = () => {
           // Fetch the complete message with profile data
           const { data } = await supabase
             .from("messages")
-            .select("*, profiles(username)")
+            .select("*, profiles(username, avatar_url)")
             .eq("id", payload.new.id)
             .maybeSingle();
 

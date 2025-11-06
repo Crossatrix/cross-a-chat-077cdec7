@@ -1,15 +1,21 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface ThemeConfig {
-  primaryHue: number;
-  primarySaturation: number;
-  primaryLightness: number;
+  backgroundHue: number;
+  backgroundSaturation: number;
+  backgroundLightness: number;
+  buttonHue: number;
+  buttonSaturation: number;
+  buttonLightness: number;
 }
 
 const defaultTheme: ThemeConfig = {
-  primaryHue: 262.1,
-  primarySaturation: 83.3,
-  primaryLightness: 57.8,
+  backgroundHue: 220,
+  backgroundSaturation: 80,
+  backgroundLightness: 12,
+  buttonHue: 45,
+  buttonSaturation: 100,
+  buttonLightness: 55,
 };
 
 interface ThemeContextType {
@@ -32,8 +38,54 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     // Apply theme to CSS variables
     const root = document.documentElement;
     root.style.setProperty(
+      "--background",
+      `${theme.backgroundHue} ${theme.backgroundSaturation}% ${theme.backgroundLightness}%`
+    );
+    root.style.setProperty(
       "--primary",
-      `${theme.primaryHue} ${theme.primarySaturation}% ${theme.primaryLightness}%`
+      `${theme.buttonHue} ${theme.buttonSaturation}% ${theme.buttonLightness}%`
+    );
+    
+    // Update related colors
+    root.style.setProperty(
+      "--card",
+      `${theme.backgroundHue} ${theme.backgroundSaturation - 10}% ${theme.backgroundLightness + 3}%`
+    );
+    root.style.setProperty(
+      "--popover",
+      `${theme.backgroundHue} ${theme.backgroundSaturation - 10}% ${theme.backgroundLightness + 3}%`
+    );
+    root.style.setProperty(
+      "--secondary",
+      `${theme.backgroundHue} ${theme.backgroundSaturation - 20}% ${theme.backgroundLightness + 8}%`
+    );
+    root.style.setProperty(
+      "--muted",
+      `${theme.backgroundHue} ${theme.backgroundSaturation - 20}% ${theme.backgroundLightness + 13}%`
+    );
+    root.style.setProperty(
+      "--border",
+      `${theme.backgroundHue} ${theme.backgroundSaturation - 20}% ${theme.backgroundLightness + 13}%`
+    );
+    root.style.setProperty(
+      "--input",
+      `${theme.backgroundHue} ${theme.backgroundSaturation - 20}% ${theme.backgroundLightness + 8}%`
+    );
+    root.style.setProperty(
+      "--accent",
+      `${theme.buttonHue} ${theme.buttonSaturation}% ${theme.buttonLightness}%`
+    );
+    root.style.setProperty(
+      "--ring",
+      `${theme.buttonHue} ${theme.buttonSaturation}% ${theme.buttonLightness}%`
+    );
+    root.style.setProperty(
+      "--primary-foreground",
+      `${theme.backgroundHue} ${theme.backgroundSaturation}% ${theme.backgroundLightness}%`
+    );
+    root.style.setProperty(
+      "--accent-foreground",
+      `${theme.backgroundHue} ${theme.backgroundSaturation}% ${theme.backgroundLightness}%`
     );
   }, [theme]);
 

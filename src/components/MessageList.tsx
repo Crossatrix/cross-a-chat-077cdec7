@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import UserActionsMenu from "./UserActionsMenu";
@@ -15,6 +15,7 @@ interface Message {
   video_url?: string;
   profiles: {
     username: string;
+    avatar_url?: string;
   };
 }
 
@@ -46,6 +47,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
             >
               <div className="flex items-start gap-1 md:gap-2">
                 <Avatar className="h-6 w-6 md:h-8 md:w-8 border-2 border-primary">
+                  <AvatarImage src={message.profiles?.avatar_url || ""} alt={message.profiles?.username} />
                   <AvatarFallback className="bg-secondary text-foreground text-[10px] md:text-xs">
                     {message.profiles?.username?.charAt(0).toUpperCase() || "?"}
                   </AvatarFallback>

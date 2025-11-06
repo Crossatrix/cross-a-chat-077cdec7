@@ -229,7 +229,7 @@ const Settings = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <Label>{t("settings.primaryColor")}</Label>
+                <Label>{t("settings.backgroundColor")}</Label>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-sm text-muted-foreground">Hue</Label>
@@ -237,8 +237,8 @@ const Settings = () => {
                       type="range"
                       min="0"
                       max="360"
-                      value={theme.primaryHue}
-                      onChange={(e) => setTheme({ ...theme, primaryHue: Number(e.target.value) })}
+                      value={theme.backgroundHue}
+                      onChange={(e) => setTheme({ ...theme, backgroundHue: Number(e.target.value) })}
                       className="w-full"
                     />
                   </div>
@@ -248,8 +248,8 @@ const Settings = () => {
                       type="range"
                       min="0"
                       max="100"
-                      value={theme.primarySaturation}
-                      onChange={(e) => setTheme({ ...theme, primarySaturation: Number(e.target.value) })}
+                      value={theme.backgroundSaturation}
+                      onChange={(e) => setTheme({ ...theme, backgroundSaturation: Number(e.target.value) })}
                       className="w-full"
                     />
                   </div>
@@ -259,8 +259,62 @@ const Settings = () => {
                       type="range"
                       min="0"
                       max="100"
-                      value={theme.primaryLightness}
-                      onChange={(e) => setTheme({ ...theme, primaryLightness: Number(e.target.value) })}
+                      value={theme.backgroundLightness}
+                      onChange={(e) => setTheme({ ...theme, backgroundLightness: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 p-4 border rounded-lg">
+                  <div
+                    className="w-16 h-16 rounded-lg border"
+                    style={{
+                      backgroundColor: `hsl(${theme.backgroundHue}, ${theme.backgroundSaturation}%, ${theme.backgroundLightness}%)`,
+                    }}
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Background Preview</p>
+                    <p className="text-xs text-muted-foreground">
+                      HSL({theme.backgroundHue}, {theme.backgroundSaturation}%, {theme.backgroundLightness}%)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <Label>{t("settings.buttonColor")}</Label>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Hue</Label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="360"
+                      value={theme.buttonHue}
+                      onChange={(e) => setTheme({ ...theme, buttonHue: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Saturation</Label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={theme.buttonSaturation}
+                      onChange={(e) => setTheme({ ...theme, buttonSaturation: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Lightness</Label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={theme.buttonLightness}
+                      onChange={(e) => setTheme({ ...theme, buttonLightness: Number(e.target.value) })}
                       className="w-full"
                     />
                   </div>
@@ -270,21 +324,21 @@ const Settings = () => {
                   <div
                     className="w-16 h-16 rounded-lg"
                     style={{
-                      backgroundColor: `hsl(${theme.primaryHue}, ${theme.primarySaturation}%, ${theme.primaryLightness}%)`,
+                      backgroundColor: `hsl(${theme.buttonHue}, ${theme.buttonSaturation}%, ${theme.buttonLightness}%)`,
                     }}
                   />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Preview</p>
+                    <p className="text-sm font-medium">Button Preview</p>
                     <p className="text-xs text-muted-foreground">
-                      HSL({theme.primaryHue}, {theme.primarySaturation}%, {theme.primaryLightness}%)
+                      HSL({theme.buttonHue}, {theme.buttonSaturation}%, {theme.buttonLightness}%)
                     </p>
                   </div>
                 </div>
-
-                <Button onClick={resetTheme} variant="outline" className="w-full">
-                  Reset to Default
-                </Button>
               </div>
+
+              <Button onClick={resetTheme} variant="outline" className="w-full">
+                Reset to Default
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
