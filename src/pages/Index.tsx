@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield } from "lucide-react";
+import { LogOut, Shield, Settings } from "lucide-react";
 import { toast } from "sonner";
 import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
@@ -405,6 +405,9 @@ const Index = () => {
                 <Shield className="h-3.5 w-3.5" />
               </Button>
             )}
+            <Button onClick={() => navigate("/settings")} variant="secondary" size="icon" className="h-8 w-8" aria-label="Settings">
+              <Settings className="h-3.5 w-3.5" />
+            </Button>
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5" />
             </Button>
@@ -457,6 +460,10 @@ const Index = () => {
                 <span className="hidden md:inline md:text-sm">Admin</span>
               </Button>
             )}
+            <Button onClick={() => navigate("/settings")} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Settings">
+              <Settings className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden md:inline md:ml-2">Settings</span>
+            </Button>
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden md:inline md:ml-2">Logout</span>
