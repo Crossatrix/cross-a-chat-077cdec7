@@ -4,36 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, Trash2, Ban, Clock } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { CheckCircle2 } from "lucide-react";
 
 interface Report {
   id: string;
   reason: string;
   status: string;
   created_at: string;
-  reported_user_id: string;
   reporter: {
     username: string;
   };
@@ -45,10 +22,6 @@ interface Report {
 const ReportsList = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tempBanDays, setTempBanDays] = useState("7");
-  const [banDialogOpen, setBanDialogOpen] = useState(false);
-  const [tempBanDialogOpen, setTempBanDialogOpen] = useState(false);
-  const [selectedReportUserId, setSelectedReportUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReports();
@@ -65,9 +38,7 @@ const ReportsList = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      if (import.meta.env.DEV) {
-        console.error("Error fetching reports:", error);
-      }
+      console.error("Error fetching reports:", error);
       toast.error("Failed to load reports");
       return;
     }
@@ -95,68 +66,6 @@ const ReportsList = () => {
 
     toast.success("Report resolved");
     fetchReports();
-  };
-
-  const handleDelete = async (reportId: string) => {
-    const { error } = await supabase
-      .from("user_reports")
-      .delete()
-      .eq("id", reportId);
-
-    if (error) {
-      toast.error("Failed to delete report");
-      return;
-    }
-
-    toast.success("Report deleted");
-    fetchReports();
-  };
-
-  const handleBanUser = async (userId: string, reportReason: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    const { error } = await supabase
-      .from("user_bans")
-      .insert({
-        user_id: userId,
-        banned_by: user?.id,
-        reason: `Report: ${reportReason}`
-      });
-
-    if (error) {
-      toast.error("Failed to ban user");
-      return;
-    }
-
-    toast.success("User banned permanently");
-    setBanDialogOpen(false);
-    setSelectedReportUserId(null);
-  };
-
-  const handleTempBanUser = async (userId: string, reportReason: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const days = parseInt(tempBanDays) || 7;
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + days);
-    
-    const { error } = await supabase
-      .from("user_bans")
-      .insert({
-        user_id: userId,
-        banned_by: user?.id,
-        reason: `Report (${days} day temp ban): ${reportReason}`,
-        expires_at: expiresAt.toISOString()
-      });
-
-    if (error) {
-      toast.error("Failed to temporarily ban user");
-      return;
-    }
-
-    toast.success(`User temporarily banned for ${days} days`);
-    setTempBanDialogOpen(false);
-    setSelectedReportUserId(null);
-    setTempBanDays("7");
   };
 
   if (loading) {
@@ -195,118 +104,16 @@ const ReportsList = () => {
                 <p className="text-xs text-muted-foreground">
                   {new Date(report.created_at).toLocaleString()}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {report.status === "pending" && (
-                    <Button
-                      onClick={() => handleResolve(report.id)}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Resolve
-                    </Button>
-                  )}
-                  
-                  <Dialog open={banDialogOpen && selectedReportUserId === report.reported_user.username} onOpenChange={setBanDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => setSelectedReportUserId(report.reported_user.username)}
-                      >
-                        <Ban className="h-4 w-4 mr-2" />
-                        Ban User
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Ban @{report.reported_user?.username}?</DialogTitle>
-                        <DialogDescription>
-                          This will permanently ban the user from accessing the chat.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setBanDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button 
-                          variant="destructive"
-                          onClick={() => handleBanUser(report.reported_user_id, report.reason)}
-                        >
-                          Permanently Ban
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog open={tempBanDialogOpen && selectedReportUserId === report.reported_user.username} onOpenChange={setTempBanDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setSelectedReportUserId(report.reported_user.username)}
-                      >
-                        <Clock className="h-4 w-4 mr-2" />
-                        Temp Ban
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Temporarily Ban @{report.reported_user?.username}?</DialogTitle>
-                        <DialogDescription>
-                          This will temporarily prevent the user from accessing the chat.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="days">Ban Duration (days)</Label>
-                          <Input
-                            id="days"
-                            type="number"
-                            min="1"
-                            max="365"
-                            value={tempBanDays}
-                            onChange={(e) => setTempBanDays(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setTempBanDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button 
-                          variant="destructive"
-                          onClick={() => handleTempBanUser(report.reported_user_id, report.reason)}
-                        >
-                          Temporarily Ban
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Report
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Report</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this report? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(report.id)}>
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                {report.status === "pending" && (
+                  <Button
+                    onClick={() => handleResolve(report.id)}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Resolve
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

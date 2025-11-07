@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { ArrowLeft, UserX, Ban } from "lucide-react";
 import ReportsList from "@/components/admin/ReportsList";
 import UsersList from "@/components/admin/UsersList";
-import FeedbackList from "@/components/admin/FeedbackList";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -72,10 +71,9 @@ const Admin = () => {
 
       <main className="max-w-7xl mx-auto p-6">
         <Tabs defaultValue="reports" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="reports">User Reports</TabsTrigger>
+            <TabsTrigger value="users">Manage Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="reports">
@@ -84,10 +82,6 @@ const Admin = () => {
 
           <TabsContent value="users">
             <UsersList />
-          </TabsContent>
-
-          <TabsContent value="feedback">
-            <FeedbackList />
           </TabsContent>
         </Tabs>
       </main>

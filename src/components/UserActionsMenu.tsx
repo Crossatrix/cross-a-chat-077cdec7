@@ -19,9 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { MoreVertical, UserX, Flag } from "lucide-react";
-import { z } from "zod";
-
-const reportSchema = z.string().trim().min(10, "Please provide more details (min 10 characters)").max(1000, "Reason too long (max 1000 characters)");
 
 interface UserActionsMenuProps {
   userId: string;
@@ -54,9 +51,8 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
   };
 
   const handleReport = async () => {
-    const validation = reportSchema.safeParse(reportReason);
-    if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
+    if (!reportReason.trim()) {
+      toast.error("Please provide a reason");
       return;
     }
 
@@ -65,7 +61,7 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
       .insert({
         reporter_id: currentUserId,
         reported_user_id: userId,
-        reason: validation.data,
+        reason: reportReason,
       });
 
     if (error) {
@@ -115,11 +111,7 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
                 onChange={(e) => setReportReason(e.target.value)}
                 placeholder="Describe the issue..."
                 rows={4}
-                maxLength={1000}
               />
-              <p className="text-xs text-muted-foreground text-right">
-                {reportReason.length}/1000 (minimum 10 characters)
-              </p>
             </div>
           </div>
           <DialogFooter>

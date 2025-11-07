@@ -2,23 +2,19 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Ban, Shield } from "lucide-react";
-import { z } from "zod";
-
-const banReasonSchema = z.string().trim().min(10, "Please provide more details (min 10 characters)").max(1000, "Reason too long (max 1000 characters)");
 
 interface User {
   id: string;
   username: string;
   created_at: string;
   banned?: boolean;
-  banExpiresAt?: string | null;
-  isAdmin?: boolean;
 }
 
 const UsersList = () => {
@@ -38,42 +34,31 @@ const UsersList = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      if (import.meta.env.DEV) {
-        console.error("Error fetching users:", error);
-      }
+      console.error("Error fetching users:", error);
       toast.error("Failed to load users");
       return;
     }
 
     const { data: bans } = await supabase
       .from("user_bans")
-      .select("user_id, expires_at");
+      .select("user_id");
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("user_id, role")
-      .eq("role", "admin");
-
-    const banMap = new Map(bans?.map(b => [b.user_id, b.expires_at]) || []);
-    const adminIds = new Set(roles?.map(r => r.user_id) || []);
+    const bannedIds = new Set(bans?.map(b => b.user_id) || []);
     
-    const usersWithStatus = profiles?.map(p => ({
+    const usersWithBanStatus = profiles?.map(p => ({
       ...p,
-      banned: banMap.has(p.id),
-      banExpiresAt: banMap.get(p.id),
-      isAdmin: adminIds.has(p.id)
+      banned: bannedIds.has(p.id)
     })) || [];
 
-    setUsers(usersWithStatus);
+    setUsers(usersWithBanStatus);
     setLoading(false);
   };
 
   const handleBan = async (userId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     
-    const validation = banReasonSchema.safeParse(banReason);
-    if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
+    if (!banReason.trim()) {
+      toast.error("Please provide a reason for the ban");
       return;
     }
 
@@ -82,7 +67,7 @@ const UsersList = () => {
       .insert({
         user_id: userId,
         banned_by: user?.id,
-        reason: validation.data
+        reason: banReason
       });
 
     if (error) {
@@ -111,34 +96,6 @@ const UsersList = () => {
     fetchUsers();
   };
 
-  const handlePromoteToAdmin = async (userId: string) => {
-    const { error } = await supabase.rpc("promote_to_admin", {
-      target_user_id: userId
-    });
-
-    if (error) {
-      toast.error(error.message || "Failed to promote user");
-      return;
-    }
-
-    toast.success("User promoted to admin");
-    fetchUsers();
-  };
-
-  const handleDemoteFromAdmin = async (userId: string) => {
-    const { error } = await supabase.rpc("demote_from_admin", {
-      target_user_id: userId
-    });
-
-    if (error) {
-      toast.error(error.message || "Failed to demote user");
-      return;
-    }
-
-    toast.success("User demoted to regular user");
-    fetchUsers();
-  };
-
   if (loading) {
     return <p className="text-muted-foreground">Loading users...</p>;
   }
@@ -155,24 +112,15 @@ const UsersList = () => {
                   Joined {new Date(user.created_at).toLocaleDateString()}
                 </CardDescription>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                {user.isAdmin && <Badge variant="default">Admin</Badge>}
-                {user.banned ? (
-                  user.banExpiresAt ? (
-                    <Badge variant="destructive">
-                      Temp Ban (expires {new Date(user.banExpiresAt).toLocaleDateString()})
-                    </Badge>
-                  ) : (
-                    <Badge variant="destructive">Permanently Banned</Badge>
-                  )
-                ) : (
-                  <Badge variant="secondary">Active</Badge>
-                )}
-              </div>
+              {user.banned ? (
+                <Badge variant="destructive">Banned</Badge>
+              ) : (
+                <Badge variant="secondary">Active</Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2">
               {user.banned ? (
                 <Button
                   onClick={() => handleUnban(user.id)}
@@ -210,11 +158,7 @@ const UsersList = () => {
                           onChange={(e) => setBanReason(e.target.value)}
                           placeholder="Enter reason..."
                           rows={4}
-                          maxLength={1000}
                         />
-                        <p className="text-xs text-muted-foreground text-right">
-                          {banReason.length}/1000 (minimum 10 characters)
-                        </p>
                       </div>
                     </div>
                     <DialogFooter>
@@ -227,25 +171,6 @@ const UsersList = () => {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
-              )}
-              
-              {user.isAdmin ? (
-                <Button
-                  onClick={() => handleDemoteFromAdmin(user.id)}
-                  variant="outline"
-                  size="sm"
-                >
-                  Remove Admin
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => handlePromoteToAdmin(user.id)}
-                  variant="outline"
-                  size="sm"
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Make Admin
-                </Button>
               )}
             </div>
           </CardContent>
