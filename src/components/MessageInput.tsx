@@ -126,11 +126,13 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Allow sending media without text
     if (!message.trim() && !selectedImage && !selectedVideo && !recordedBlob) {
       toast.error("Please enter a message, select an image/video, or record a voice message");
       return;
     }
 
+    // Only validate text if text is present
     if (message.trim()) {
       const validation = messageSchema.safeParse(message);
       if (!validation.success) {
@@ -139,7 +141,8 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
       }
     }
 
-    onSend(message || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined);
+    // Send with empty string if no text (media only)
+    onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined);
     setMessage("");
     setSelectedImage(null);
     setSelectedVideo(null);

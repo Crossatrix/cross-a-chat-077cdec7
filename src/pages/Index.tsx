@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings } from "lucide-react";
+import { LogOut, Shield, Settings, Phone } from "lucide-react";
 import { toast } from "sonner";
 import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
@@ -12,6 +12,8 @@ import UsersList from "@/components/UsersList";
 import UserActionsMenu from "@/components/UserActionsMenu";
 import BlockedUsersList from "@/components/BlockedUsersList";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { CallInterface } from "@/components/CallInterface";
+import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 
 interface Message {
   id: string;
@@ -37,6 +39,7 @@ const Index = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedUsername, setSelectedUsername] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [isInCall, setIsInCall] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -117,6 +120,10 @@ const Index = () => {
     };
 
     fetchUserData();
+
+    // Initialize notifications
+    registerServiceWorker();
+    requestNotificationPermission();
   }, [user, navigate, loading]);
 
   useEffect(() => {
@@ -164,6 +171,15 @@ const Index = () => {
 
           if (data) {
             setMessages((prev) => [...prev, data]);
+            
+            // Show notification if document is not focused and message is from other user
+            if (!document.hasFocus() && data.user_id !== user.id) {
+              showNotification(
+                `New message from ${data.profiles?.username || 'Someone'}`,
+                data.content || 'Sent a media file',
+                { url: '/' }
+              );
+            }
           }
         }
       )
@@ -383,8 +399,32 @@ const Index = () => {
     navigate("/auth");
   };
 
+  const startCall = () => {
+    if (selectedUserId === '00000000-0000-0000-0000-000000000000') {
+      toast.error("Cannot call AI bot");
+      return;
+    }
+    setIsInCall(true);
+  };
+
+  const endCall = () => {
+    setIsInCall(false);
+  };
+
   if (loading || !user) {
     return null;
+  }
+
+  // Show call interface if in call
+  if (isInCall && selectedConversationId && selectedUserId) {
+    return (
+      <CallInterface
+        conversationId={selectedConversationId}
+        userId={user.id}
+        otherUserId={selectedUserId}
+        onEndCall={endCall}
+      />
+    );
   }
 
   return (
@@ -444,11 +484,22 @@ const Index = () => {
               <p className="text-xs md:text-sm text-muted-foreground truncate">@{username}</p>
             </div>
             {selectedUsername && selectedUserId && user?.id && (
-              <UserActionsMenu
-                userId={selectedUserId}
-                username={selectedUsername}
-                currentUserId={user.id}
-              />
+              <>
+                <Button
+                  onClick={startCall}
+                  size="icon"
+                  variant="default"
+                  className="shrink-0 h-8 w-8 md:h-10 md:w-10"
+                  aria-label="Start Call"
+                >
+                  <Phone className="h-4 w-4 md:h-5 md:w-5" />
+                </Button>
+                <UserActionsMenu
+                  userId={selectedUserId}
+                  username={selectedUsername}
+                  currentUserId={user.id}
+                />
+              </>
             )}
           </div>
           <div className="flex gap-0.5 md:gap-2 shrink-0 overflow-x-auto items-center">

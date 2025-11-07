@@ -45,6 +45,13 @@ const translations: Translations = {
   // Chat
   "chat.selectConversation": { en: "Select a conversation to start chatting", de: "Wählen Sie eine Unterhaltung aus" },
   "chat.newConversation": { en: "Start a new conversation", de: "Neue Unterhaltung starten" },
+  
+  // Calls
+  "call.start": { en: "Start Call", de: "Anruf starten" },
+  "call.end": { en: "End Call", de: "Anruf beenden" },
+  "call.connecting": { en: "Connecting...", de: "Verbinde..." },
+  "call.cannotCallAI": { en: "Cannot call AI bot", de: "AI-Bot kann nicht angerufen werden" },
+  "call.failed": { en: "Failed to start call", de: "Anruf konnte nicht gestartet werden" },
 };
 
 interface LanguageContextType {
