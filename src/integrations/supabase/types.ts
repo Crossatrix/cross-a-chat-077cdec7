@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      call_signals: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          from_user_id: string
+          id: string
+          signal_data: string
+          signal_type: string
+          to_user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          from_user_id: string
+          id?: string
+          signal_data: string
+          signal_type: string
+          to_user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          from_user_id?: string
+          id?: string
+          signal_data?: string
+          signal_type?: string
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_signals_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -61,27 +99,66 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          created_at: string
+          id: string
+          important: boolean
+          message: string
+          rating: number | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          important?: boolean
+          message: string
+          rating?: number | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          important?: boolean
+          message?: string
+          rating?: number | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
           conversation_id: string | null
           created_at: string
           id: string
+          image_url: string | null
           user_id: string
+          video_url: string | null
+          voice_url: string | null
         }
         Insert: {
           content: string
           conversation_id?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           user_id: string
+          video_url?: string | null
+          voice_url?: string | null
         }
         Update: {
           content?: string
           conversation_id?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           user_id?: string
+          video_url?: string | null
+          voice_url?: string | null
         }
         Relationships: [
           {
@@ -102,16 +179,22 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           created_at: string
           id: string
           username: string
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           id: string
           username: string
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           id?: string
           username?: string
@@ -122,6 +205,7 @@ export type Database = {
         Row: {
           banned_by: string
           created_at: string
+          expires_at: string | null
           id: string
           reason: string
           user_id: string
@@ -129,6 +213,7 @@ export type Database = {
         Insert: {
           banned_by: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           reason: string
           user_id: string
@@ -136,6 +221,7 @@ export type Database = {
         Update: {
           banned_by?: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           reason?: string
           user_id?: string
@@ -282,6 +368,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      demote_from_admin: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       find_or_create_conversation: {
         Args: { other_user_id: string }
         Returns: string
@@ -293,6 +383,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_conversation_member: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
+      }
+      promote_to_admin: { Args: { target_user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
