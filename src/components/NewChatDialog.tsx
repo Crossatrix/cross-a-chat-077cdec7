@@ -1,0 +1,221 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageSquarePlus } from "lucide-react";
+import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+interface User {
+  id: string;
+  username: string;
+  avatar_url?: string;
+}
+
+interface NewChatDialogProps {
+  currentUserId: string;
+  onChatCreated: (conversationId: string, displayName: string, isGroup: boolean) => void;
+  onUserSelected: (userId: string) => void;
+}
+
+export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: NewChatDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const [groupName, setGroupName] = useState("");
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [showGroupNameInput, setShowGroupNameInput] = useState(false);
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    if (open) {
+      fetchUsers();
+      setSelectedUsers(new Set());
+      setGroupName("");
+      setShowGroupNameInput(false);
+    }
+  }, [open]);
+
+  const fetchUsers = async () => {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .neq("id", currentUserId)
+      .neq("id", "00000000-0000-0000-0000-000000000000")
+      .order("username");
+
+    if (profiles) {
+      const { data: blockedUsers } = await supabase
+        .from("user_blocks")
+        .select("blocked_user_id")
+        .eq("blocker_id", currentUserId);
+
+      const blockedIds = new Set(blockedUsers?.map((b) => b.blocked_user_id) || []);
+      const filteredProfiles = profiles.filter((p) => !blockedIds.has(p.id));
+      setUsers(filteredProfiles);
+    }
+  };
+
+  const toggleUser = (userId: string) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUsers(newSelected);
+    
+    // Reset group name input if going back to single selection
+    if (newSelected.size < 2) {
+      setShowGroupNameInput(false);
+      setGroupName("");
+    }
+  };
+
+  const handleNext = () => {
+    if (selectedUsers.size === 0) {
+      toast.error("Please select at least one person");
+      return;
+    }
+
+    if (selectedUsers.size === 1) {
+      // Start 1-on-1 chat immediately
+      const userId = Array.from(selectedUsers)[0];
+      onUserSelected(userId);
+      setOpen(false);
+      setSelectedUsers(new Set());
+    } else {
+      // Show group name input for multiple selections
+      setShowGroupNameInput(true);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupName.trim()) {
+      toast.error("Please enter a group name");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc("create_group_conversation", {
+        group_name: groupName,
+        participant_ids: Array.from(selectedUsers),
+      });
+
+      if (error) throw error;
+
+      toast.success("Group created successfully");
+      onChatCreated(data, groupName, true);
+      setOpen(false);
+      setGroupName("");
+      setSelectedUsers(new Set());
+      setShowGroupNameInput(false);
+    } catch (error) {
+      console.error("Error creating group:", error);
+      toast.error("Failed to create group");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    setShowGroupNameInput(false);
+    setGroupName("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="default" size="icon" className="h-8 w-8" aria-label="New Chat">
+          <MessageSquarePlus className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        {!showGroupNameInput ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>New Chat</DialogTitle>
+              <DialogDescription>
+                Select one person for direct chat, or multiple for a group
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <ScrollArea className="h-64 border rounded-md p-4">
+                <div className="space-y-3">
+                  {users.map((user) => (
+                    <div key={user.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={user.id}
+                        checked={selectedUsers.has(user.id)}
+                        onCheckedChange={() => toggleUser(user.id)}
+                      />
+                      <label
+                        htmlFor={user.id}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                      >
+                        @{user.username}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+              <div className="flex justify-between items-center text-sm text-muted-foreground">
+                <span>{selectedUsers.size} selected</span>
+                {selectedUsers.size > 1 && <span>Group chat</span>}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleNext} disabled={selectedUsers.size === 0}>
+                  {selectedUsers.size === 1 ? "Start Chat" : "Next"}
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Name Your Group</DialogTitle>
+              <DialogDescription>
+                Creating group with {selectedUsers.size} members
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="groupName">Group Name</Label>
+                <Input
+                  id="groupName"
+                  placeholder="Enter group name"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={handleBack}>
+                  Back
+                </Button>
+                <Button onClick={handleCreateGroup} disabled={loading}>
+                  {loading ? "Creating..." : "Create Group"}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
