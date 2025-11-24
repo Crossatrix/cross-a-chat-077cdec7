@@ -164,7 +164,7 @@ serve(async (req) => {
       const filePath = `${conversationId}/${fileName}`;
       
       const { error: uploadError } = await supabase.storage
-        .from('images')
+        .from('chat-images')
         .upload(filePath, binaryData, {
           contentType: 'image/png',
           upsert: false
@@ -174,7 +174,7 @@ serve(async (req) => {
         console.error('Error uploading image:', uploadError);
       } else {
         const { data: { publicUrl } } = supabase.storage
-          .from('images')
+          .from('chat-images')
           .getPublicUrl(filePath);
         messageData.image_url = publicUrl;
       }

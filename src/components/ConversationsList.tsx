@@ -3,7 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Conversation {
   id: string;
@@ -23,14 +33,17 @@ interface ConversationsListProps {
   currentUserId: string;
   onSelectConversation: (conversationId: string, displayName: string, isGroup: boolean) => void;
   selectedConversationId: string | null;
+  onDeleteConversation: (conversationId: string) => void;
 }
 
 const ConversationsList = ({ 
   currentUserId, 
   onSelectConversation,
-  selectedConversationId 
+  selectedConversationId,
+  onDeleteConversation
 }: ConversationsListProps) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -177,37 +190,74 @@ const ConversationsList = ({
                 : (conv.otherUser?.username?.charAt(0).toUpperCase() || "?");
               
               return (
-                <Button
-                  key={conv.id}
-                  variant={selectedConversationId === conv.id ? "secondary" : "ghost"}
-                  className="w-full justify-start gap-3 h-auto py-3"
-                  onClick={() => onSelectConversation(conv.id, displayName, conv.is_group)}
-                >
-                  <Avatar className="h-10 w-10 border-2 border-primary shrink-0">
-                    <AvatarImage src={avatarSrc} alt={displayName} />
-                    <AvatarFallback className="bg-secondary text-foreground">
-                      {avatarFallback}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 text-left overflow-hidden min-w-0">
-                    <div className="font-medium truncate">{displayName}</div>
-                    {conv.is_group && conv.participantCount && (
-                      <div className="text-xs text-muted-foreground">
-                        {conv.participantCount} members
-                      </div>
-                    )}
-                    {conv.lastMessage && (
-                      <div className="text-xs text-muted-foreground truncate mt-1">
-                        {conv.lastMessage}
-                      </div>
-                    )}
-                  </div>
-                </Button>
+                <div key={conv.id} className="relative group">
+                  <Button
+                    variant={selectedConversationId === conv.id ? "secondary" : "ghost"}
+                    className="w-full justify-start gap-3 h-auto py-3 pr-12"
+                    onClick={() => onSelectConversation(conv.id, displayName, conv.is_group)}
+                  >
+                    <Avatar className="h-10 w-10 border-2 border-primary shrink-0">
+                      <AvatarImage src={avatarSrc} alt={displayName} />
+                      <AvatarFallback className="bg-secondary text-foreground">
+                        {avatarFallback}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 text-left overflow-hidden min-w-0">
+                      <div className="font-medium truncate">{displayName}</div>
+                      {conv.is_group && conv.participantCount && (
+                        <div className="text-xs text-muted-foreground">
+                          {conv.participantCount} members
+                        </div>
+                      )}
+                      {conv.lastMessage && (
+                        <div className="text-xs text-muted-foreground truncate mt-1">
+                          {conv.lastMessage}
+                        </div>
+                      )}
+                    </div>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeletingConversationId(conv.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               );
             })}
           </div>
         )}
       </ScrollArea>
+      
+      <AlertDialog open={!!deletingConversationId} onOpenChange={(open) => !open && setDeletingConversationId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this chat? This will remove all messages and media. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingConversationId) {
+                  onDeleteConversation(deletingConversationId);
+                  setDeletingConversationId(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
