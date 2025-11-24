@@ -37,6 +37,8 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [showGroupNameInput, setShowGroupNameInput] = useState(false);
+  const [showAiChatNameInput, setShowAiChatNameInput] = useState(false);
+  const [aiChatName, setAiChatName] = useState("");
   const [usernameSearch, setUsernameSearch] = useState("");
   const [searchedUser, setSearchedUser] = useState<User | null>(null);
   const [searching, setSearching] = useState(false);
@@ -116,15 +118,42 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (selectedUsers.size === 0) {
       toast.error("Please select at least one person");
       return;
     }
 
     if (selectedUsers.size === 1) {
-      // Start 1-on-1 chat immediately
       const userId = Array.from(selectedUsers)[0];
+      const selectedUser = [...recentUsers, ...users, searchedUser].find(u => u?.id === userId);
+      
+      // Check if selecting AI
+      if (selectedUser?.username.toLowerCase() === 'ai') {
+        // Check AI chat count
+        const { data: existingAIChats, error: countError } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('is_ai_chat', true)
+          .eq('created_by', currentUserId);
+
+        if (countError) {
+          console.error('Error checking AI chats:', countError);
+          toast.error("Failed to check AI chat limit");
+          return;
+        }
+
+        if (existingAIChats && existingAIChats.length >= 5) {
+          toast.error("You can only have up to 5 AI chat conversations");
+          return;
+        }
+
+        // Show AI chat name input
+        setShowAiChatNameInput(true);
+        return;
+      }
+      
+      // Start 1-on-1 chat immediately for non-AI users
       onUserSelected(userId);
       setOpen(false);
       setSelectedUsers(new Set());
@@ -165,7 +194,57 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
 
   const handleBack = () => {
     setShowGroupNameInput(false);
+    setShowAiChatNameInput(false);
     setGroupName("");
+    setAiChatName("");
+  };
+
+  const handleCreateAIChat = async () => {
+    if (!aiChatName.trim()) {
+      toast.error("Please enter a name for your AI chat");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
+      
+      // Create new AI conversation with name
+      const { data: newConv, error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          is_ai_chat: true,
+          is_group: false,
+          name: aiChatName.trim(),
+          created_by: currentUserId
+        })
+        .select()
+        .single();
+
+      if (convError) throw convError;
+
+      // Add participants
+      const { error: participantError } = await supabase
+        .from('conversation_participants')
+        .insert([
+          { conversation_id: newConv.id, user_id: currentUserId },
+          { conversation_id: newConv.id, user_id: AI_BOT_ID }
+        ]);
+
+      if (participantError) throw participantError;
+
+      toast.success("AI chat created successfully");
+      onChatCreated(newConv.id, aiChatName.trim(), false);
+      setOpen(false);
+      setAiChatName("");
+      setSelectedUsers(new Set());
+      setShowAiChatNameInput(false);
+    } catch (error) {
+      console.error("Error creating AI chat:", error);
+      toast.error("Failed to create AI chat");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSearchUsername = async () => {
@@ -230,7 +309,37 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
-        {!showGroupNameInput ? (
+        {showAiChatNameInput ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Name Your AI Chat</DialogTitle>
+              <DialogDescription>
+                Give your AI conversation a unique name
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="aiChatName">AI Chat Name</Label>
+                <Input
+                  id="aiChatName"
+                  placeholder="Enter AI chat name"
+                  value={aiChatName}
+                  onChange={(e) => setAiChatName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateAIChat()}
+                  autoFocus
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={handleBack}>
+                  Back
+                </Button>
+                <Button onClick={handleCreateAIChat} disabled={loading}>
+                  {loading ? "Creating..." : "Create AI Chat"}
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : !showGroupNameInput ? (
           <>
             <DialogHeader>
               <DialogTitle>New Chat</DialogTitle>

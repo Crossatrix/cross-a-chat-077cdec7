@@ -349,6 +349,9 @@ const Index = () => {
     // If this is an AI chat, call the AI edge function
     if (isAIChat) {
       try {
+        // Add AI to typing users
+        setTypingUsers((prev) => [...prev, { userId: AI_BOT_ID, username: 'CrossChatAI' }]);
+
         const { error: aiError } = await supabase.functions.invoke('ai-chat', {
           body: { 
             conversationId: selectedConversationId,
@@ -358,6 +361,9 @@ const Index = () => {
           }
         });
 
+        // Remove AI from typing users
+        setTypingUsers((prev) => prev.filter((u) => u.userId !== AI_BOT_ID));
+
         if (aiError) {
           console.error('AI chat error:', aiError);
           toast.error('AI response failed. Please try again.');
@@ -365,6 +371,8 @@ const Index = () => {
       } catch (aiError) {
         console.error('AI chat error:', aiError);
         toast.error('AI response failed. Please try again.');
+        // Remove AI from typing users on error
+        setTypingUsers((prev) => prev.filter((u) => u.userId !== AI_BOT_ID));
       }
     }
   };
@@ -580,6 +588,10 @@ const Index = () => {
               onModelChange={setSelectedAIModel}
               onTyping={() => {
                 if (!selectedConversationId || !user?.id) return;
+                
+                // Don't broadcast typing to AI chats
+                const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
+                if (selectedUserId === AI_BOT_ID) return;
                 
                 // Clear existing timeout
                 if (typingTimeout) {
