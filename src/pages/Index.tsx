@@ -120,10 +120,6 @@ const Index = () => {
     };
 
     fetchUserData();
-
-    // Initialize notifications
-    registerServiceWorker();
-    requestNotificationPermission();
   }, [user, navigate, loading]);
 
   useEffect(() => {
@@ -172,8 +168,8 @@ const Index = () => {
           if (data) {
             setMessages((prev) => [...prev, data]);
             
-            // Show notification if document is not focused and message is from other user
-            if (!document.hasFocus() && data.user_id !== user.id) {
+            // Show notification for messages from other users
+            if (data.user_id !== user.id) {
               showNotification(
                 `New message from ${data.profiles?.username || 'Someone'}`,
                 data.content || 'Sent a media file',
