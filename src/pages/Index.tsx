@@ -433,6 +433,66 @@ const Index = () => {
     navigate("/auth");
   };
 
+  const handleDeleteConversation = async (conversationId: string) => {
+    try {
+      // Delete all messages and their associated media files
+      const { data: messages } = await supabase
+        .from("messages")
+        .select("id, image_url, voice_url, video_url")
+        .eq("conversation_id", conversationId);
+
+      if (messages) {
+        for (const msg of messages) {
+          // Delete image if exists
+          if (msg.image_url) {
+            const imagePath = msg.image_url.split("/").pop();
+            if (imagePath) {
+              await supabase.storage.from("chat-images").remove([`${conversationId}/${imagePath}`]);
+            }
+          }
+          // Delete voice if exists
+          if (msg.voice_url) {
+            const voicePath = msg.voice_url.split("/").pop();
+            if (voicePath) {
+              await supabase.storage.from("voice-messages").remove([`${conversationId}/${voicePath}`]);
+            }
+          }
+          // Delete video if exists
+          if (msg.video_url) {
+            const videoPath = msg.video_url.split("/").pop();
+            if (videoPath) {
+              await supabase.storage.from("chat-videos").remove([`${conversationId}/${videoPath}`]);
+            }
+          }
+        }
+      }
+
+      // Delete all messages
+      await supabase.from("messages").delete().eq("conversation_id", conversationId);
+
+      // Delete all participants
+      await supabase.from("conversation_participants").delete().eq("conversation_id", conversationId);
+
+      // Delete the conversation
+      const { error } = await supabase.from("conversations").delete().eq("id", conversationId);
+
+      if (error) throw error;
+
+      toast.success("Chat deleted successfully");
+      
+      // Clear selected conversation if it was the deleted one
+      if (selectedConversationId === conversationId) {
+        setSelectedConversationId(null);
+        setSelectedUsername("");
+        setSelectedUserId("");
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      toast.error("Failed to delete chat");
+    }
+  };
+
   const startCall = () => {
     if (isGroup) {
       toast.error("Group calls are not supported yet");
@@ -500,6 +560,7 @@ const Index = () => {
           currentUserId={user?.id || ""}
           onSelectConversation={handleSelectConversation}
           selectedConversationId={selectedConversationId}
+          onDeleteConversation={handleDeleteConversation}
         />
       </div>
       <div className={`flex flex-col flex-1 min-w-0 h-full ${!selectedConversationId ? 'hidden md:flex' : 'flex'}`}>
