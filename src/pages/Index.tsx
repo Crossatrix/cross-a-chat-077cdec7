@@ -41,6 +41,7 @@ const Index = () => {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [isGroup, setIsGroup] = useState(false);
   const [isInCall, setIsInCall] = useState(false);
+  const [selectedAIModel, setSelectedAIModel] = useState("openai/gpt-5-mini");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -224,7 +225,7 @@ const Index = () => {
     }
   };
 
-  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File) => {
+  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File, generateImage?: boolean) => {
     if (!user || !selectedConversationId) return;
 
     const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
@@ -330,7 +331,9 @@ const Index = () => {
         const { error: aiError } = await supabase.functions.invoke('ai-chat', {
           body: { 
             conversationId: selectedConversationId,
-            userMessage: content 
+            userMessage: content,
+            model: selectedAIModel,
+            generateImage: generateImage || false
           }
         });
 
@@ -548,7 +551,12 @@ const Index = () => {
               currentUserDbId={user?.id}
               onDeleteMessage={handleDeleteMessage}
             />
-            <MessageInput onSend={handleSendMessage} />
+            <MessageInput 
+              onSend={handleSendMessage} 
+              isAIChat={selectedUserId === '00000000-0000-0000-0000-000000000000'}
+              selectedModel={selectedAIModel}
+              onModelChange={setSelectedAIModel}
+            />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground p-4">

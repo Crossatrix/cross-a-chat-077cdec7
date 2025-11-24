@@ -1,13 +1,16 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Image, Video, Mic, StopCircle, X } from "lucide-react";
+import { Send, Image as ImageIcon, Video, Mic, StopCircle, X, Sparkles } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 
 interface MessageInputProps {
-  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File) => void;
+  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean) => void;
   disabled?: boolean;
+  isAIChat?: boolean;
+  onModelChange?: (model: string) => void;
+  selectedModel?: string;
 }
 
 const messageSchema = z.string()
@@ -18,13 +21,14 @@ const messageSchema = z.string()
     "Message contains invalid content"
   );
 
-const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
+const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini" }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [generateImage, setGenerateImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -142,12 +146,13 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
     }
 
     // Send with empty string if no text (media only)
-    onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined);
+    onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined, generateImage);
     setMessage("");
     setSelectedImage(null);
     setSelectedVideo(null);
     setRecordedBlob(null);
     setRecordingTime(0);
+    setGenerateImage(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -158,9 +163,38 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-2 md:p-4 border-t border-border bg-card shrink-0">
+      {isAIChat && (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant={selectedModel === "openai/gpt-5-nano" ? "default" : "outline"}
+            size="sm"
+            onClick={() => onModelChange?.("openai/gpt-5-nano")}
+          >
+            Fast
+          </Button>
+          <Button
+            type="button"
+            variant={selectedModel === "openai/gpt-5-mini" ? "default" : "outline"}
+            size="sm"
+            onClick={() => onModelChange?.("openai/gpt-5-mini")}
+          >
+            Detailed
+          </Button>
+          <Button
+            type="button"
+            variant={generateImage ? "default" : "outline"}
+            size="sm"
+            onClick={() => setGenerateImage(!generateImage)}
+          >
+            <Sparkles className="h-4 w-4 mr-1" />
+            Generate Image
+          </Button>
+        </div>
+      )}
       {selectedImage && (
         <div className="flex items-center gap-2 p-2 bg-secondary rounded-md">
-          <Image className="h-4 w-4 text-muted-foreground" />
+          <ImageIcon className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm flex-1 truncate">{selectedImage.name}</span>
           <Button
             type="button"
@@ -234,52 +268,56 @@ const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
         </div>
       )}
       <div className="flex gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-          onChange={handleImageSelect}
-          className="hidden"
-          disabled={disabled || isRecording}
-        />
-        <Button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={disabled || isRecording || !!recordedBlob}
-          size="icon"
-          variant="outline"
-          className="shrink-0"
-        >
-          <Image className="h-4 w-4" />
-        </Button>
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska"
-          onChange={handleVideoSelect}
-          className="hidden"
-          disabled={disabled || isRecording}
-        />
-        <Button
-          type="button"
-          onClick={() => videoInputRef.current?.click()}
-          disabled={disabled || isRecording || !!recordedBlob}
-          size="icon"
-          variant="outline"
-          className="shrink-0"
-        >
-          <Video className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          onClick={isRecording ? stopRecording : startRecording}
-          disabled={disabled || !!selectedImage || !!selectedVideo || !!recordedBlob}
-          size="icon"
-          variant={isRecording ? "destructive" : "outline"}
-          className="shrink-0"
-        >
-          {isRecording ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-        </Button>
+        {!isAIChat && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              onChange={handleImageSelect}
+              className="hidden"
+              disabled={disabled || isRecording}
+            />
+            <Button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled || isRecording || !!recordedBlob}
+              size="icon"
+              variant="outline"
+              className="shrink-0"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska"
+              onChange={handleVideoSelect}
+              className="hidden"
+              disabled={disabled || isRecording}
+            />
+            <Button
+              type="button"
+              onClick={() => videoInputRef.current?.click()}
+              disabled={disabled || isRecording || !!recordedBlob}
+              size="icon"
+              variant="outline"
+              className="shrink-0"
+            >
+              <Video className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={disabled || !!selectedImage || !!selectedVideo || !!recordedBlob}
+              size="icon"
+              variant={isRecording ? "destructive" : "outline"}
+              className="shrink-0"
+            >
+              {isRecording ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </Button>
+          </>
+        )}
         <Input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
