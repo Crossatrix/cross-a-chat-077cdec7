@@ -242,7 +242,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
                         />
                         <label
                           htmlFor={searchedUser.id}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1 truncate"
                         >
                           @{searchedUser.username} <span className="text-xs text-muted-foreground">(searched)</span>
                         </label>
@@ -258,7 +258,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
                       />
                       <label
                         htmlFor={user.id}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1 truncate"
                       >
                         @{user.username}
                       </label>
