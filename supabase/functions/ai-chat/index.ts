@@ -23,8 +23,8 @@ serve(async (req) => {
       );
     }
 
-    const { conversationId, userMessage } = await req.json();
-    console.log('AI Chat request:', { conversationId, userMessage });
+    const { conversationId, userMessage, model = "google/gemini-2.5-flash", generateImage = false } = await req.json();
+    console.log('AI Chat request:', { conversationId, userMessage, model, generateImage });
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -87,22 +87,31 @@ serve(async (req) => {
     }));
 
     // Call Lovable AI
+    const requestBody: any = {
+      messages: [
+        { 
+          role: "system", 
+          content: "You are a friendly AI assistant in a chat application called Cross Chat. Be helpful, conversational, and concise. Keep responses engaging and natural." 
+        },
+        ...conversationHistory,
+      ],
+    };
+
+    // Use image generation model if requested, otherwise use specified model
+    if (generateImage) {
+      requestBody.model = "google/gemini-2.5-flash-image-preview";
+      requestBody.modalities = ["image", "text"];
+    } else {
+      requestBody.model = model;
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { 
-            role: "system", 
-            content: "You are a friendly AI assistant in a chat application called Cross Chat. Be helpful, conversational, and concise. Keep responses engaging and natural." 
-          },
-          ...conversationHistory,
-        ],
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -127,18 +136,53 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    let aiResponse = data.choices[0].message.content;
+    let imageUrl = null;
+
+    // Check if response includes an image
+    if (data.choices[0].message.images && data.choices[0].message.images.length > 0) {
+      imageUrl = data.choices[0].message.images[0].image_url.url;
+      console.log('AI generated image');
+    }
 
     console.log('AI response generated:', aiResponse);
 
     // Insert AI's response as a message
+    const messageData: any = {
+      conversation_id: conversationId,
+      user_id: AI_BOT_ID,
+      content: aiResponse || "Generated an image",
+    };
+
+    // If there's an image, upload it to storage
+    if (imageUrl) {
+      // Convert base64 to blob
+      const base64Data = imageUrl.split(',')[1];
+      const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      const fileName = `ai-generated-${Date.now()}.png`;
+      const filePath = `${conversationId}/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filePath, binaryData, {
+          contentType: 'image/png',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from('images')
+          .getPublicUrl(filePath);
+        messageData.image_url = publicUrl;
+      }
+    }
+
     const { error: insertError } = await supabase
       .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        user_id: AI_BOT_ID,
-        content: aiResponse,
-      });
+      .insert(messageData);
 
     if (insertError) {
       console.error('Error inserting AI message:', insertError);
