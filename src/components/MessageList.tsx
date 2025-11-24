@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import UserActionsMenu from "./UserActionsMenu";
+import TypingIndicator from "./TypingIndicator";
 
 interface Message {
   id: string;
@@ -24,16 +25,17 @@ interface MessageListProps {
   currentUserId: string | undefined;
   currentUserDbId: string | undefined;
   onDeleteMessage: (messageId: string, imageUrl?: string, voiceUrl?: string, videoUrl?: string) => void;
+  typingUsers?: { userId: string; username: string }[];
 }
 
-const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage }: MessageListProps) => {
+const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage, typingUsers = [] }: MessageListProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, typingUsers]);
 
   return (
     <ScrollArea className="flex-1 p-2 md:p-4" ref={scrollRef}>
@@ -119,6 +121,9 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
             </div>
           );
         })}
+        {typingUsers.map((user) => (
+          <TypingIndicator key={user.userId} username={user.username} />
+        ))}
       </div>
     </ScrollArea>
   );

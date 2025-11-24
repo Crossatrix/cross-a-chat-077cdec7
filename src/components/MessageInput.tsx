@@ -11,6 +11,7 @@ interface MessageInputProps {
   isAIChat?: boolean;
   onModelChange?: (model: string) => void;
   selectedModel?: string;
+  onTyping?: () => void;
 }
 
 const messageSchema = z.string()
@@ -21,7 +22,7 @@ const messageSchema = z.string()
     "Message contains invalid content"
   );
 
-const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini" }: MessageInputProps) => {
+const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
@@ -320,7 +321,10 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
         )}
         <Input
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            setMessage(e.target.value);
+            onTyping?.();
+          }}
           placeholder="Type a message..."
           disabled={disabled || isRecording}
           className="flex-1 text-sm md:text-base"
