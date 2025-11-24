@@ -8,12 +8,11 @@ import { toast } from "sonner";
 import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
 import ConversationsList from "@/components/ConversationsList";
-import UsersList from "@/components/UsersList";
 import UserActionsMenu from "@/components/UserActionsMenu";
 import BlockedUsersList from "@/components/BlockedUsersList";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CallInterface } from "@/components/CallInterface";
-import { CreateGroupDialog } from "@/components/CreateGroupDialog";
+import { NewChatDialog } from "@/components/NewChatDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 
 interface Message {
@@ -445,10 +444,10 @@ const Index = () => {
             </div>
           </div>
           <div className="flex gap-0.5 md:gap-1 shrink-0 overflow-x-auto items-center">
-            <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
-            <CreateGroupDialog 
+            <NewChatDialog
               currentUserId={user?.id || ""}
-              onGroupCreated={(convId, groupName) => handleSelectConversation(convId, groupName, true)}
+              onChatCreated={(convId, displayName, isGroup) => handleSelectConversation(convId, displayName, isGroup)}
+              onUserSelected={handleSelectUser}
             />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
@@ -518,10 +517,10 @@ const Index = () => {
             )}
           </div>
           <div className="flex gap-0.5 md:gap-2 shrink-0 overflow-x-auto items-center">
-            <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
-            <CreateGroupDialog 
+            <NewChatDialog
               currentUserId={user?.id || ""}
-              onGroupCreated={(convId, groupName) => handleSelectConversation(convId, groupName, true)}
+              onChatCreated={(convId, displayName, isGroup) => handleSelectConversation(convId, displayName, isGroup)}
+              onUserSelected={handleSelectUser}
             />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
