@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import UserActionsMenu from "./UserActionsMenu";
 import TypingIndicator from "./TypingIndicator";
+import { formatMessageText } from "@/utils/textFormatting";
 
 interface Message {
   id: string;
@@ -109,7 +110,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                       preload="metadata"
                     />
                   )}
-                  {message.content && <div>{message.content}</div>}
+                  {message.content && <div>{formatMessageText(message.content)}</div>}
                 </div>
                 <span className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
                   {new Date(message.created_at).toLocaleTimeString([], {
