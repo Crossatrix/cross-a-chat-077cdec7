@@ -46,6 +46,19 @@ const translations: Translations = {
   "chat.selectConversation": { en: "Select a conversation to start chatting", de: "Wählen Sie eine Unterhaltung aus" },
   "chat.newConversation": { en: "Start a new conversation", de: "Neue Unterhaltung starten" },
   
+  // Group Chats
+  "group.create": { en: "Create Group", de: "Gruppe erstellen" },
+  "group.name": { en: "Group Name", de: "Gruppenname" },
+  "group.namePlaceholder": { en: "Enter group name", de: "Gruppenname eingeben" },
+  "group.selectMembers": { en: "Select Members", de: "Mitglieder auswählen" },
+  "group.minMembers": { en: "minimum 2", de: "mindestens 2" },
+  "group.created": { en: "Group created successfully", de: "Gruppe erfolgreich erstellt" },
+  "group.createFailed": { en: "Failed to create group", de: "Gruppe konnte nicht erstellt werden" },
+  "group.enterName": { en: "Please enter a group name", de: "Bitte Gruppenname eingeben" },
+  "group.selectTwoMembers": { en: "Please select at least 2 members", de: "Bitte mindestens 2 Mitglieder auswählen" },
+  "group.callsNotSupported": { en: "Group calls are not supported yet", de: "Gruppenanrufe werden noch nicht unterstützt" },
+  "group.members": { en: "members", de: "Mitglieder" },
+  
   // Calls
   "call.start": { en: "Start Call", de: "Anruf starten" },
   "call.end": { en: "End Call", de: "Anruf beenden" },

@@ -13,6 +13,7 @@ import UserActionsMenu from "@/components/UserActionsMenu";
 import BlockedUsersList from "@/components/BlockedUsersList";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CallInterface } from "@/components/CallInterface";
+import { CreateGroupDialog } from "@/components/CreateGroupDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 
 interface Message {
@@ -39,6 +40,7 @@ const Index = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedUsername, setSelectedUsername] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [isGroup, setIsGroup] = useState(false);
   const [isInCall, setIsInCall] = useState(false);
   const navigate = useNavigate();
 
@@ -344,20 +346,25 @@ const Index = () => {
     }
   };
 
-  const handleSelectConversation = async (conversationId: string, otherUsername: string) => {
+  const handleSelectConversation = async (conversationId: string, displayName: string, isGroupChat: boolean) => {
     setSelectedConversationId(conversationId);
-    setSelectedUsername(otherUsername);
+    setSelectedUsername(displayName);
+    setIsGroup(isGroupChat);
     setMessages([]);
 
-    // Fetch the other user's ID
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", otherUsername)
-      .single();
+    // For 1-on-1 chats, fetch the other user's ID
+    if (!isGroupChat) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", displayName)
+        .single();
 
-    if (profile) {
-      setSelectedUserId(profile.id);
+      if (profile) {
+        setSelectedUserId(profile.id);
+      }
+    } else {
+      setSelectedUserId("");
     }
   };
 
@@ -396,6 +403,10 @@ const Index = () => {
   };
 
   const startCall = () => {
+    if (isGroup) {
+      toast.error("Group calls are not supported yet");
+      return;
+    }
     if (selectedUserId === '00000000-0000-0000-0000-000000000000') {
       toast.error("Cannot call AI bot");
       return;
@@ -435,6 +446,10 @@ const Index = () => {
           </div>
           <div className="flex gap-0.5 md:gap-1 shrink-0 overflow-x-auto items-center">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
+            <CreateGroupDialog 
+              currentUserId={user?.id || ""}
+              onGroupCreated={(convId, groupName) => handleSelectConversation(convId, groupName, true)}
+            />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
             {isAdmin && (
@@ -479,27 +494,35 @@ const Index = () => {
               </h1>
               <p className="text-xs md:text-sm text-muted-foreground truncate">@{username}</p>
             </div>
-            {selectedUsername && selectedUserId && user?.id && (
+            {selectedUsername && user?.id && (
               <>
-                <Button
-                  onClick={startCall}
-                  size="icon"
-                  variant="default"
-                  className="shrink-0 h-8 w-8 md:h-10 md:w-10"
-                  aria-label="Start Call"
-                >
-                  <Phone className="h-4 w-4 md:h-5 md:w-5" />
-                </Button>
-                <UserActionsMenu
-                  userId={selectedUserId}
-                  username={selectedUsername}
-                  currentUserId={user.id}
-                />
+                {!isGroup && selectedUserId && (
+                  <>
+                    <Button
+                      onClick={startCall}
+                      size="icon"
+                      variant="default"
+                      className="shrink-0 h-8 w-8 md:h-10 md:w-10"
+                      aria-label="Start Call"
+                    >
+                      <Phone className="h-4 w-4 md:h-5 md:w-5" />
+                    </Button>
+                    <UserActionsMenu
+                      userId={selectedUserId}
+                      username={selectedUsername}
+                      currentUserId={user.id}
+                    />
+                  </>
+                )}
               </>
             )}
           </div>
           <div className="flex gap-0.5 md:gap-2 shrink-0 overflow-x-auto items-center">
             <UsersList currentUserId={user?.id || ""} onSelectUser={handleSelectUser} />
+            <CreateGroupDialog 
+              currentUserId={user?.id || ""}
+              onGroupCreated={(convId, groupName) => handleSelectConversation(convId, groupName, true)}
+            />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
             {isAdmin && (
