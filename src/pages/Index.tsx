@@ -42,6 +42,8 @@ const Index = () => {
   const [isGroup, setIsGroup] = useState(false);
   const [isInCall, setIsInCall] = useState(false);
   const [selectedAIModel, setSelectedAIModel] = useState("openai/gpt-5-mini");
+  const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -148,7 +150,7 @@ const Index = () => {
 
     fetchMessages();
 
-    // Subscribe to new messages in this conversation
+    // Subscribe to new messages and typing indicators in this conversation
     const channel = supabase
       .channel(`conversation-${selectedConversationId}`)
       .on(
@@ -170,6 +172,9 @@ const Index = () => {
           if (data) {
             setMessages((prev) => [...prev, data]);
             
+            // Remove typing indicator for the user who sent the message
+            setTypingUsers((prev) => prev.filter((u) => u.userId !== data.user_id));
+            
             // Show notification for messages from other users
             if (data.user_id !== user.id) {
               showNotification(
@@ -181,6 +186,22 @@ const Index = () => {
           }
         }
       )
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload.userId !== user.id) {
+          setTypingUsers((prev) => {
+            const exists = prev.find((u) => u.userId === payload.userId);
+            if (!exists) {
+              return [...prev, { userId: payload.userId, username: payload.username }];
+            }
+            return prev;
+          });
+
+          // Remove typing indicator after 3 seconds
+          setTimeout(() => {
+            setTypingUsers((prev) => prev.filter((u) => u.userId !== payload.userId));
+          }, 3000);
+        }
+      })
       .subscribe();
 
     return () => {
@@ -550,12 +571,36 @@ const Index = () => {
               currentUserId={username} 
               currentUserDbId={user?.id}
               onDeleteMessage={handleDeleteMessage}
+              typingUsers={typingUsers}
             />
             <MessageInput 
               onSend={handleSendMessage} 
               isAIChat={selectedUserId === '00000000-0000-0000-0000-000000000000'}
               selectedModel={selectedAIModel}
               onModelChange={setSelectedAIModel}
+              onTyping={() => {
+                if (!selectedConversationId || !user?.id) return;
+                
+                // Clear existing timeout
+                if (typingTimeout) {
+                  clearTimeout(typingTimeout);
+                }
+
+                // Broadcast typing event
+                const channel = supabase.channel(`conversation-${selectedConversationId}`);
+                channel.send({
+                  type: 'broadcast',
+                  event: 'typing',
+                  payload: { userId: user.id, username }
+                });
+
+                // Set timeout to stop broadcasting
+                const timeout = setTimeout(() => {
+                  setTypingTimeout(null);
+                }, 3000);
+                
+                setTypingTimeout(timeout);
+              }}
             />
           </>
         ) : (
