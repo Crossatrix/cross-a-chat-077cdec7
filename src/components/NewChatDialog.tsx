@@ -33,6 +33,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
   const [open, setOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [users, setUsers] = useState<User[]>([]);
+  const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [showGroupNameInput, setShowGroupNameInput] = useState(false);
@@ -53,6 +54,28 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
   }, [open]);
 
   const fetchUsers = async () => {
+    // Fetch recent conversation participants
+    const { data: conversations } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", currentUserId);
+
+    const conversationIds = conversations?.map((c) => c.conversation_id) || [];
+    
+    let recentUserIds: string[] = [];
+    if (conversationIds.length > 0) {
+      const { data: recentParticipants } = await supabase
+        .from("conversation_participants")
+        .select("user_id, joined_at")
+        .in("conversation_id", conversationIds)
+        .neq("user_id", currentUserId)
+        .order("joined_at", { ascending: false });
+
+      // Get unique user IDs from recent conversations
+      recentUserIds = [...new Set(recentParticipants?.map((p) => p.user_id) || [])].slice(0, 5);
+    }
+
+    // Fetch all profiles
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, username, avatar_url")
@@ -67,8 +90,13 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
         .eq("blocker_id", currentUserId);
 
       const blockedIds = new Set(blockedUsers?.map((b) => b.blocked_user_id) || []);
-      const filteredProfiles = profiles.filter((p) => !blockedIds.has(p.id));
-      setUsers(filteredProfiles);
+      const recentUserIdsSet = new Set(recentUserIds);
+      
+      const filteredRecent = profiles.filter((p) => !blockedIds.has(p.id) && recentUserIdsSet.has(p.id));
+      const filteredOther = profiles.filter((p) => !blockedIds.has(p.id) && !recentUserIdsSet.has(p.id));
+      
+      setRecentUsers(filteredRecent);
+      setUsers(filteredOther);
     }
   };
 
@@ -246,6 +274,28 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
                         >
                           @{searchedUser.username} <span className="text-xs text-muted-foreground">(searched)</span>
                         </label>
+                      </div>
+                    </div>
+                  )}
+                  {recentUsers.length > 0 && (
+                    <div className="pb-3 mb-3 border-b">
+                      <div className="text-xs text-muted-foreground mb-2 font-semibold">Recent</div>
+                      <div className="space-y-3">
+                        {recentUsers.map((user) => (
+                          <div key={user.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={user.id}
+                              checked={selectedUsers.has(user.id)}
+                              onCheckedChange={() => toggleUser(user.id)}
+                            />
+                            <label
+                              htmlFor={user.id}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1 truncate"
+                            >
+                              @{user.username}
+                            </label>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
