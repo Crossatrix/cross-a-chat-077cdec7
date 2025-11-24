@@ -36,6 +36,9 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [showGroupNameInput, setShowGroupNameInput] = useState(false);
+  const [usernameSearch, setUsernameSearch] = useState("");
+  const [searchedUser, setSearchedUser] = useState<User | null>(null);
+  const [searching, setSearching] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -44,6 +47,8 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
       setSelectedUsers(new Set());
       setGroupName("");
       setShowGroupNameInput(false);
+      setUsernameSearch("");
+      setSearchedUser(null);
     }
   }, [open]);
 
@@ -135,6 +140,60 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
     setGroupName("");
   };
 
+  const handleSearchUsername = async () => {
+    if (!usernameSearch.trim()) {
+      toast.error("Please enter a username");
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .eq("username", usernameSearch.trim())
+        .neq("id", currentUserId)
+        .neq("id", "00000000-0000-0000-0000-000000000000")
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!profile) {
+        toast.error("User not found");
+        setSearchedUser(null);
+        return;
+      }
+
+      // Check if user is blocked
+      const { data: blockCheck } = await supabase
+        .from("user_blocks")
+        .select("id")
+        .eq("blocker_id", currentUserId)
+        .eq("blocked_user_id", profile.id)
+        .maybeSingle();
+
+      if (blockCheck) {
+        toast.error("This user is blocked");
+        setSearchedUser(null);
+        return;
+      }
+
+      setSearchedUser(profile);
+      
+      // Auto-select the searched user
+      const newSelected = new Set(selectedUsers);
+      newSelected.add(profile.id);
+      setSelectedUsers(newSelected);
+      
+      toast.success(`Found @${profile.username}`);
+    } catch (error) {
+      console.error("Error searching username:", error);
+      toast.error("Failed to search username");
+    } finally {
+      setSearching(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -152,8 +211,44 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="usernameSearch">Search by username</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="usernameSearch"
+                    placeholder="Enter username"
+                    value={usernameSearch}
+                    onChange={(e) => setUsernameSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearchUsername()}
+                  />
+                  <Button 
+                    onClick={handleSearchUsername} 
+                    disabled={searching || !usernameSearch.trim()}
+                    variant="secondary"
+                  >
+                    {searching ? "..." : "Find"}
+                  </Button>
+                </div>
+              </div>
               <ScrollArea className="h-64 border rounded-md p-4">
                 <div className="space-y-3">
+                  {searchedUser && (
+                    <div className="pb-3 mb-3 border-b">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id={searchedUser.id}
+                          checked={selectedUsers.has(searchedUser.id)}
+                          onCheckedChange={() => toggleUser(searchedUser.id)}
+                        />
+                        <label
+                          htmlFor={searchedUser.id}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                        >
+                          @{searchedUser.username} <span className="text-xs text-muted-foreground">(searched)</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
                   {users.map((user) => (
                     <div key={user.id} className="flex items-center space-x-2">
                       <Checkbox
