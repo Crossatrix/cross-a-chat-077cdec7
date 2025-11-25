@@ -3,8 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
 import ConversationsList from "@/components/ConversationsList";
@@ -44,6 +54,7 @@ const Index = () => {
   const [selectedAIModel, setSelectedAIModel] = useState("openai/gpt-5-mini");
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [showClearChatDialog, setShowClearChatDialog] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -433,6 +444,42 @@ const Index = () => {
     navigate("/auth");
   };
 
+  const handleClearAIChat = async () => {
+    if (!selectedConversationId) return;
+
+    try {
+      // Delete all messages and their associated media files for this AI chat
+      const { data: messages } = await supabase
+        .from("messages")
+        .select("id, image_url, voice_url, video_url")
+        .eq("conversation_id", selectedConversationId);
+
+      if (messages) {
+        for (const msg of messages) {
+          // Delete image if exists
+          if (msg.image_url) {
+            const imagePath = msg.image_url.split("/").pop();
+            if (imagePath) {
+              await supabase.storage.from("chat-images").remove([`${selectedConversationId}/${imagePath}`]);
+            }
+          }
+        }
+      }
+
+      // Delete all messages
+      const { error } = await supabase.from("messages").delete().eq("conversation_id", selectedConversationId);
+
+      if (error) throw error;
+
+      setMessages([]);
+      toast.success("AI chat cleared successfully");
+      setShowClearChatDialog(false);
+    } catch (error) {
+      console.error("Error clearing AI chat:", error);
+      toast.error("Failed to clear chat");
+    }
+  };
+
   const handleDeleteConversation = async (conversationId: string) => {
     try {
       // Delete all messages and their associated media files
@@ -588,23 +635,35 @@ const Index = () => {
             </div>
             {selectedUsername && user?.id && (
               <>
-                {!isGroup && selectedUserId && (
-                  <>
-                    <Button
-                      onClick={startCall}
-                      size="icon"
-                      variant="default"
-                      className="shrink-0 h-8 w-8 md:h-10 md:w-10"
-                      aria-label="Start Call"
-                    >
-                      <Phone className="h-4 w-4 md:h-5 md:w-5" />
-                    </Button>
-                    <UserActionsMenu
-                      userId={selectedUserId}
-                      username={selectedUsername}
-                      currentUserId={user.id}
-                    />
-                  </>
+                {selectedUserId === '00000000-0000-0000-0000-000000000000' ? (
+                  <Button
+                    onClick={() => setShowClearChatDialog(true)}
+                    size="icon"
+                    variant="destructive"
+                    className="shrink-0 h-8 w-8 md:h-10 md:w-10"
+                    aria-label="Clear AI Chat"
+                  >
+                    <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+                  </Button>
+                ) : (
+                  !isGroup && selectedUserId && (
+                    <>
+                      <Button
+                        onClick={startCall}
+                        size="icon"
+                        variant="default"
+                        className="shrink-0 h-8 w-8 md:h-10 md:w-10"
+                        aria-label="Start Call"
+                      >
+                        <Phone className="h-4 w-4 md:h-5 md:w-5" />
+                      </Button>
+                      <UserActionsMenu
+                        userId={selectedUserId}
+                        username={selectedUsername}
+                        currentUserId={user.id}
+                      />
+                    </>
+                  )
                 )}
               </>
             )}
@@ -686,6 +745,23 @@ const Index = () => {
           </div>
         )}
       </div>
+
+      <AlertDialog open={showClearChatDialog} onOpenChange={setShowClearChatDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear AI Chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all messages in this AI conversation. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearAIChat} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Clear Chat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
