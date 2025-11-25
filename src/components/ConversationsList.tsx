@@ -212,7 +212,7 @@ const ConversationsList = ({
                 <div key={conv.id} className="relative group">
                   <Button
                     variant={selectedConversationId === conv.id ? "secondary" : "ghost"}
-                    className="w-full justify-start gap-3 h-auto py-3 pr-12"
+                    className="w-full justify-start gap-3 h-auto py-3 pr-12 overflow-hidden"
                     onClick={() => onSelectConversation(conv.id, displayName, conv.is_group)}
                   >
                     <Avatar className="h-10 w-10 border-2 border-primary shrink-0">
