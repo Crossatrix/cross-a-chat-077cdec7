@@ -463,20 +463,45 @@ const Index = () => {
               await supabase.storage.from("chat-images").remove([`${selectedConversationId}/${imagePath}`]);
             }
           }
+          // Delete voice if exists
+          if (msg.voice_url) {
+            const voicePath = msg.voice_url.split("/").pop();
+            if (voicePath) {
+              await supabase.storage.from("voice-messages").remove([`${selectedConversationId}/${voicePath}`]);
+            }
+          }
+          // Delete video if exists
+          if (msg.video_url) {
+            const videoPath = msg.video_url.split("/").pop();
+            if (videoPath) {
+              await supabase.storage.from("chat-videos").remove([`${selectedConversationId}/${videoPath}`]);
+            }
+          }
         }
       }
 
       // Delete all messages
-      const { error } = await supabase.from("messages").delete().eq("conversation_id", selectedConversationId);
+      await supabase.from("messages").delete().eq("conversation_id", selectedConversationId);
+
+      // Delete all participants
+      await supabase.from("conversation_participants").delete().eq("conversation_id", selectedConversationId);
+
+      // Delete the conversation
+      const { error } = await supabase.from("conversations").delete().eq("id", selectedConversationId);
 
       if (error) throw error;
 
-      setMessages([]);
-      toast.success("AI chat cleared successfully");
+      toast.success("AI chat deleted successfully");
       setShowClearChatDialog(false);
+      
+      // Clear UI state
+      setSelectedConversationId(null);
+      setSelectedUsername("");
+      setSelectedUserId("");
+      setMessages([]);
     } catch (error) {
       console.error("Error clearing AI chat:", error);
-      toast.error("Failed to clear chat");
+      toast.error("Failed to delete chat");
     }
   };
 
