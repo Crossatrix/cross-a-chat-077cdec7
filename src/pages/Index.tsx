@@ -414,11 +414,45 @@ const Index = () => {
         setIsGroup(false);
         setMessages([]);
       } else {
-        // No AI conversations exist, prompt to create one
-        toast.info("Click the + button to create your first AI chat");
-        setSelectedConversationId(null);
-        setSelectedUsername('');
-        setSelectedUserId('');
+        // No AI conversations exist, create one automatically
+        const { data: newConversation, error: convError } = await supabase
+          .from('conversations')
+          .insert({
+            is_ai_chat: true,
+            created_by: user?.id,
+            name: 'AI Chat',
+            is_group: false
+          })
+          .select()
+          .single();
+
+        if (convError) {
+          console.error('Error creating AI conversation:', convError);
+          toast.error('Failed to create AI chat');
+          return;
+        }
+
+        // Add current user as participant
+        const { error: participantError } = await supabase
+          .from('conversation_participants')
+          .insert({
+            conversation_id: newConversation.id,
+            user_id: user?.id
+          });
+
+        if (participantError) {
+          console.error('Error adding participant:', participantError);
+          toast.error('Failed to create AI chat');
+          return;
+        }
+
+        // Select the newly created AI chat
+        setSelectedConversationId(newConversation.id);
+        setSelectedUsername('AI Chat');
+        setSelectedUserId(AI_BOT_ID);
+        setIsGroup(false);
+        setMessages([]);
+        toast.success('AI chat created');
       }
       return;
     }
