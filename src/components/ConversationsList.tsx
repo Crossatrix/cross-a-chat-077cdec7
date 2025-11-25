@@ -19,6 +19,7 @@ interface Conversation {
   id: string;
   updated_at: string;
   is_group: boolean;
+  is_ai_chat: boolean;
   name?: string;
   otherUser?: {
     id: string;
@@ -53,7 +54,7 @@ const ConversationsList = ({
         .from("conversation_participants")
         .select(`
           conversation_id,
-          conversations!inner(id, updated_at, is_group, name)
+          conversations!inner(id, updated_at, is_group, is_ai_chat, name)
         `)
         .eq("user_id", currentUserId);
 
@@ -107,6 +108,7 @@ const ConversationsList = ({
           id: p.conversation_id,
           updated_at: conv.updated_at,
           is_group: conv.is_group,
+          is_ai_chat: conv.is_ai_chat,
           name: conv.name,
           participantCount: countMap.get(p.conversation_id) || 0,
         });
@@ -140,7 +142,24 @@ const ConversationsList = ({
       const sortedConversations = Array.from(conversationsMap.values())
         .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
-      setConversations(sortedConversations);
+      // Always add AI bot at the top
+      const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
+      const aiConversation: Conversation = {
+        id: 'ai-chat',
+        updated_at: new Date().toISOString(),
+        is_group: false,
+        is_ai_chat: true,
+        otherUser: {
+          id: AI_BOT_ID,
+          username: 'CrossChatAI',
+          avatar_url: undefined,
+        },
+        lastMessage: undefined,
+      };
+
+      // Remove any existing AI conversations from the list and add the permanent one at top
+      const nonAIConversations = sortedConversations.filter(c => !c.is_ai_chat);
+      setConversations([aiConversation, ...nonAIConversations]);
     };
 
     fetchConversations();
@@ -172,22 +191,20 @@ const ConversationsList = ({
         <h2 className="text-base md:text-lg font-semibold">Chats</h2>
       </div>
       <ScrollArea className="flex-1">
-        {conversations.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground">
-            <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No conversations yet</p>
-            <p className="text-xs mt-1">Click on a username to start chatting</p>
-          </div>
-        ) : (
+        {conversations.length > 0 && (
           <div className="space-y-0.5 p-2">
             {conversations.map((conv) => {
-              const displayName = conv.is_group 
-                ? conv.name || "Group Chat" 
-                : conv.otherUser?.username || "Unknown";
+              const displayName = conv.is_ai_chat
+                ? "CrossChatAI"
+                : conv.is_group 
+                  ? conv.name || "Group Chat" 
+                  : conv.otherUser?.username || "Unknown";
               const avatarSrc = conv.is_group ? "" : (conv.otherUser?.avatar_url || "");
-              const avatarFallback = conv.is_group 
-                ? "👥" 
-                : (conv.otherUser?.username?.charAt(0).toUpperCase() || "?");
+              const avatarFallback = conv.is_ai_chat
+                ? "🤖"
+                : conv.is_group 
+                  ? "👥" 
+                  : (conv.otherUser?.username?.charAt(0).toUpperCase() || "?");
               
               return (
                 <div key={conv.id} className="relative group">
@@ -216,17 +233,19 @@ const ConversationsList = ({
                       )}
                     </div>
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeletingConversationId(conv.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {!conv.is_ai_chat && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingConversationId(conv.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
                 </div>
               );
             })}

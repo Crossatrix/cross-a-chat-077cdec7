@@ -389,6 +389,40 @@ const Index = () => {
   };
 
   const handleSelectConversation = async (conversationId: string, displayName: string, isGroupChat: boolean) => {
+    const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
+    
+    // Handle special "ai-chat" placeholder ID
+    if (conversationId === 'ai-chat') {
+      // Find existing AI conversations for this user
+      const { data: aiConversations } = await supabase
+        .from('conversation_participants')
+        .select(`
+          conversation_id,
+          conversations!inner(id, updated_at, is_ai_chat, name)
+        `)
+        .eq('user_id', user?.id)
+        .eq('conversations.is_ai_chat', true)
+        .order('conversations.updated_at', { ascending: false });
+
+      if (aiConversations && aiConversations.length > 0) {
+        // Use the most recent AI conversation
+        const mostRecentAI = aiConversations[0];
+        const aiConv = mostRecentAI.conversations as any;
+        setSelectedConversationId(mostRecentAI.conversation_id);
+        setSelectedUsername(aiConv.name || 'CrossChatAI');
+        setSelectedUserId(AI_BOT_ID);
+        setIsGroup(false);
+        setMessages([]);
+      } else {
+        // No AI conversations exist, prompt to create one
+        toast.info("Click the + button to create your first AI chat");
+        setSelectedConversationId(null);
+        setSelectedUsername('');
+        setSelectedUserId('');
+      }
+      return;
+    }
+
     setSelectedConversationId(conversationId);
     setSelectedUsername(displayName);
     setIsGroup(isGroupChat);
