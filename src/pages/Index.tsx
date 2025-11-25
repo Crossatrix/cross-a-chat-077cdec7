@@ -415,6 +415,7 @@ const Index = () => {
         setMessages([]);
       } else {
         // No AI conversations exist, create one automatically
+        console.log('Creating new AI chat for user:', user?.id);
         const { data: newConversation, error: convError } = await supabase
           .from('conversations')
           .insert({
@@ -428,10 +429,12 @@ const Index = () => {
 
         if (convError) {
           console.error('Error creating AI conversation:', convError);
-          toast.error('Failed to create AI chat');
+          toast.error(`Failed to create AI chat: ${convError.message}`);
           return;
         }
 
+        console.log('AI conversation created:', newConversation.id);
+        
         // Add current user as participant
         const { error: participantError } = await supabase
           .from('conversation_participants')
@@ -442,10 +445,12 @@ const Index = () => {
 
         if (participantError) {
           console.error('Error adding participant:', participantError);
-          toast.error('Failed to create AI chat');
+          toast.error(`Failed to add participant: ${participantError.message}`);
           return;
         }
 
+        console.log('Participant added successfully');
+        
         // Select the newly created AI chat
         setSelectedConversationId(newConversation.id);
         setSelectedUsername('AI Chat');
