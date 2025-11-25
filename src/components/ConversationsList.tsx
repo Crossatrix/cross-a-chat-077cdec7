@@ -221,15 +221,15 @@ const ConversationsList = ({
                         {avatarFallback}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 text-left overflow-hidden min-w-0">
+                    <div className="flex-1 text-left overflow-hidden min-w-0 max-w-full">
                       <div className="font-medium truncate">{displayName}</div>
                       {conv.is_group && conv.participantCount && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-muted-foreground truncate">
                           {conv.participantCount} members
                         </div>
                       )}
                       {conv.lastMessage && (
-                        <div className="text-xs text-muted-foreground truncate mt-1">
+                        <div className="text-xs text-muted-foreground truncate mt-1 max-w-full">
                           {conv.lastMessage}
                         </div>
                       )}
