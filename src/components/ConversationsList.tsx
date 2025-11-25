@@ -142,24 +142,26 @@ const ConversationsList = ({
       const sortedConversations = Array.from(conversationsMap.values())
         .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
-      // Always add AI bot at the top
-      const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
-      const aiConversation: Conversation = {
-        id: 'ai-chat',
-        updated_at: new Date().toISOString(),
-        is_group: false,
-        is_ai_chat: true,
-        otherUser: {
-          id: AI_BOT_ID,
-          username: 'CrossChatAI',
-          avatar_url: undefined,
-        },
-        lastMessage: undefined,
-      };
-
-      // Remove any existing AI conversations from the list and add the permanent one at top
-      const nonAIConversations = sortedConversations.filter(c => !c.is_ai_chat);
-      setConversations([aiConversation, ...nonAIConversations]);
+      // Add AI bot placeholder at the top if no AI chats exist
+      const hasAIChats = sortedConversations.some(c => c.is_ai_chat);
+      if (!hasAIChats) {
+        const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
+        const aiPlaceholder: Conversation = {
+          id: 'ai-chat',
+          updated_at: new Date().toISOString(),
+          is_group: false,
+          is_ai_chat: true,
+          otherUser: {
+            id: AI_BOT_ID,
+            username: 'CrossChatAI',
+            avatar_url: undefined,
+          },
+          lastMessage: undefined,
+        };
+        setConversations([aiPlaceholder, ...sortedConversations]);
+      } else {
+        setConversations(sortedConversations);
+      }
     };
 
     fetchConversations();
@@ -195,7 +197,7 @@ const ConversationsList = ({
           <div className="space-y-0.5 p-2">
             {conversations.map((conv) => {
               const displayName = conv.is_ai_chat
-                ? "CrossChatAI"
+                ? (conv.name || "CrossChatAI")
                 : conv.is_group 
                   ? conv.name || "Group Chat" 
                   : conv.otherUser?.username || "Unknown";

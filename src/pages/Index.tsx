@@ -467,8 +467,18 @@ const Index = () => {
     setIsGroup(isGroupChat);
     setMessages([]);
 
-    // For 1-on-1 chats, fetch the other user's ID
-    if (!isGroupChat) {
+    // Check if this is an AI conversation
+    const { data: conversation } = await supabase
+      .from("conversations")
+      .select("is_ai_chat")
+      .eq("id", conversationId)
+      .single();
+
+    if (conversation?.is_ai_chat) {
+      // This is an AI chat, set the AI bot ID
+      setSelectedUserId(AI_BOT_ID);
+    } else if (!isGroupChat) {
+      // For 1-on-1 chats, fetch the other user's ID
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")
