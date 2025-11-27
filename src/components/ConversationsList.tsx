@@ -229,7 +229,7 @@ const ConversationsList = ({
                         </div>
                       )}
                       {conv.lastMessage && (
-                        <div className="text-xs text-muted-foreground truncate mt-1 max-w-[60vw] md:max-w-full">
+                        <div className="text-xs text-muted-foreground truncate mt-1 max-w-full">
                           {conv.lastMessage}
                         </div>
                       )}
