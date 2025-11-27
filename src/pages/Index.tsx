@@ -685,7 +685,7 @@ const Index = () => {
       <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen`}>
         <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0 md:hidden">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h1 className="text-lg font-bold text-primary truncate">Cross Chat</h1>
               <p className="text-xs text-muted-foreground truncate">@{username}</p>
             </div>
@@ -735,7 +735,7 @@ const Index = () => {
                 ← Back
               </Button>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h1 className="text-lg md:text-2xl font-bold text-primary truncate">
                 {selectedUsername ? `@${selectedUsername}` : "Cross Chat"}
               </h1>
