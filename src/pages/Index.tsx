@@ -78,6 +78,54 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Track user presence and update last_seen
+  useEffect(() => {
+    if (!user) return;
+
+    const presenceChannel = supabase.channel('online-users')
+      .on('presence', { event: 'sync' }, () => {
+        // Presence state synced
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({
+            user_id: user.id,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    // Update last_seen every 30 seconds while online
+    const lastSeenInterval = setInterval(async () => {
+      await supabase
+        .from('profiles')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('id', user.id);
+    }, 30000);
+
+    // Update last_seen on page unload
+    const updateLastSeenOnUnload = async () => {
+      await supabase
+        .from('profiles')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('id', user.id);
+    };
+
+    window.addEventListener('beforeunload', updateLastSeenOnUnload);
+
+    return () => {
+      clearInterval(lastSeenInterval);
+      window.removeEventListener('beforeunload', updateLastSeenOnUnload);
+      presenceChannel.untrack();
+      supabase.removeChannel(presenceChannel);
+      // Update last_seen on cleanup
+      supabase
+        .from('profiles')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('id', user.id);
+    };
+  }, [user]);
+
   useEffect(() => {
     // Don't redirect while still loading auth state
     if (loading) return;

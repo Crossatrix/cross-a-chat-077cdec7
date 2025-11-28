@@ -25,6 +25,7 @@ interface Conversation {
     id: string;
     username: string;
     avatar_url?: string;
+    last_seen?: string;
   };
   participantCount?: number;
   lastMessage?: string;
@@ -46,6 +47,7 @@ const ConversationsList = ({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -90,10 +92,10 @@ const ConversationsList = ({
       const { data: otherProfiles } = otherUserIds.length
         ? await supabase
             .from("profiles")
-            .select("id, username, avatar_url")
+            .select("id, username, avatar_url, last_seen")
             .in("id", otherUserIds)
         : { data: [] as any[] };
-      const userMap = new Map((otherProfiles || []).map((pr: any) => [pr.id, { username: pr.username, avatar_url: pr.avatar_url }]));
+      const userMap = new Map((otherProfiles || []).map((pr: any) => [pr.id, { username: pr.username, avatar_url: pr.avatar_url, last_seen: pr.last_seen }]));
 
       // Get last messages for each conversation
       const { data: lastMessages } = await supabase
@@ -124,6 +126,7 @@ const ConversationsList = ({
             id: p.user_id,
             username: userInfo?.username || "Unknown",
             avatar_url: userInfo?.avatar_url,
+            last_seen: userInfo?.last_seen,
           };
         }
       });
@@ -240,8 +243,50 @@ const ConversationsList = ({
       )
       .subscribe();
 
+    // Track online users presence
+    const presenceChannel = supabase
+      .channel('online-users')
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = presenceChannel.presenceState();
+        const online = new Set<string>();
+        Object.values(presenceState).forEach((presences: any) => {
+          presences.forEach((presence: any) => {
+            if (presence.user_id) {
+              online.add(presence.user_id);
+            }
+          });
+        });
+        setOnlineUsers(online);
+      })
+      .on('presence', { event: 'join' }, ({ newPresences }) => {
+        setOnlineUsers((prev) => {
+          const updated = new Set(prev);
+          newPresences.forEach((presence: any) => {
+            if (presence.user_id) {
+              updated.add(presence.user_id);
+            }
+          });
+          return updated;
+        });
+      })
+      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        setOnlineUsers((prev) => {
+          const updated = new Set(prev);
+          leftPresences.forEach((presence: any) => {
+            if (presence.user_id) {
+              updated.delete(presence.user_id);
+            }
+          });
+          return updated;
+        });
+        // Refresh conversations to update last_seen times
+        fetchConversations();
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(presenceChannel);
     };
   }, [currentUserId]);
 
@@ -267,6 +312,29 @@ const ConversationsList = ({
                   : (conv.otherUser?.username?.charAt(0).toUpperCase() || "?");
               
               const hasUnread = (unreadCounts[conv.id] || 0) > 0;
+              const isOnline = conv.otherUser && onlineUsers.has(conv.otherUser.id);
+              
+              const getLastSeenText = () => {
+                if (conv.is_ai_chat || conv.is_group) return null;
+                if (!conv.otherUser) return null;
+                if (isOnline) return "Online";
+                if (!conv.otherUser.last_seen) return "Offline";
+                
+                const lastSeen = new Date(conv.otherUser.last_seen);
+                const now = new Date();
+                const diffMs = now.getTime() - lastSeen.getTime();
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+                
+                if (diffMins < 1) return "Just now";
+                if (diffMins < 60) return `${diffMins}m ago`;
+                if (diffHours < 24) return `${diffHours}h ago`;
+                if (diffDays < 7) return `${diffDays}d ago`;
+                return "Offline";
+              };
+
+              const lastSeenText = getLastSeenText();
               
               return (
                 <div key={conv.id} className="relative group">
@@ -275,14 +343,26 @@ const ConversationsList = ({
                     className={`w-full justify-start gap-3 h-auto py-3 pr-12 overflow-hidden ${hasUnread ? 'border-2 border-[#39ff14] bg-[#39ff14]/10' : ''}`}
                     onClick={() => onSelectConversation(conv.id, displayName, conv.is_group)}
                   >
-                    <Avatar className="h-10 w-10 border-2 border-primary shrink-0">
-                      <AvatarImage src={avatarSrc} alt={displayName} />
-                      <AvatarFallback className="bg-secondary text-foreground">
-                        {avatarFallback}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative shrink-0">
+                      <Avatar className="h-10 w-10 border-2 border-primary">
+                        <AvatarImage src={avatarSrc} alt={displayName} />
+                        <AvatarFallback className="bg-secondary text-foreground">
+                          {avatarFallback}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isOnline && !conv.is_ai_chat && !conv.is_group && (
+                        <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-card" />
+                      )}
+                    </div>
                     <div className="flex-1 text-left overflow-hidden min-w-0 max-w-full">
-                      <div className="font-medium truncate">{displayName}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium truncate">{displayName}</div>
+                        {lastSeenText && (
+                          <div className={`text-xs shrink-0 ${isOnline ? 'text-green-500 font-medium' : 'text-muted-foreground'}`}>
+                            {lastSeenText}
+                          </div>
+                        )}
+                      </div>
                       {conv.is_group && conv.participantCount && (
                         <div className="text-xs text-muted-foreground truncate">
                           {conv.participantCount} members
