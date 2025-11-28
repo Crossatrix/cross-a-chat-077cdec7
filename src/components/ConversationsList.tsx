@@ -45,6 +45,7 @@ const ConversationsList = ({
 }: ConversationsListProps) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -166,7 +167,52 @@ const ConversationsList = ({
 
     fetchConversations();
 
-    // Subscribe to new messages to refresh conversations
+    // Fetch unread counts
+    const fetchUnreadCounts = async () => {
+      const { data: participantData } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id")
+        .eq("user_id", currentUserId);
+
+      if (!participantData) return;
+
+      const conversationIds = participantData.map((p: any) => p.conversation_id);
+      if (conversationIds.length === 0) return;
+
+      // Get all messages in user's conversations
+      const { data: messages } = await supabase
+        .from("messages")
+        .select("id, conversation_id, user_id")
+        .in("conversation_id", conversationIds)
+        .neq("user_id", currentUserId);
+
+      if (!messages) return;
+
+      const messageIds = messages.map(m => m.id);
+      if (messageIds.length === 0) return;
+
+      // Get read receipts for current user
+      const { data: reads } = await supabase
+        .from("message_reads")
+        .select("message_id")
+        .in("message_id", messageIds)
+        .eq("user_id", currentUserId);
+
+      const readMessageIds = new Set((reads || []).map(r => r.message_id));
+      
+      const counts: Record<string, number> = {};
+      messages.forEach(msg => {
+        if (!readMessageIds.has(msg.id)) {
+          counts[msg.conversation_id] = (counts[msg.conversation_id] || 0) + 1;
+        }
+      });
+
+      setUnreadCounts(counts);
+    };
+
+    fetchUnreadCounts();
+
+    // Subscribe to new messages and read receipts to refresh conversations
     const channel = supabase
       .channel("conversations-updates")
       .on(
@@ -178,6 +224,18 @@ const ConversationsList = ({
         },
         () => {
           fetchConversations();
+          fetchUnreadCounts();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "message_reads",
+        },
+        () => {
+          fetchUnreadCounts();
         }
       )
       .subscribe();
@@ -208,11 +266,13 @@ const ConversationsList = ({
                   ? "👥" 
                   : (conv.otherUser?.username?.charAt(0).toUpperCase() || "?");
               
+              const hasUnread = (unreadCounts[conv.id] || 0) > 0;
+              
               return (
                 <div key={conv.id} className="relative group">
                   <Button
                     variant={selectedConversationId === conv.id ? "secondary" : "ghost"}
-                    className="w-full justify-start gap-3 h-auto py-3 pr-12 overflow-hidden"
+                    className={`w-full justify-start gap-3 h-auto py-3 pr-12 overflow-hidden ${hasUnread ? 'border-2 border-[#39ff14] bg-[#39ff14]/10' : ''}`}
                     onClick={() => onSelectConversation(conv.id, displayName, conv.is_group)}
                   >
                     <Avatar className="h-10 w-10 border-2 border-primary shrink-0">

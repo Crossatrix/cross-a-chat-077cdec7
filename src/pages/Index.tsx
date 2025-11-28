@@ -33,6 +33,7 @@ interface Message {
   image_url?: string;
   voice_url?: string;
   video_url?: string;
+  updated_at?: string;
   profiles: {
     username: string;
     avatar_url?: string;
@@ -161,7 +162,7 @@ const Index = () => {
 
     fetchMessages();
 
-    // Subscribe to new messages and typing indicators in this conversation
+    // Subscribe to new messages, updates, and typing indicators in this conversation
     const channel = supabase
       .channel(`conversation-${selectedConversationId}`)
       .on(
@@ -197,6 +198,25 @@ const Index = () => {
           }
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${selectedConversationId}`,
+        },
+        async (payload) => {
+          // Update the message in state
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === payload.new.id
+                ? { ...msg, content: payload.new.content, updated_at: payload.new.updated_at }
+                : msg
+            )
+          );
+        }
+      )
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
         if (payload.userId !== user.id) {
           setTypingUsers((prev) => {
@@ -219,6 +239,14 @@ const Index = () => {
       supabase.removeChannel(channel);
     };
   }, [user, selectedConversationId]);
+
+  const handleUpdateMessage = (messageId: string, newContent: string) => {
+    setMessages(prev =>
+      prev.map(msg =>
+        msg.id === messageId ? { ...msg, content: newContent, updated_at: new Date().toISOString() } : msg
+      )
+    );
+  };
 
   const handleDeleteMessage = async (messageId: string, imageUrl?: string, voiceUrl?: string, videoUrl?: string) => {
     try {
@@ -807,7 +835,9 @@ const Index = () => {
               currentUserId={username} 
               currentUserDbId={user?.id}
               onDeleteMessage={handleDeleteMessage}
+              onUpdateMessage={handleUpdateMessage}
               typingUsers={typingUsers}
+              conversationId={selectedConversationId}
             />
             <MessageInput 
               onSend={handleSendMessage} 
