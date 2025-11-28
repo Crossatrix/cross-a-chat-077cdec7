@@ -179,7 +179,7 @@ const Banned = () => {
               className="flex-1"
               asChild
             >
-              <a href="mailto:support@crosschat.app">Contact Support</a>
+              <a href="mailto:cross.a.trix.chat@hotmail.com">Contact Support</a>
             </Button>
           </div>
         </CardContent>
