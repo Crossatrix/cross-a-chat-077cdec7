@@ -683,14 +683,14 @@ const Index = () => {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen`}>
-        <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0 md:hidden">
-          <div className="flex items-center gap-2 min-w-0">
+        <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0 md:hidden w-full">
+          <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
             <div className="min-w-0">
               <h1 className="text-lg font-bold text-primary truncate">Cross Chat</h1>
               <p className="text-xs text-muted-foreground truncate">@{username}</p>
             </div>
           </div>
-          <div className="flex gap-0.5 md:gap-1 shrink-0 overflow-x-auto items-center">
+          <div className="flex gap-0.5 md:gap-1 shrink-0 items-center ml-auto">
             <NewChatDialog
               currentUserId={user?.id || ""}
               onChatCreated={(convId, displayName, isGroup) => handleSelectConversation(convId, displayName, isGroup)}
@@ -719,8 +719,8 @@ const Index = () => {
         />
       </div>
       <div className={`flex flex-col flex-1 min-w-0 h-full ${!selectedConversationId ? 'hidden md:flex' : 'flex'}`}>
-        <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
+        <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0 w-full">
+          <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
             {selectedConversationId && (
               <Button
                 variant="ghost"
@@ -776,7 +776,7 @@ const Index = () => {
               </>
             )}
           </div>
-          <div className="flex gap-0.5 md:gap-2 shrink-0 overflow-x-auto items-center">
+          <div className="flex gap-0.5 md:gap-2 shrink-0 items-center ml-auto">
             <NewChatDialog
               currentUserId={user?.id || ""}
               onChatCreated={(convId, displayName, isGroup) => handleSelectConversation(convId, displayName, isGroup)}
