@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { MoreVertical, UserX, Flag } from "lucide-react";
 import { z } from "zod";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const reportSchema = z.string().trim().min(10, "Please provide more details (min 10 characters)").max(1000, "Reason too long (max 1000 characters)");
 
@@ -32,6 +33,7 @@ interface UserActionsMenuProps {
 const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuProps) => {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const { t } = useLanguage();
 
   const handleBlock = async () => {
     const { error } = await supabase
@@ -43,14 +45,14 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
 
     if (error) {
       if (error.code === "23505") {
-        toast.error("User already blocked");
+        toast.error(t("user.alreadyBlocked"));
       } else {
-        toast.error("Failed to block user");
+        toast.error(t("user.blockFailed"));
       }
       return;
     }
 
-    toast.success(`Blocked @${username}`);
+    toast.success(`${t("user.blocked")} @${username}`);
   };
 
   const handleReport = async () => {
@@ -69,11 +71,11 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
       });
 
     if (error) {
-      toast.error("Failed to submit report");
+      toast.error(t("user.reportFailed"));
       return;
     }
 
-    toast.success("Report submitted");
+    toast.success(t("user.reportSubmitted"));
     setReportReason("");
     setReportOpen(false);
   };
@@ -89,11 +91,11 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={handleBlock}>
             <UserX className="h-4 w-4 mr-2" />
-            Block User
+            {t("user.block")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setReportOpen(true)}>
             <Flag className="h-4 w-4 mr-2" />
-            Report User
+            {t("user.report")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -101,30 +103,30 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Report @{username}</DialogTitle>
+            <DialogTitle>{t("user.reportTitle")} @{username}</DialogTitle>
             <DialogDescription>
-              Please describe why you're reporting this user
+              {t("user.reportDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="report-reason">Reason</Label>
+              <Label htmlFor="report-reason">{t("user.reportReason")}</Label>
               <Textarea
                 id="report-reason"
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
-                placeholder="Describe the issue..."
+                placeholder={t("user.reportPlaceholder")}
                 rows={4}
                 maxLength={1000}
               />
               <p className="text-xs text-muted-foreground text-right">
-                {reportReason.length}/1000 (minimum 10 characters)
+                {reportReason.length}/1000 ({t("user.reportMinChars")})
               </p>
             </div>
           </div>
           <DialogFooter>
             <Button onClick={handleReport} variant="destructive">
-              Submit Report
+              {t("user.reportSubmit")}
             </Button>
           </DialogFooter>
         </DialogContent>

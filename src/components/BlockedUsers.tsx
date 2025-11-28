@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { UserX, Shield } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface BlockedUser {
   id: string;
@@ -23,6 +24,7 @@ const BlockedUsers = ({ currentUserId }: BlockedUsersProps) => {
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
 
   const fetchBlockedUsers = async () => {
     setLoading(true);
@@ -40,7 +42,7 @@ const BlockedUsers = ({ currentUserId }: BlockedUsersProps) => {
       if (import.meta.env.DEV) {
         console.error("Error fetching blocked users:", error);
       }
-      toast.error("Failed to load blocked users");
+      toast.error(t("blocked.unblockFailed"));
       return;
     }
 
@@ -61,11 +63,11 @@ const BlockedUsers = ({ currentUserId }: BlockedUsersProps) => {
       .eq("id", blockId);
 
     if (error) {
-      toast.error("Failed to unblock user");
+      toast.error(t("blocked.unblockFailed"));
       return;
     }
 
-    toast.success(`Unblocked @${username}`);
+    toast.success(`${t("blocked.unblocked")} @${username}`);
     fetchBlockedUsers();
   };
 
@@ -74,28 +76,28 @@ const BlockedUsers = ({ currentUserId }: BlockedUsersProps) => {
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
           <UserX className="h-4 w-4 mr-2" />
-          Blocked Users
+          {t("blocked.title")}
         </Button>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Blocked Users</SheetTitle>
+          <SheetTitle>{t("blocked.title")}</SheetTitle>
           <SheetDescription>
-            Manage users you've blocked
+            {t("blocked.description")}
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4">
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
           ) : blockedUsers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No blocked users</p>
+            <p className="text-sm text-muted-foreground">{t("blocked.none")}</p>
           ) : (
             blockedUsers.map((block) => (
               <Card key={block.id}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">@{block.profiles.username}</CardTitle>
                   <CardDescription>
-                    Blocked {new Date(block.created_at).toLocaleDateString()}
+                    {t("blocked.on")} {new Date(block.created_at).toLocaleDateString()}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -105,7 +107,7 @@ const BlockedUsers = ({ currentUserId }: BlockedUsersProps) => {
                     size="sm"
                   >
                     <Shield className="h-4 w-4 mr-2" />
-                    Unblock
+                    {t("blocked.unblock")}
                   </Button>
                 </CardContent>
               </Card>
