@@ -682,7 +682,7 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen`}>
+      <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen w-full md:w-auto`}>
         <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0 md:hidden w-full">
           <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
             <div className="min-w-0">
