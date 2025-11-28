@@ -120,7 +120,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
 
   const handleNext = async () => {
     if (selectedUsers.size === 0) {
-      toast.error("Please select at least one person");
+      toast.error(t("newChat.selectOne"));
       return;
     }
 
@@ -139,12 +139,12 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
 
         if (countError) {
           console.error('Error checking AI chats:', countError);
-          toast.error("Failed to check AI chat limit");
+          toast.error(t("ai.checkFailed"));
           return;
         }
 
         if (existingAIChats && existingAIChats.length >= 5) {
-          toast.error("You can only have up to 5 AI chat conversations");
+          toast.error(t("ai.limitReached"));
           return;
         }
 
@@ -165,7 +165,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
-      toast.error("Please enter a group name");
+      toast.error(t("group.enterName"));
       return;
     }
 
@@ -178,7 +178,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
 
       if (error) throw error;
 
-      toast.success("Group created successfully");
+      toast.success(t("group.created"));
       onChatCreated(data, groupName, true);
       setOpen(false);
       setGroupName("");
@@ -186,7 +186,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
       setShowGroupNameInput(false);
     } catch (error) {
       console.error("Error creating group:", error);
-      toast.error("Failed to create group");
+      toast.error(t("group.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -201,7 +201,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
 
   const handleCreateAIChat = async () => {
     if (!aiChatName.trim()) {
-      toast.error("Please enter a name for your AI chat");
+      toast.error(t("ai.enterChatName"));
       return;
     }
 
@@ -233,7 +233,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
 
       if (participantError) throw participantError;
 
-      toast.success("AI chat created successfully");
+      toast.success(t("ai.chatCreated"));
       onChatCreated(newConv.id, aiChatName.trim(), false);
       setOpen(false);
       setAiChatName("");
@@ -241,7 +241,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
       setShowAiChatNameInput(false);
     } catch (error) {
       console.error("Error creating AI chat:", error);
-      toast.error("Failed to create AI chat");
+      toast.error(t("ai.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -249,7 +249,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
 
   const handleSearchUsername = async () => {
     if (!usernameSearch.trim()) {
-      toast.error("Please enter a username");
+      toast.error(t("newChat.selectOne"));
       return;
     }
 
@@ -266,7 +266,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
       if (error) throw error;
 
       if (!profile) {
-        toast.error("User not found");
+        toast.error(t("newChat.userNotFound"));
         setSearchedUser(null);
         return;
       }
@@ -280,7 +280,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
         .maybeSingle();
 
       if (blockCheck) {
-        toast.error("This user is blocked");
+        toast.error(t("newChat.userBlocked"));
         setSearchedUser(null);
         return;
       }
@@ -292,10 +292,10 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
       newSelected.add(profile.id);
       setSelectedUsers(newSelected);
       
-      toast.success(`Found @${profile.username}`);
+      toast.success(`${t("newChat.found")} @${profile.username}`);
     } catch (error) {
       console.error("Error searching username:", error);
-      toast.error("Failed to search username");
+      toast.error(t("newChat.searchFailed"));
     } finally {
       setSearching(false);
     }
@@ -312,17 +312,17 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
         {showAiChatNameInput ? (
           <>
             <DialogHeader>
-              <DialogTitle>Name Your AI Chat</DialogTitle>
+              <DialogTitle>{t("ai.nameChat")}</DialogTitle>
               <DialogDescription>
-                Give your AI conversation a unique name
+                {t("ai.nameDescription")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="aiChatName">AI Chat Name</Label>
+                <Label htmlFor="aiChatName">{t("ai.chatName")}</Label>
                 <Input
                   id="aiChatName"
-                  placeholder="Enter AI chat name"
+                  placeholder={t("ai.enterName")}
                   value={aiChatName}
                   onChange={(e) => setAiChatName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateAIChat()}
@@ -331,10 +331,10 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={handleBack}>
-                  Back
+                  {t("common.back")}
                 </Button>
                 <Button onClick={handleCreateAIChat} disabled={loading}>
-                  {loading ? "Creating..." : "Create AI Chat"}
+                  {loading ? t("common.creating") : t("ai.createChat")}
                 </Button>
               </div>
             </div>
@@ -342,18 +342,18 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
         ) : !showGroupNameInput ? (
           <>
             <DialogHeader>
-              <DialogTitle>New Chat</DialogTitle>
+              <DialogTitle>{t("newChat.title")}</DialogTitle>
               <DialogDescription>
-                Select one person for direct chat, or multiple for a group
+                {t("newChat.description")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="usernameSearch">Search by username</Label>
+                <Label htmlFor="usernameSearch">{t("newChat.searchUsername")}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="usernameSearch"
-                    placeholder="Enter username"
+                    placeholder={t("newChat.enterUsername")}
                     value={usernameSearch}
                     onChange={(e) => setUsernameSearch(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearchUsername()}
@@ -363,7 +363,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
                     disabled={searching || !usernameSearch.trim()}
                     variant="secondary"
                   >
-                    {searching ? "..." : "Find"}
+                    {searching ? "..." : t("newChat.find")}
                   </Button>
                 </div>
               </div>
@@ -381,14 +381,14 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
                           htmlFor={searchedUser.id}
                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1 truncate"
                         >
-                          @{searchedUser.username} <span className="text-xs text-muted-foreground">(searched)</span>
+                          @{searchedUser.username} <span className="text-xs text-muted-foreground">({t("common.searched")})</span>
                         </label>
                       </div>
                     </div>
                   )}
                   {recentUsers.length > 0 && (
                     <div className="pb-3 mb-3 border-b">
-                      <div className="text-xs text-muted-foreground mb-2 font-semibold">Recent</div>
+                      <div className="text-xs text-muted-foreground mb-2 font-semibold">{t("common.recent")}</div>
                       <div className="space-y-3">
                         {recentUsers.map((user) => (
                           <div key={user.id} className="flex items-center space-x-2">
@@ -426,15 +426,15 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
                 </div>
               </ScrollArea>
               <div className="flex justify-between items-center text-sm text-muted-foreground">
-                <span>{selectedUsers.size} selected</span>
-                {selectedUsers.size > 1 && <span>Group chat</span>}
+                <span>{selectedUsers.size} {t("common.selected")}</span>
+                {selectedUsers.size > 1 && <span>{t("chat.groupChat")}</span>}
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button onClick={handleNext} disabled={selectedUsers.size === 0}>
-                  {selectedUsers.size === 1 ? "Start Chat" : "Next"}
+                  {selectedUsers.size === 1 ? t("chat.startChat") : t("common.next")}
                 </Button>
               </div>
             </div>
@@ -442,17 +442,17 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Name Your Group</DialogTitle>
+              <DialogTitle>{t("group.nameYourGroup")}</DialogTitle>
               <DialogDescription>
-                Creating group with {selectedUsers.size} members
+                {t("group.creatingWith")} {selectedUsers.size} {t("group.members")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="groupName">Group Name</Label>
+                <Label htmlFor="groupName">{t("group.name")}</Label>
                 <Input
                   id="groupName"
-                  placeholder="Enter group name"
+                  placeholder={t("group.namePlaceholder")}
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   autoFocus
@@ -460,10 +460,10 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={handleBack}>
-                  Back
+                  {t("common.back")}
                 </Button>
                 <Button onClick={handleCreateGroup} disabled={loading}>
-                  {loading ? "Creating..." : "Create Group"}
+                  {loading ? t("common.creating") : t("group.create")}
                 </Button>
               </div>
             </div>

@@ -9,11 +9,13 @@ import { ArrowLeft, UserX, Ban } from "lucide-react";
 import ReportsList from "@/components/admin/ReportsList";
 import UsersList from "@/components/admin/UsersList";
 import FeedbackList from "@/components/admin/FeedbackList";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -32,7 +34,7 @@ const Admin = () => {
         .single();
 
       if (!roles) {
-        toast.error("Access denied: Admin only");
+        toast.error(t("admin.accessDenied"));
         navigate("/");
         return;
       }
@@ -47,7 +49,7 @@ const Admin = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-foreground">Loading...</p>
+        <p className="text-foreground">{t("common.loading")}</p>
       </div>
     );
   }
@@ -63,9 +65,9 @@ const Admin = () => {
           <div className="flex items-center gap-4">
             <Button onClick={() => navigate("/")} variant="secondary" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Chat
+              {t("admin.backToChat")}
             </Button>
-            <h1 className="text-2xl font-bold text-primary">Admin Dashboard</h1>
+            <h1 className="text-2xl font-bold text-primary">{t("admin.title")}</h1>
           </div>
         </div>
       </header>
@@ -73,9 +75,9 @@ const Admin = () => {
       <main className="max-w-7xl mx-auto p-6">
         <Tabs defaultValue="reports" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
+            <TabsTrigger value="reports">{t("admin.reports")}</TabsTrigger>
+            <TabsTrigger value="users">{t("admin.users")}</TabsTrigger>
+            <TabsTrigger value="feedback">{t("admin.feedback")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="reports">
