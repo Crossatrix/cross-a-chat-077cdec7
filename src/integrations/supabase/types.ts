@@ -352,6 +352,10 @@ export type Database = {
       }
       user_reports: {
         Row: {
+          ai_reason: string | null
+          ai_reviewed: boolean | null
+          ai_reviewed_at: string | null
+          ai_verdict: string | null
           created_at: string
           id: string
           reason: string
@@ -362,6 +366,10 @@ export type Database = {
           status: string
         }
         Insert: {
+          ai_reason?: string | null
+          ai_reviewed?: boolean | null
+          ai_reviewed_at?: string | null
+          ai_verdict?: string | null
           created_at?: string
           id?: string
           reason: string
@@ -372,6 +380,10 @@ export type Database = {
           status?: string
         }
         Update: {
+          ai_reason?: string | null
+          ai_reviewed?: boolean | null
+          ai_reviewed_at?: string | null
+          ai_verdict?: string | null
           created_at?: string
           id?: string
           reason?: string

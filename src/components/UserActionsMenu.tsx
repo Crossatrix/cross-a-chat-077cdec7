@@ -31,9 +31,10 @@ interface UserActionsMenuProps {
 }
 
 const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuProps) => {
+  const { t } = useLanguage();
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
-  const { t } = useLanguage();
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   const handleBlock = async () => {
     const { error } = await supabase
@@ -56,28 +57,57 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
   };
 
   const handleReport = async () => {
-    const validation = reportSchema.safeParse(reportReason);
-    if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
-      return;
+    setSubmittingReport(true);
+    try {
+      const validation = reportSchema.safeParse(reportReason);
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        setSubmittingReport(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("user_reports")
+        .insert({
+          reporter_id: currentUserId,
+          reported_user_id: userId,
+          reason: validation.data,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        toast.error(t("user.reportFailed"));
+        setSubmittingReport(false);
+        return;
+      }
+
+      toast.success(t("user.reportSubmitted"));
+      setReportReason("");
+      setReportOpen(false);
+
+      // Trigger AI auto-moderation
+      if (data?.id) {
+        toast.info(t("ai.reviewing"));
+        supabase.functions
+          .invoke("ai-moderator", {
+            body: { reportId: data.id },
+          })
+          .then(({ data: aiData, error: aiError }) => {
+            if (aiError) {
+              console.error("AI moderation error:", aiError);
+            } else if (aiData?.success) {
+              if (aiData.banCreated) {
+                toast.success(`${t("ai.autoBanned")} ${aiData.banDays} ${t("ban.days")}`);
+              } else {
+                toast.info(t("ai.reviewComplete"));
+              }
+            }
+          });
+      }
+    } finally {
+      setSubmittingReport(false);
     }
-
-    const { error } = await supabase
-      .from("user_reports")
-      .insert({
-        reporter_id: currentUserId,
-        reported_user_id: userId,
-        reason: validation.data,
-      });
-
-    if (error) {
-      toast.error(t("user.reportFailed"));
-      return;
-    }
-
-    toast.success(t("user.reportSubmitted"));
-    setReportReason("");
-    setReportOpen(false);
   };
 
   return (
@@ -125,8 +155,8 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleReport} variant="destructive">
-              {t("user.reportSubmit")}
+            <Button onClick={handleReport} variant="destructive" disabled={submittingReport}>
+              {submittingReport ? t("common.submitting") : t("user.reportSubmit")}
             </Button>
           </DialogFooter>
         </DialogContent>
