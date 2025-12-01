@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, Trash2, Ban, Clock } from "lucide-react";
+import { CheckCircle2, Trash2, Ban, Clock, Bot, XCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Report {
   id: string;
@@ -40,15 +41,21 @@ interface Report {
   reported_user: {
     username: string;
   };
+  ai_reviewed: boolean;
+  ai_verdict: string | null;
+  ai_reason: string | null;
+  ai_reviewed_at: string | null;
 }
 
 const ReportsList = () => {
+  const { t } = useLanguage();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [tempBanDays, setTempBanDays] = useState("7");
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [tempBanDialogOpen, setTempBanDialogOpen] = useState(false);
   const [selectedReportUserId, setSelectedReportUserId] = useState<string | null>(null);
+  const [aiReviewing, setAiReviewing] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReports();
@@ -74,6 +81,31 @@ const ReportsList = () => {
 
     setReports(data || []);
     setLoading(false);
+  };
+
+  const handleAiReview = async (reportId: string) => {
+    setAiReviewing(reportId);
+    toast.info(t("ai.reviewing"));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-moderator", {
+        body: { reportId },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success(t("ai.reviewComplete"));
+        await fetchReports();
+      } else {
+        throw new Error(data.error || "AI review failed");
+      }
+    } catch (error) {
+      console.error("AI review error:", error);
+      toast.error(t("ai.reviewFailed"));
+    } finally {
+      setAiReviewing(null);
+    }
   };
 
   const handleResolve = async (reportId: string) => {
@@ -160,7 +192,7 @@ const ReportsList = () => {
   };
 
   if (loading) {
-    return <p className="text-muted-foreground">Loading reports...</p>;
+    return <p className="text-muted-foreground">{t("reports.loading")}</p>;
   }
 
   return (
@@ -168,7 +200,7 @@ const ReportsList = () => {
       {reports.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">No reports found</p>
+            <p className="text-center text-muted-foreground">{t("reports.none")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -178,24 +210,73 @@ const ReportsList = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-lg">
-                    Report by @{report.reporter?.username}
+                    {t("reports.by")} @{report.reporter?.username}
                   </CardTitle>
                   <CardDescription>
-                    Against @{report.reported_user?.username}
+                    {t("reports.against")} @{report.reported_user?.username}
                   </CardDescription>
                 </div>
-                <Badge variant={report.status === "pending" ? "default" : "secondary"}>
-                  {report.status}
-                </Badge>
+                <div className="flex gap-2 items-center">
+                  {report.ai_reviewed && (
+                    <Badge variant="outline" className="gap-1">
+                      <Bot className="w-3 h-3" />
+                      {t("ai.reviewed")}
+                    </Badge>
+                  )}
+                  <Badge variant={report.status === "pending" ? "default" : "secondary"}>
+                    {t(`reports.${report.status}`)}
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
               <p className="text-foreground mb-4">{report.reason}</p>
+
+              {report.ai_reviewed && report.ai_verdict && (
+                <div className="mb-4 p-3 bg-muted/50 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Bot className="w-4 h-4" />
+                    <span className="font-semibold">{t("ai.verdict")}:</span>
+                    {report.ai_verdict === 'violation' ? (
+                      <Badge variant="destructive" className="gap-1">
+                        <XCircle className="w-3 h-3" />
+                        {t("ai.violation")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 bg-green-500/20 text-green-300 border-green-500/30">
+                        <CheckCircle2 className="w-3 h-3" />
+                        {t("ai.noViolation")}
+                      </Badge>
+                    )}
+                  </div>
+                  {report.ai_reason && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      <span className="font-semibold">{t("ai.reason")}:</span> {report.ai_reason}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {t("ai.reviewed")}: {new Date(report.ai_reviewed_at!).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
                   {new Date(report.created_at).toLocaleString()}
                 </p>
                 <div className="flex flex-wrap gap-2">
+                  {!report.ai_reviewed && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAiReview(report.id)}
+                      disabled={aiReviewing === report.id}
+                      className="gap-2"
+                    >
+                      <Bot className="w-4 h-4" />
+                      {aiReviewing === report.id ? t("ai.reviewing") : t("ai.review")}
+                    </Button>
+                  )}
                   {report.status === "pending" && (
                     <Button
                       onClick={() => handleResolve(report.id)}
@@ -203,7 +284,7 @@ const ReportsList = () => {
                       size="sm"
                     >
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Resolve
+                      {t("reports.resolve")}
                     </Button>
                   )}
                   
@@ -215,25 +296,25 @@ const ReportsList = () => {
                         onClick={() => setSelectedReportUserId(report.reported_user.username)}
                       >
                         <Ban className="h-4 w-4 mr-2" />
-                        Ban User
+                        {t("ban.permanent")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Ban @{report.reported_user?.username}?</DialogTitle>
+                        <DialogTitle>{t("ban.user")} @{report.reported_user?.username}?</DialogTitle>
                         <DialogDescription>
-                          This will permanently ban the user from accessing the chat.
+                          {t("ban.confirmPermanent")}
                         </DialogDescription>
                       </DialogHeader>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setBanDialogOpen(false)}>
-                          Cancel
+                          {t("common.cancel")}
                         </Button>
                         <Button 
                           variant="destructive"
                           onClick={() => handleBanUser(report.reported_user_id, report.reason)}
                         >
-                          Permanently Ban
+                          {t("ban.permanent")}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -247,24 +328,24 @@ const ReportsList = () => {
                         onClick={() => setSelectedReportUserId(report.reported_user.username)}
                       >
                         <Clock className="h-4 w-4 mr-2" />
-                        Temp Ban
+                        {t("ban.temp")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Temporarily Ban @{report.reported_user?.username}?</DialogTitle>
+                        <DialogTitle>{t("ban.temporarily")} @{report.reported_user?.username}?</DialogTitle>
                         <DialogDescription>
-                          This will temporarily prevent the user from accessing the chat.
+                          {t("ban.confirmTemp")}
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                          <Label htmlFor="days">Ban Duration (days)</Label>
+                          <Label htmlFor="days">{t("ban.duration")}</Label>
                           <Input
                             id="days"
                             type="number"
                             min="1"
-                            max="365"
+                            max="14"
                             value={tempBanDays}
                             onChange={(e) => setTempBanDays(e.target.value)}
                           />
@@ -272,13 +353,13 @@ const ReportsList = () => {
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setTempBanDialogOpen(false)}>
-                          Cancel
+                          {t("common.cancel")}
                         </Button>
                         <Button 
                           variant="destructive"
                           onClick={() => handleTempBanUser(report.reported_user_id, report.reason)}
                         >
-                          Temporarily Ban
+                          {t("ban.temporarily")}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -288,20 +369,20 @@ const ReportsList = () => {
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm">
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Report
+                        {t("reports.delete")}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Report</AlertDialogTitle>
+                        <AlertDialogTitle>{t("reports.delete")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete this report? This action cannot be undone.
+                          {t("reports.deleteConfirm")}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDelete(report.id)}>
-                          Delete
+                          {t("common.delete")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

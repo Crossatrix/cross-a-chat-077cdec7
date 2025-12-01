@@ -174,6 +174,24 @@ const translations: Translations = {
   "ban.failed": { en: "Failed to ban user", de: "Sperren fehlgeschlagen" },
   "ban.failedTemp": { en: "Failed to temporarily ban user", de: "Temporäres Sperren fehlgeschlagen" },
   
+  // AI Moderation
+  "ai.reviewing": { en: "AI is reviewing report...", de: "KI überprüft Meldung..." },
+  "ai.reviewComplete": { en: "AI review complete", de: "KI-Überprüfung abgeschlossen" },
+  "ai.reviewFailed": { en: "AI review failed", de: "KI-Überprüfung fehlgeschlagen" },
+  "ai.violation": { en: "Violation", de: "Verstoß" },
+  "ai.noViolation": { en: "No Violation", de: "Kein Verstoß" },
+  "ai.verdict": { en: "AI Verdict", de: "KI-Urteil" },
+  "ai.reason": { en: "AI Reason", de: "KI-Begründung" },
+  "ai.autoBanned": { en: "Auto-banned for", de: "Automatisch gesperrt für" },
+  "ai.reviewed": { en: "AI Reviewed", de: "KI geprüft" },
+  "ai.pending": { en: "Pending AI Review", de: "Ausstehende KI-Prüfung" },
+  "ai.review": { en: "AI Review", de: "KI-Überprüfung" },
+  "ai.severity": { en: "Severity", de: "Schweregrad" },
+  "ai.low": { en: "Low", de: "Niedrig" },
+  "ai.medium": { en: "Medium", de: "Mittel" },
+  "ai.high": { en: "High", de: "Hoch" },
+  "ai.severe": { en: "Severe", de: "Schwer" },
+  
   // Banned Page
   "banned.account": { en: "Account", de: "Konto" },
   "banned.banned": { en: "Banned", de: "Gesperrt" },
