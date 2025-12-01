@@ -243,6 +243,9 @@ export type Database = {
           created_at: string
           id: string
           last_seen: string | null
+          text_hue: number | null
+          text_lightness: number | null
+          text_saturation: number | null
           username: string
         }
         Insert: {
@@ -251,6 +254,9 @@ export type Database = {
           created_at?: string
           id: string
           last_seen?: string | null
+          text_hue?: number | null
+          text_lightness?: number | null
+          text_saturation?: number | null
           username: string
         }
         Update: {
@@ -259,6 +265,9 @@ export type Database = {
           created_at?: string
           id?: string
           last_seen?: string | null
+          text_hue?: number | null
+          text_lightness?: number | null
+          text_saturation?: number | null
           username?: string
         }
         Relationships: []
