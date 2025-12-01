@@ -40,7 +40,7 @@ const Settings = () => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("username, bio, avatar_url")
+        .select("username, bio, avatar_url, text_hue, text_saturation, text_lightness")
         .eq("id", user.id)
         .single();
 
@@ -48,6 +48,16 @@ const Settings = () => {
         setUsername(profile.username || "");
         setBio(profile.bio || "");
         setAvatarUrl(profile.avatar_url || "");
+        
+        // Load saved text color settings
+        if (profile.text_hue !== null && profile.text_saturation !== null && profile.text_lightness !== null) {
+          setTheme({
+            ...theme,
+            textHue: profile.text_hue,
+            textSaturation: profile.text_saturation,
+            textLightness: profile.text_lightness,
+          });
+        }
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -112,6 +122,9 @@ const Settings = () => {
           username,
           bio,
           avatar_url: avatarUrl,
+          text_hue: theme.textHue,
+          text_saturation: theme.textSaturation,
+          text_lightness: theme.textLightness,
         })
         .eq("id", user.id);
 
@@ -331,6 +344,62 @@ const Settings = () => {
                     <p className="text-sm font-medium">Button Preview</p>
                     <p className="text-xs text-muted-foreground">
                       HSL({theme.buttonHue}, {theme.buttonSaturation}%, {theme.buttonLightness}%)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <Label>Text Color</Label>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Hue</Label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="360"
+                      value={theme.textHue}
+                      onChange={(e) => setTheme({ ...theme, textHue: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Saturation</Label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={theme.textSaturation}
+                      onChange={(e) => setTheme({ ...theme, textSaturation: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Lightness</Label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={theme.textLightness}
+                      onChange={(e) => setTheme({ ...theme, textLightness: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 p-4 border rounded-lg" style={{
+                  backgroundColor: `hsl(${theme.backgroundHue}, ${theme.backgroundSaturation}%, ${theme.backgroundLightness}%)`,
+                }}>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium" style={{
+                      color: `hsl(${theme.textHue}, ${theme.textSaturation}%, ${theme.textLightness}%)`,
+                    }}>
+                      Sample Text Preview
+                    </p>
+                    <p className="text-xs" style={{
+                      color: `hsl(${theme.textHue}, ${theme.textSaturation}%, ${theme.textLightness}%)`,
+                    }}>
+                      HSL({theme.textHue}, {theme.textSaturation}%, {theme.textLightness}%)
                     </p>
                   </div>
                 </div>

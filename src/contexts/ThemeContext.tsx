@@ -7,6 +7,9 @@ interface ThemeConfig {
   buttonHue: number;
   buttonSaturation: number;
   buttonLightness: number;
+  textHue: number;
+  textSaturation: number;
+  textLightness: number;
 }
 
 const defaultTheme: ThemeConfig = {
@@ -16,6 +19,9 @@ const defaultTheme: ThemeConfig = {
   buttonHue: 45,
   buttonSaturation: 100,
   buttonLightness: 55,
+  textHue: 48,
+  textSaturation: 100,
+  textLightness: 96,
 };
 
 interface ThemeContextType {
@@ -86,6 +92,26 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     root.style.setProperty(
       "--accent-foreground",
       `${theme.backgroundHue} ${theme.backgroundSaturation}% ${theme.backgroundLightness}%`
+    );
+    root.style.setProperty(
+      "--foreground",
+      `${theme.textHue} ${theme.textSaturation}% ${theme.textLightness}%`
+    );
+    root.style.setProperty(
+      "--card-foreground",
+      `${theme.textHue} ${theme.textSaturation}% ${theme.textLightness}%`
+    );
+    root.style.setProperty(
+      "--popover-foreground",
+      `${theme.textHue} ${theme.textSaturation}% ${theme.textLightness}%`
+    );
+    root.style.setProperty(
+      "--secondary-foreground",
+      `${theme.textHue} ${theme.textSaturation}% ${theme.textLightness}%`
+    );
+    root.style.setProperty(
+      "--muted-foreground",
+      `${theme.textHue} ${Math.max(theme.textSaturation - 60, 0)}% ${Math.max(theme.textLightness - 26, 30)}%`
     );
   }, [theme]);
 
