@@ -356,6 +356,7 @@ export type Database = {
           ai_reviewed: boolean | null
           ai_reviewed_at: string | null
           ai_verdict: string | null
+          conversation_id: string | null
           created_at: string
           id: string
           reason: string
@@ -370,6 +371,7 @@ export type Database = {
           ai_reviewed?: boolean | null
           ai_reviewed_at?: string | null
           ai_verdict?: string | null
+          conversation_id?: string | null
           created_at?: string
           id?: string
           reason: string
@@ -384,6 +386,7 @@ export type Database = {
           ai_reviewed?: boolean | null
           ai_reviewed_at?: string | null
           ai_verdict?: string | null
+          conversation_id?: string | null
           created_at?: string
           id?: string
           reason?: string
@@ -394,6 +397,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_reports_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_reports_reported_user_id_fkey"
             columns: ["reported_user_id"]

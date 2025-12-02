@@ -26,13 +26,14 @@ serve(async (req) => {
 
     console.log(`[AI Moderator] Processing report ${reportId}`);
 
-    // Fetch the report details
+    // Fetch the report details including conversation context
     const { data: report, error: reportError } = await supabase
       .from('user_reports')
       .select(`
         id,
         reporter_id,
         reported_user_id,
+        conversation_id,
         reason,
         status,
         profiles!user_reports_reported_user_id_fkey(username)
@@ -44,13 +45,14 @@ serve(async (req) => {
       throw new Error(`Failed to fetch report: ${reportError?.message}`);
     }
 
-    console.log(`[AI Moderator] Processing report against user ID: ${report.reported_user_id}`);
+    console.log(`[AI Moderator] Processing report against user ID: ${report.reported_user_id} in conversation: ${report.conversation_id}`);
 
-    // Fetch recent messages from the reported user (last 100 messages)
+    // Fetch messages ONLY from the specific conversation where the report was made
     const { data: messages, error: messagesError } = await supabase
       .from('messages')
       .select('content, created_at')
       .eq('user_id', report.reported_user_id)
+      .eq('conversation_id', report.conversation_id)
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -75,33 +77,44 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an AI content moderator. Analyze the user's messages for violations of community guidelines.
+            content: `You are a STRICT AI content moderator. Your job is to protect users from harmful behavior.
 
-Guidelines to check for violations:
-1. Harassment, bullying, or personal attacks
-2. Hate speech, discrimination, or threats
-3. Spam, scams, or malicious content
-4. Inappropriate or explicit content
-5. Violence or threats of harm
+CRITICAL: The reporter has explicitly complained about this user's behavior. Take their report seriously and evaluate the messages in that context.
+
+ZERO TOLERANCE for:
+1. Harassment, bullying, intimidation, or personal attacks
+2. Hate speech, discrimination, slurs, or derogatory language
+3. Threats of violence or harm (direct or implied)
+4. Sexual harassment or explicit content
+5. Spam, scams, phishing, or malicious content
+6. Doxxing or sharing private information
+
+BE STRICT: If you see ANY patterns matching the reported behavior, issue a violation verdict. Even subtle violations should be taken seriously.
 
 Respond using this exact format:
 VERDICT: [violation OR no_violation]
 SEVERITY: [low OR medium OR high OR severe]
-REASON: [Brief explanation in 1-2 sentences]
-BAN_DAYS: [0-14, where 0 means no ban]
+REASON: [Detailed explanation referencing the report reason and specific message content]
+BAN_DAYS: [1-14, where violations should result in meaningful bans]
 
-Severity guidelines:
-- low: Minor infractions (1-3 days)
-- medium: Repeated or moderate violations (3-7 days)
-- high: Serious violations (7-10 days)
-- severe: Extreme violations (10-14 days)`
+Ban duration guidelines (BE STRICT):
+- low: Minor infractions, first-time issues (2-4 days)
+- medium: Clear violations, repeated issues (5-7 days)
+- high: Serious violations, aggressive behavior (8-11 days)
+- severe: Extreme violations, dangerous content (12-14 days)
+
+IMPORTANT: If the reported behavior is evident in the messages, issue a violation verdict. Err on the side of protecting the community.`
           },
           {
             role: 'user',
-            content: `Report reason: ${report.reason}
+            content: `REPORT SUBMITTED BY USER: "${report.reason}"
 
-User's recent messages:
-${messageHistory}`
+This is what the reporter is complaining about. Analyze the following messages from the reported user in this specific conversation and determine if they match or support the reported behavior:
+
+User's messages in this conversation:
+${messageHistory}
+
+Remember: The reporter felt strongly enough to file this complaint. Evaluate whether the messages contain or show patterns of the reported behavior.`
           }
         ],
       }),

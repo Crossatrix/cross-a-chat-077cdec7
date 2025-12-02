@@ -28,9 +28,10 @@ interface UserActionsMenuProps {
   userId: string;
   username: string;
   currentUserId: string;
+  conversationId: string;
 }
 
-const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuProps) => {
+const UserActionsMenu = ({ userId, username, currentUserId, conversationId }: UserActionsMenuProps) => {
   const { t } = useLanguage();
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
@@ -71,6 +72,7 @@ const UserActionsMenu = ({ userId, username, currentUserId }: UserActionsMenuPro
         .insert({
           reporter_id: currentUserId,
           reported_user_id: userId,
+          conversation_id: conversationId,
           reason: validation.data,
         })
         .select()
