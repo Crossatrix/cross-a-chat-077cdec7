@@ -19,9 +19,9 @@ const defaultTheme: ThemeConfig = {
   buttonHue: 45,
   buttonSaturation: 100,
   buttonLightness: 55,
-  textHue: 48,
-  textSaturation: 100,
-  textLightness: 96,
+  textHue: 0,
+  textSaturation: 0,
+  textLightness: 100,
 };
 
 interface ThemeContextType {
