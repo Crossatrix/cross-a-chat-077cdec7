@@ -456,6 +456,48 @@ export type Database = {
           },
         ]
       }
+      user_warnings: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          related_report_id: string | null
+          user_id: string
+          warning_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason: string
+          related_report_id?: string | null
+          user_id: string
+          warning_type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          related_report_id?: string | null
+          user_id?: string
+          warning_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_warnings_related_report_id_fkey"
+            columns: ["related_report_id"]
+            isOneToOne: false
+            referencedRelation: "user_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_warnings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
