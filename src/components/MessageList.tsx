@@ -172,11 +172,12 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                     {message.profiles?.username?.charAt(0).toUpperCase() || "?"}
                   </AvatarFallback>
                 </Avatar>
-                {!isCurrentUser && currentUserDbId && (
+                {!isCurrentUser && currentUserDbId && conversationId && (
                   <UserActionsMenu
                     userId={message.user_id}
                     username={message.profiles?.username || "Unknown"}
                     currentUserId={currentUserDbId}
+                    conversationId={conversationId}
                   />
                 )}
               </div>

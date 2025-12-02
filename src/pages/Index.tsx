@@ -845,6 +845,7 @@ const Index = () => {
                         userId={selectedUserId}
                         username={selectedUsername}
                         currentUserId={user.id}
+                        conversationId={selectedConversationId}
                       />
                     </>
                   )
