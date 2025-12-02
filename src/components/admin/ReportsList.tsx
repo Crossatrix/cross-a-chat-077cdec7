@@ -242,6 +242,11 @@ const ReportsList = () => {
                         <XCircle className="w-3 h-3" />
                         {t("ai.violation")}
                       </Badge>
+                    ) : report.ai_verdict === 'false_report' ? (
+                      <Badge variant="outline" className="gap-1 bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                        <XCircle className="w-3 h-3" />
+                        {t("ai.falseReport")}
+                      </Badge>
                     ) : (
                       <Badge variant="outline" className="gap-1 bg-green-500/20 text-green-300 border-green-500/30">
                         <CheckCircle2 className="w-3 h-3" />
@@ -252,6 +257,11 @@ const ReportsList = () => {
                   {report.ai_reason && (
                     <p className="text-sm text-muted-foreground mb-2">
                       <span className="font-semibold">{t("ai.reason")}:</span> {report.ai_reason}
+                    </p>
+                  )}
+                  {report.ai_verdict === 'false_report' && (
+                    <p className="text-xs text-yellow-300/80 mb-2">
+                      ⚠️ {t("ai.warningIssued")} - {t("ai.threeWarnings")}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">

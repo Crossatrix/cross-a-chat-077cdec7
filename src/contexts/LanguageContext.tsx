@@ -191,6 +191,11 @@ const translations: Translations = {
   "ai.medium": { en: "Medium", de: "Mittel" },
   "ai.high": { en: "High", de: "Hoch" },
   "ai.severe": { en: "Severe", de: "Schwer" },
+  "ai.falseReport": { en: "False Report", de: "Falscher Bericht" },
+  "ai.reporterWarned": { en: "Reporter warned for false report", de: "Melder wurde für falschen Bericht verwarnt" },
+  "ai.reporterBanned": { en: "Reporter banned for repeated false reports", de: "Melder wurde für wiederholte falsche Berichte gesperrt" },
+  "ai.warningIssued": { en: "Warning issued to reporter", de: "Verwarnung an Melder ausgestellt" },
+  "ai.threeWarnings": { en: "3 warnings = 2 day ban", de: "3 Verwarnungen = 2 Tage Sperre" },
   
   // Banned Page
   "banned.account": { en: "Account", de: "Konto" },

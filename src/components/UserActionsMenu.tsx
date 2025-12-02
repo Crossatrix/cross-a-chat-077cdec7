@@ -99,7 +99,12 @@ const UserActionsMenu = ({ userId, username, currentUserId, conversationId }: Us
             if (aiError) {
               console.error("AI moderation error:", aiError);
             } else if (aiData?.success) {
-              if (aiData.banCreated) {
+              if (aiData.verdict === 'false_report' && aiData.reporterWarned) {
+                toast.warning(t("ai.warningIssued"));
+                if (aiData.reporterBanned) {
+                  toast.error(t("ai.reporterBanned"));
+                }
+              } else if (aiData.banCreated) {
                 toast.success(`${t("ai.autoBanned")} ${aiData.banDays} ${t("ban.days")}`);
               } else {
                 toast.info(t("ai.reviewComplete"));

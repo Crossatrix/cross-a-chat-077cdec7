@@ -77,9 +77,9 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a STRICT AI content moderator. Your job is to protect users from harmful behavior.
+            content: `You are a STRICT AI content moderator. Your job is to protect users from harmful behavior AND detect false/malicious reports.
 
-CRITICAL: The reporter has explicitly complained about this user's behavior. Take their report seriously and evaluate the messages in that context.
+CRITICAL: The reporter has explicitly complained about this user's behavior. Evaluate the messages carefully in context.
 
 ZERO TOLERANCE for:
 1. Harassment, bullying, intimidation, or personal attacks
@@ -89,13 +89,19 @@ ZERO TOLERANCE for:
 5. Spam, scams, phishing, or malicious content
 6. Doxxing or sharing private information
 
-BE STRICT: If you see ANY patterns matching the reported behavior, issue a violation verdict. Even subtle violations should be taken seriously.
+FALSE REPORT DETECTION:
+If the report is clearly baseless (no evidence of violations, messages are normal/harmless), issue a "false_report" verdict to warn the reporter.
+Examples of false reports:
+- Reporting normal conversation as harassment
+- Reporting someone for disagreeing with them
+- No connection between report reason and actual messages
+- Obvious attempt to weaponize the report system
 
 Respond using this exact format:
-VERDICT: [violation OR no_violation]
+VERDICT: [violation OR no_violation OR false_report]
 SEVERITY: [low OR medium OR high OR severe]
 REASON: [Detailed explanation referencing the report reason and specific message content]
-BAN_DAYS: [1-14, where violations should result in meaningful bans]
+BAN_DAYS: [1-14 for violations, 0 for no_violation, 0 for false_report]
 
 Ban duration guidelines (BE STRICT):
 - low: Minor infractions, first-time issues (2-4 days)
@@ -103,7 +109,10 @@ Ban duration guidelines (BE STRICT):
 - high: Serious violations, aggressive behavior (8-11 days)
 - severe: Extreme violations, dangerous content (12-14 days)
 
-IMPORTANT: If the reported behavior is evident in the messages, issue a violation verdict. Err on the side of protecting the community.`
+IMPORTANT: 
+- If the reported behavior is evident, issue a violation verdict
+- If messages are clearly harmless but reporter claims violations, issue false_report verdict
+- Err on the side of protecting the community from both violators AND false reporters`
           },
           {
             role: 'user',
@@ -131,7 +140,7 @@ Remember: The reporter felt strongly enough to file this complaint. Evaluate whe
     console.log(`[AI Moderator] AI Analysis:\n${aiAnalysis}`);
 
     // Parse AI response
-    const verdictMatch = aiAnalysis.match(/VERDICT:\s*(violation|no_violation)/i);
+    const verdictMatch = aiAnalysis.match(/VERDICT:\s*(violation|no_violation|false_report)/i);
     const severityMatch = aiAnalysis.match(/SEVERITY:\s*(low|medium|high|severe)/i);
     const reasonMatch = aiAnalysis.match(/REASON:\s*(.+?)(?:\n|$)/i);
     const banDaysMatch = aiAnalysis.match(/BAN_DAYS:\s*(\d+)/i);
@@ -143,6 +152,58 @@ Remember: The reporter felt strongly enough to file this complaint. Evaluate whe
 
     console.log(`[AI Moderator] Verdict: ${verdict}, Severity: ${severity}, Ban Days: ${banDays}`);
 
+    // Handle false report - warn the reporter
+    let reporterWarned = false;
+    let reporterBanned = false;
+    if (verdict === 'false_report') {
+      console.log(`[AI Moderator] False report detected. Warning reporter: ${report.reporter_id}`);
+      
+      // Issue warning to the reporter
+      const { error: warningError } = await supabase
+        .from('user_warnings')
+        .insert({
+          user_id: report.reporter_id,
+          reason: `False report submitted: ${reason}`,
+          warning_type: 'false_report',
+          related_report_id: reportId,
+        });
+
+      if (warningError) {
+        console.error(`[AI Moderator] Failed to issue warning: ${warningError.message}`);
+      } else {
+        reporterWarned = true;
+        
+        // Check total warning count for this reporter
+        const { data: warnings, error: countError } = await supabase
+          .from('user_warnings')
+          .select('id')
+          .eq('user_id', report.reporter_id)
+          .eq('warning_type', 'false_report');
+
+        if (!countError && warnings && warnings.length >= 3) {
+          // Ban the reporter for 2 days after 3 warnings
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 2);
+
+          const { error: banError } = await supabase
+            .from('user_bans')
+            .insert({
+              user_id: report.reporter_id,
+              banned_by: report.reported_user_id, // Ironically, the falsely reported user
+              reason: `[Auto-Ban] 3 false reports submitted. User has been warned ${warnings.length} times for submitting baseless reports.`,
+              expires_at: expiresAt.toISOString(),
+            });
+
+          if (banError) {
+            console.error(`[AI Moderator] Failed to ban reporter: ${banError.message}`);
+          } else {
+            reporterBanned = true;
+            console.log(`[AI Moderator] Reporter banned for 2 days after ${warnings.length} false reports`);
+          }
+        }
+      }
+    }
+
     // Update the report with AI review results
     const { error: updateError } = await supabase
       .from('user_reports')
@@ -151,7 +212,7 @@ Remember: The reporter felt strongly enough to file this complaint. Evaluate whe
         ai_verdict: verdict,
         ai_reason: reason,
         ai_reviewed_at: new Date().toISOString(),
-        status: verdict === 'violation' ? 'resolved' : 'pending',
+        status: verdict === 'violation' ? 'resolved' : verdict === 'false_report' ? 'dismissed' : 'pending',
       })
       .eq('id', reportId);
 
@@ -190,6 +251,8 @@ Remember: The reporter felt strongly enough to file this complaint. Evaluate whe
         reason,
         banDays,
         banCreated,
+        reporterWarned,
+        reporterBanned,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
