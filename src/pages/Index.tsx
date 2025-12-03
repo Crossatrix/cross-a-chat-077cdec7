@@ -56,7 +56,29 @@ const Index = () => {
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [showClearChatDialog, setShowClearChatDialog] = useState(false);
+  const [aiCredits, setAiCredits] = useState<number>(15);
   const navigate = useNavigate();
+
+  const fetchAiCredits = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('ai_credits')
+      .select('credits_remaining, last_reset_date')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    if (data) {
+      // Check if reset is needed (new day)
+      const today = new Date().toISOString().split('T')[0];
+      if (data.last_reset_date < today) {
+        setAiCredits(15);
+      } else {
+        setAiCredits(Number(data.credits_remaining));
+      }
+    } else {
+      setAiCredits(15); // Default for new users
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -181,6 +203,9 @@ const Index = () => {
         .single();
 
       setIsAdmin(!!roles);
+
+      // Fetch AI credits
+      fetchAiCredits();
     };
 
     fetchUserData();
@@ -439,7 +464,7 @@ const Index = () => {
         // Add AI to typing users
         setTypingUsers((prev) => [...prev, { userId: AI_BOT_ID, username: 'CrossChatAI' }]);
 
-        const { error: aiError } = await supabase.functions.invoke('ai-chat', {
+        const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-chat', {
           body: { 
             conversationId: selectedConversationId,
             userMessage: content,
@@ -451,13 +476,27 @@ const Index = () => {
         // Remove AI from typing users
         setTypingUsers((prev) => prev.filter((u) => u.userId !== AI_BOT_ID));
 
+        // Refresh credits after AI call
+        fetchAiCredits();
+
         if (aiError) {
           console.error('AI chat error:', aiError);
+          // Check if it's a credits error
+          if (aiError.message?.includes('credits') || aiError.message?.includes('402')) {
+            toast.error('Not enough AI credits. Credits reset daily.');
+          } else {
+            toast.error('AI response failed. Please try again.');
+          }
+        }
+      } catch (aiError: any) {
+        console.error('AI chat error:', aiError);
+        // Refresh credits to show current state
+        fetchAiCredits();
+        if (aiError?.message?.includes('credits')) {
+          toast.error('Not enough AI credits. Credits reset daily.');
+        } else {
           toast.error('AI response failed. Please try again.');
         }
-      } catch (aiError) {
-        console.error('AI chat error:', aiError);
-        toast.error('AI response failed. Please try again.');
         // Remove AI from typing users on error
         setTypingUsers((prev) => prev.filter((u) => u.userId !== AI_BOT_ID));
       }
@@ -893,6 +932,8 @@ const Index = () => {
               isAIChat={selectedUserId === '00000000-0000-0000-0000-000000000000'}
               selectedModel={selectedAIModel}
               onModelChange={setSelectedAIModel}
+              aiCredits={aiCredits}
+              onCreditsUpdate={fetchAiCredits}
               onTyping={() => {
                 if (!selectedConversationId || !user?.id) return;
                 

@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Image as ImageIcon, Video, Mic, StopCircle, X, Sparkles } from "lucide-react";
+import { Send, Image as ImageIcon, Video, Mic, StopCircle, X, Sparkles, Coins } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MessageInputProps {
   onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean) => void;
@@ -12,6 +13,8 @@ interface MessageInputProps {
   onModelChange?: (model: string) => void;
   selectedModel?: string;
   onTyping?: () => void;
+  aiCredits?: number;
+  onCreditsUpdate?: () => void;
 }
 
 const messageSchema = z.string()
@@ -22,7 +25,7 @@ const messageSchema = z.string()
     "Message contains invalid content"
   );
 
-const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping }: MessageInputProps) => {
+const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping, aiCredits, onCreditsUpdate }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
@@ -165,31 +168,50 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-2 md:p-4 border-t border-border bg-card shrink-0">
       {isAIChat && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 px-2 py-1 bg-secondary rounded-md text-sm">
+            <Coins className="h-4 w-4 text-yellow-500" />
+            <span>{aiCredits?.toFixed(1) ?? '15.0'}/15</span>
+          </div>
           <Button
             type="button"
             variant={selectedModel === "openai/gpt-5-nano" ? "default" : "outline"}
             size="sm"
             onClick={() => onModelChange?.("openai/gpt-5-nano")}
+            title="0.5 credits"
           >
-            Fast
+            Fast (0.5)
           </Button>
           <Button
             type="button"
-            variant={selectedModel === "openai/gpt-5-mini" ? "default" : "outline"}
+            variant={selectedModel === "openai/gpt-5-mini" && !generateImage ? "default" : "outline"}
             size="sm"
-            onClick={() => onModelChange?.("openai/gpt-5-mini")}
+            onClick={() => {
+              onModelChange?.("openai/gpt-5-mini");
+              setGenerateImage(false);
+            }}
+            title="1 credit"
           >
-            Detailed
+            Normal (1)
+          </Button>
+          <Button
+            type="button"
+            variant={selectedModel === "openai/gpt-5" ? "default" : "outline"}
+            size="sm"
+            onClick={() => onModelChange?.("openai/gpt-5")}
+            title="1.5 credits"
+          >
+            Detailed (1.5)
           </Button>
           <Button
             type="button"
             variant={generateImage ? "default" : "outline"}
             size="sm"
             onClick={() => setGenerateImage(!generateImage)}
+            title="5 credits"
           >
             <Sparkles className="h-4 w-4 mr-1" />
-            Generate Image
+            Image (5)
           </Button>
         </div>
       )}
