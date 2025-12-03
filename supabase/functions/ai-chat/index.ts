@@ -23,13 +23,26 @@ serve(async (req) => {
       );
     }
 
-    const { conversationId, userMessage, model = "google/gemini-2.5-flash", generateImage = false } = await req.json();
+const { conversationId, userMessage, model = "google/gemini-2.5-flash", generateImage = false } = await req.json();
     console.log('AI Chat request:', { conversationId, userMessage, model, generateImage });
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+
+    // Calculate credit cost based on model/action
+    let creditCost = 1; // Default for normal (gpt-5-mini)
+    if (generateImage) {
+      creditCost = 5;
+    } else if (model === "openai/gpt-5-nano") {
+      creditCost = 0.5;
+    } else if (model === "openai/gpt-5-mini") {
+      creditCost = 1;
+    } else if (model === "openai/gpt-5") {
+      creditCost = 1.5;
+    }
+    console.log('Credit cost:', creditCost);
 
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -51,6 +64,29 @@ serve(async (req) => {
 
     // Create Supabase client with service role to bypass RLS for bot operations
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Check and deduct AI credits
+    const { data: creditResult, error: creditError } = await supabase.rpc('deduct_ai_credits', {
+      p_user_id: user.id,
+      p_amount: creditCost
+    });
+
+    if (creditError) {
+      console.error('Credit check error:', creditError);
+      return new Response(
+        JSON.stringify({ error: "Failed to check credits" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!creditResult) {
+      // Get current credits to show in error
+      const { data: credits } = await supabase.rpc('get_or_reset_ai_credits', { p_user_id: user.id });
+      return new Response(
+        JSON.stringify({ error: `Not enough credits. You have ${credits ?? 0} credits, but this action costs ${creditCost}.` }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Verify user is a participant in this conversation
     const { data: participant } = await supabase

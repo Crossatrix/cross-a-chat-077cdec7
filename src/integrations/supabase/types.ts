@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_credits: {
+        Row: {
+          created_at: string
+          credits_remaining: number
+          id: string
+          last_reset_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_remaining?: number
+          id?: string
+          last_reset_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_remaining?: number
+          id?: string
+          last_reset_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       call_signals: {
         Row: {
           conversation_id: string
@@ -507,6 +534,10 @@ export type Database = {
         Args: { group_name: string; participant_ids: string[] }
         Returns: string
       }
+      deduct_ai_credits: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: boolean
+      }
       demote_from_admin: {
         Args: { target_user_id: string }
         Returns: undefined
@@ -515,6 +546,7 @@ export type Database = {
         Args: { other_user_id: string }
         Returns: string
       }
+      get_or_reset_ai_credits: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
