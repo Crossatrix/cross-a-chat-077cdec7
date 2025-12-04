@@ -41,19 +41,77 @@ const EmojiManager = () => {
     fetchEmojis();
   }, []);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      // For GIFs, skip compression to preserve animation
+      if (file.type === "image/gif") {
+        resolve(file);
+        return;
+      }
+
+      const img = new Image();
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      img.onload = () => {
+        const maxSize = 128; // Max emoji size
+        let { width, height } = img;
+
+        // Scale down if larger than maxSize
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = (height / width) * maxSize;
+            width = maxSize;
+          } else {
+            width = (width / height) * maxSize;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: "image/webp",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              reject(new Error("Compression failed"));
+            }
+          },
+          "image/webp",
+          0.8
+        );
+      };
+
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const validTypes = ["image/png", "image/gif", "image/webp"];
+      const validTypes = ["image/png", "image/gif", "image/webp", "image/jpeg"];
       if (!validTypes.includes(file.type)) {
         toast.error(t("emoji.invalidFormat"));
         return;
       }
-      if (file.size > 512 * 1024) {
+      if (file.size > 2 * 1024 * 1024) { // Allow up to 2MB before compression
         toast.error(t("emoji.tooLarge"));
         return;
       }
-      setSelectedFile(file);
+      try {
+        const compressedFile = await compressImage(file);
+        setSelectedFile(compressedFile);
+      } catch {
+        toast.error(t("emoji.compressionFailed"));
+      }
     }
   };
 
