@@ -164,16 +164,6 @@ const translations: Translations = {
   "emoji.invalidFormat": { en: "Please select PNG, GIF, JPG or WEBP image", de: "Bitte PNG, GIF, JPG oder WEBP Bild auswählen" },
   "emoji.tooLarge": { en: "Image must be less than 2MB", de: "Bild muss kleiner als 2MB sein" },
   "emoji.compressionFailed": { en: "Failed to compress image", de: "Bild konnte nicht komprimiert werden" },
-  "emoji.selectCategory": { en: "Select category", de: "Kategorie wählen" },
-  "emoji.newCategoryPlaceholder": { en: "Or create new category...", de: "Oder neue Kategorie erstellen..." },
-  "emoji.filterByCategory": { en: "Filter by category", de: "Nach Kategorie filtern" },
-  "emoji.allCategories": { en: "All categories", de: "Alle Kategorien" },
-  "emoji.category.general": { en: "General", de: "Allgemein" },
-  "emoji.category.reactions": { en: "Reactions", de: "Reaktionen" },
-  "emoji.category.animals": { en: "Animals", de: "Tiere" },
-  "emoji.category.food": { en: "Food", de: "Essen" },
-  "emoji.category.activities": { en: "Activities", de: "Aktivitäten" },
-  "emoji.category.objects": { en: "Objects", de: "Objekte" },
   
   // Reports
   "reports.loading": { en: "Loading reports...", de: "Lade Meldungen..." },
