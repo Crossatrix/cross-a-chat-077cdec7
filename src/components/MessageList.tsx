@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Edit2, Check, X } from "lucide-react";
 import UserActionsMenu from "./UserActionsMenu";
 import TypingIndicator from "./TypingIndicator";
-import { formatMessageText } from "@/utils/textFormatting";
+import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -40,6 +40,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [readReceipts, setReadReceipts] = useState<Record<string, number>>({});
+  useEmojiLoader(); // Load custom emojis for formatting
 
   useEffect(() => {
     if (scrollRef.current) {

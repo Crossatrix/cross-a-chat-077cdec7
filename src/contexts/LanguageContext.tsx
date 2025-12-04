@@ -144,7 +144,25 @@ const translations: Translations = {
   "admin.reports": { en: "Reports", de: "Meldungen" },
   "admin.users": { en: "Users", de: "Benutzer" },
   "admin.feedback": { en: "Feedback", de: "Feedback" },
+  "admin.emojis": { en: "Emojis", de: "Emojis" },
   "admin.accessDenied": { en: "Access denied: Admin only", de: "Zugriff verweigert: Nur für Admins" },
+  
+  // Custom Emojis
+  "emoji.custom": { en: "Custom Emojis", de: "Eigene Emojis" },
+  "emoji.manage": { en: "Manage Custom Emojis", de: "Eigene Emojis verwalten" },
+  "emoji.manageDescription": { en: "Add or remove custom emojis for all users", de: "Eigene Emojis für alle Benutzer hinzufügen oder entfernen" },
+  "emoji.none": { en: "No custom emojis yet", de: "Noch keine eigenen Emojis" },
+  "emoji.add": { en: "Add Emoji", de: "Emoji hinzufügen" },
+  "emoji.added": { en: "Emoji added successfully", de: "Emoji erfolgreich hinzugefügt" },
+  "emoji.addFailed": { en: "Failed to add emoji", de: "Emoji konnte nicht hinzugefügt werden" },
+  "emoji.deleted": { en: "Emoji deleted", de: "Emoji gelöscht" },
+  "emoji.deleteFailed": { en: "Failed to delete emoji", de: "Emoji konnte nicht gelöscht werden" },
+  "emoji.loadFailed": { en: "Failed to load emojis", de: "Emojis konnten nicht geladen werden" },
+  "emoji.namePlaceholder": { en: "Emoji name (e.g. happy)", de: "Emoji-Name (z.B. happy)" },
+  "emoji.selectImage": { en: "Select Image", de: "Bild auswählen" },
+  "emoji.enterName": { en: "Please enter an emoji name and select an image", de: "Bitte Emoji-Namen eingeben und Bild auswählen" },
+  "emoji.invalidFormat": { en: "Please select PNG, GIF or WEBP image", de: "Bitte PNG, GIF oder WEBP Bild auswählen" },
+  "emoji.tooLarge": { en: "Image must be less than 512KB", de: "Bild muss kleiner als 512KB sein" },
   
   // Reports
   "reports.loading": { en: "Loading reports...", de: "Lade Meldungen..." },

@@ -9,6 +9,7 @@ import { ArrowLeft, UserX, Ban } from "lucide-react";
 import ReportsList from "@/components/admin/ReportsList";
 import UsersList from "@/components/admin/UsersList";
 import FeedbackList from "@/components/admin/FeedbackList";
+import EmojiManager from "@/components/admin/EmojiManager";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Admin = () => {
@@ -74,10 +75,11 @@ const Admin = () => {
 
       <main className="max-w-7xl mx-auto p-6">
         <Tabs defaultValue="reports" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-lg grid-cols-4">
             <TabsTrigger value="reports">{t("admin.reports")}</TabsTrigger>
             <TabsTrigger value="users">{t("admin.users")}</TabsTrigger>
             <TabsTrigger value="feedback">{t("admin.feedback")}</TabsTrigger>
+            <TabsTrigger value="emojis">{t("admin.emojis")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="reports">
@@ -90,6 +92,10 @@ const Admin = () => {
 
           <TabsContent value="feedback">
             <FeedbackList />
+          </TabsContent>
+
+          <TabsContent value="emojis">
+            <EmojiManager />
           </TabsContent>
         </Tabs>
       </main>

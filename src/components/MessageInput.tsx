@@ -5,6 +5,13 @@ import { Send, Image as ImageIcon, Video, Mic, StopCircle, X, Sparkles, Coins } 
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import EmojiPicker from "./EmojiPicker";
+
+interface CustomEmoji {
+  id: string;
+  name: string;
+  image_url: string;
+}
 
 interface MessageInputProps {
   onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean) => void;
@@ -341,6 +348,10 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
             </Button>
           </>
         )}
+        <EmojiPicker 
+          onEmojiSelect={(emoji: CustomEmoji) => setMessage(prev => prev + ` :${emoji.name}: `)}
+          disabled={disabled || isRecording}
+        />
         <Input
           value={message}
           onChange={(e) => {
