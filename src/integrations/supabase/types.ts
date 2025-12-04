@@ -148,6 +148,7 @@ export type Database = {
       }
       custom_emojis: {
         Row: {
+          category: string
           created_at: string
           created_by: string
           id: string
@@ -155,6 +156,7 @@ export type Database = {
           name: string
         }
         Insert: {
+          category?: string
           created_at?: string
           created_by: string
           id?: string
@@ -162,6 +164,7 @@ export type Database = {
           name: string
         }
         Update: {
+          category?: string
           created_at?: string
           created_by?: string
           id?: string
