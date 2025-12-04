@@ -161,8 +161,9 @@ const translations: Translations = {
   "emoji.namePlaceholder": { en: "Emoji name (e.g. happy)", de: "Emoji-Name (z.B. happy)" },
   "emoji.selectImage": { en: "Select Image", de: "Bild auswählen" },
   "emoji.enterName": { en: "Please enter an emoji name and select an image", de: "Bitte Emoji-Namen eingeben und Bild auswählen" },
-  "emoji.invalidFormat": { en: "Please select PNG, GIF or WEBP image", de: "Bitte PNG, GIF oder WEBP Bild auswählen" },
-  "emoji.tooLarge": { en: "Image must be less than 512KB", de: "Bild muss kleiner als 512KB sein" },
+  "emoji.invalidFormat": { en: "Please select PNG, GIF, JPG or WEBP image", de: "Bitte PNG, GIF, JPG oder WEBP Bild auswählen" },
+  "emoji.tooLarge": { en: "Image must be less than 2MB", de: "Bild muss kleiner als 2MB sein" },
+  "emoji.compressionFailed": { en: "Failed to compress image", de: "Bild konnte nicht komprimiert werden" },
   
   // Reports
   "reports.loading": { en: "Loading reports...", de: "Lade Meldungen..." },
