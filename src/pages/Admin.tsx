@@ -31,6 +31,8 @@ const Admin = () => {
   const [newEmojiName, setNewEmojiName] = useState("");
   const [selectedEmojiFile, setSelectedEmojiFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("general");
+  const [emojiCategories, setEmojiCategories] = useState<string[]>(["general"]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -71,7 +73,7 @@ const Admin = () => {
   }, [isAdmin]);
 
   const fetchAllData = async () => {
-    const [emojis, reports, users, feedback] = await Promise.all([
+    const [emojiFolder, reports, users, feedback] = await Promise.all([
       fetchEmojis(),
       fetchReports(),
       fetchUsers(),
@@ -79,12 +81,7 @@ const Admin = () => {
     ]);
 
     const fileStructure: FileItem[] = [
-      {
-        id: "emojis",
-        name: "Emojis",
-        type: "folder",
-        children: emojis,
-      },
+      emojiFolder,
       {
         id: "reports",
         name: "Reports",
@@ -108,23 +105,71 @@ const Admin = () => {
     setFiles(fileStructure);
   };
 
-  const fetchEmojis = async (): Promise<FileItem[]> => {
+  const fetchEmojis = async (): Promise<FileItem> => {
     const { data } = await supabase
       .from("custom_emojis")
       .select("*")
+      .order("category", { ascending: true })
       .order("created_at", { ascending: false });
 
-    return (data || []).map((emoji) => {
+    // Group emojis by category
+    const categoryMap = new Map<string, FileItem[]>();
+    const categories = new Set<string>(["general"]);
+    
+    (data || []).forEach((emoji) => {
+      const category = emoji.category || "general";
+      categories.add(category);
       const ext = emoji.image_url.includes(".gif") ? "gif" : 
                   emoji.image_url.includes(".webp") ? "webp" : "png";
-      return {
+      
+      const fileItem: FileItem = {
         id: `emoji-${emoji.id}`,
         name: emoji.name,
-        type: "file" as const,
+        type: "file",
         extension: ext,
         data: emoji,
+        category: category,
       };
+
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, []);
+      }
+      categoryMap.get(category)!.push(fileItem);
     });
+
+    // Update available categories
+    setEmojiCategories(Array.from(categories).sort());
+
+    // Create category folders
+    const categoryFolders: FileItem[] = Array.from(categoryMap.entries()).map(([category, emojis]) => ({
+      id: `emoji-category-${category}`,
+      name: category.charAt(0).toUpperCase() + category.slice(1),
+      type: "folder" as const,
+      children: emojis,
+      data: { type: "emoji-category", category },
+    }));
+
+    return {
+      id: "emojis",
+      name: "Emojis",
+      type: "folder",
+      children: categoryFolders,
+      allowCreateFolder: true,
+    };
+  };
+
+  const handleCreateFolder = (parentId: string, folderName: string) => {
+    if (parentId === "emojis") {
+      const sanitizedName = folderName.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+      if (!emojiCategories.includes(sanitizedName)) {
+        setEmojiCategories(prev => [...prev, sanitizedName].sort());
+        setSelectedCategory(sanitizedName);
+        toast.success(`Category "${folderName}" created`);
+        fetchAllData();
+      } else {
+        toast.error("Category already exists");
+      }
+    }
   };
 
   const fetchReports = async (): Promise<FileItem[]> => {
@@ -294,6 +339,7 @@ const Admin = () => {
           name: sanitizedName,
           image_url: urlData.publicUrl,
           created_by: user.id,
+          category: selectedCategory,
         });
 
       if (insertError) throw insertError;
@@ -495,13 +541,24 @@ const Admin = () => {
 
       {/* Emoji Upload Bar */}
       <div className="border-b border-border bg-card/50 p-3 shrink-0">
-        <div className="flex flex-col sm:flex-row gap-2 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row gap-2 max-w-7xl mx-auto flex-wrap">
           <Input
             placeholder={t("emoji.namePlaceholder")}
             value={newEmojiName}
             onChange={(e) => setNewEmojiName(e.target.value)}
             className="flex-1 max-w-xs"
           />
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+          >
+            {emojiCategories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </option>
+            ))}
+          </select>
           <input
             ref={fileInputRef}
             type="file"
@@ -531,6 +588,7 @@ const Admin = () => {
             items={files}
             onFileSelect={setSelectedFile}
             selectedFile={selectedFile}
+            onCreateFolder={handleCreateFolder}
           />
         </div>
         <div className="flex-1 min-h-64 md:min-h-0">
