@@ -114,11 +114,19 @@ const Admin = () => {
 
     // Group emojis by category
     const categoryMap = new Map<string, FileItem[]>();
-    const categories = new Set<string>(["general"]);
+    
+    // Start with existing categories from state to preserve empty folders
+    emojiCategories.forEach(cat => categoryMap.set(cat, []));
+    // Always include general
+    if (!categoryMap.has("general")) {
+      categoryMap.set("general", []);
+    }
     
     (data || []).forEach((emoji) => {
       const category = emoji.category || "general";
-      categories.add(category);
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, []);
+      }
       const ext = emoji.image_url.includes(".gif") ? "gif" : 
                   emoji.image_url.includes(".webp") ? "webp" : "png";
       
@@ -131,21 +139,19 @@ const Admin = () => {
         category: category,
       };
 
-      if (!categoryMap.has(category)) {
-        categoryMap.set(category, []);
-      }
       categoryMap.get(category)!.push(fileItem);
     });
 
     // Update available categories
-    setEmojiCategories(Array.from(categories).sort());
+    const allCategories = Array.from(categoryMap.keys()).sort();
+    setEmojiCategories(allCategories);
 
-    // Create category folders
-    const categoryFolders: FileItem[] = Array.from(categoryMap.entries()).map(([category, emojis]) => ({
+    // Create category folders (including empty ones)
+    const categoryFolders: FileItem[] = allCategories.map((category) => ({
       id: `emoji-category-${category}`,
       name: category.charAt(0).toUpperCase() + category.slice(1),
       type: "folder" as const,
-      children: emojis,
+      children: categoryMap.get(category) || [],
       data: { type: "emoji-category", category },
     }));
 
