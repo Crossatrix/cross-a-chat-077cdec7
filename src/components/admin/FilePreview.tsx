@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle2, Ban, Clock, Bot, XCircle } from "lucide-react";
+import { Trash2, CheckCircle2, Ban, Clock, Bot, XCircle, FolderInput } from "lucide-react";
 import { FileItem } from "./FileExplorer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
@@ -14,15 +15,33 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface FilePreviewProps {
   file: FileItem | null;
   onDelete: (file: FileItem) => void;
   onAction?: (action: string, file: FileItem, extra?: any) => void;
+  emojiCategories?: string[];
 }
 
-const FilePreview = ({ file, onDelete, onAction }: FilePreviewProps) => {
+const FilePreview = ({ file, onDelete, onAction, emojiCategories = [] }: FilePreviewProps) => {
   const { t } = useLanguage();
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [selectedMoveCategory, setSelectedMoveCategory] = useState("");
 
   if (!file) {
     return (
@@ -36,6 +55,17 @@ const FilePreview = ({ file, onDelete, onAction }: FilePreviewProps) => {
 
   // Emoji file preview
   if (file.extension === "png" || file.extension === "gif" || file.extension === "webp") {
+    const currentCategory = file.category || data?.category || "general";
+    const availableCategories = emojiCategories.filter(c => c !== currentCategory);
+
+    const handleMove = () => {
+      if (selectedMoveCategory && onAction) {
+        onAction("move_emoji", file, { targetCategory: selectedMoveCategory });
+        setMoveDialogOpen(false);
+        setSelectedMoveCategory("");
+      }
+    };
+
     return (
       <div className="h-full bg-card border border-border rounded-lg p-4 overflow-auto">
         <div className="flex flex-col items-center gap-4">
@@ -49,32 +79,76 @@ const FilePreview = ({ file, onDelete, onAction }: FilePreviewProps) => {
           <div className="text-center space-y-2">
             <h3 className="font-bold text-lg text-foreground">:{data?.name}:</h3>
             <p className="text-sm text-muted-foreground">
+              Category: {currentCategory}
+            </p>
+            <p className="text-sm text-muted-foreground">
               Created: {new Date(data?.created_at).toLocaleString()}
             </p>
           </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Emoji
+          <div className="flex gap-2">
+            {availableCategories.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setMoveDialogOpen(true)}>
+                <FolderInput className="h-4 w-4 mr-2" />
+                Move
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete emoji?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete the emoji :{data?.name}:
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(file)}>
-                  {t("common.delete")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete emoji?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete the emoji :{data?.name}:
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(file)}>
+                    {t("common.delete")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
+
+        <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Move Emoji</DialogTitle>
+              <DialogDescription>
+                Select a category to move :{data?.name}: to.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Select value={selectedMoveCategory} onValueChange={setSelectedMoveCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCategories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleMove} disabled={!selectedMoveCategory}>
+                Move
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

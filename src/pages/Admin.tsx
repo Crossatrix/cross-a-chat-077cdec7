@@ -459,6 +459,24 @@ const Admin = () => {
         toast.success(data.important ? "Unmarked as important" : "Marked as important");
         fetchAllData();
         break;
+
+      case "move_emoji":
+        break;
+    }
+  };
+
+  const handleMoveEmoji = async (file: FileItem, targetCategory: string) => {
+    const data = file.data;
+    try {
+      await supabase
+        .from("custom_emojis")
+        .update({ category: targetCategory })
+        .eq("id", data.id);
+      toast.success(`Emoji moved to ${targetCategory}`);
+      setSelectedFile(null);
+      fetchAllData();
+    } catch {
+      toast.error("Failed to move emoji");
     }
   };
 
@@ -595,7 +613,14 @@ const Admin = () => {
           <FilePreview
             file={selectedFile}
             onDelete={handleDelete}
-            onAction={handleAction}
+            onAction={(action, file, extra) => {
+              if (action === "move_emoji" && extra?.targetCategory) {
+                handleMoveEmoji(file, extra.targetCategory);
+              } else {
+                handleAction(action, file);
+              }
+            }}
+            emojiCategories={emojiCategories}
           />
         </div>
       </main>
