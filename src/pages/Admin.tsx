@@ -164,14 +164,62 @@ const Admin = () => {
     };
   };
 
-  const handleCreateFolder = (parentId: string, folderName: string) => {
+  const handleCreateFolder = async (parentId: string, folderName: string) => {
     if (parentId === "emojis") {
       const sanitizedName = folderName.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
       if (!emojiCategories.includes(sanitizedName)) {
-        setEmojiCategories(prev => [...prev, sanitizedName].sort());
+        const newCategories = [...emojiCategories, sanitizedName].sort();
+        setEmojiCategories(newCategories);
         setSelectedCategory(sanitizedName);
         toast.success(`Category "${folderName}" created`);
-        fetchAllData();
+        
+        // Rebuild emoji folder with new categories inline
+        const { data } = await supabase
+          .from("custom_emojis")
+          .select("*")
+          .order("category", { ascending: true })
+          .order("created_at", { ascending: false });
+
+        const categoryMap = new Map<string, FileItem[]>();
+        newCategories.forEach(cat => categoryMap.set(cat, []));
+        
+        (data || []).forEach((emoji) => {
+          const category = emoji.category || "general";
+          if (!categoryMap.has(category)) {
+            categoryMap.set(category, []);
+          }
+          const ext = emoji.image_url.includes(".gif") ? "gif" : 
+                      emoji.image_url.includes(".webp") ? "webp" : "png";
+          
+          const fileItem: FileItem = {
+            id: `emoji-${emoji.id}`,
+            name: emoji.name,
+            type: "file",
+            extension: ext,
+            data: emoji,
+            category: category,
+          };
+          categoryMap.get(category)!.push(fileItem);
+        });
+
+        const allCategories = Array.from(categoryMap.keys()).sort();
+        const categoryFolders: FileItem[] = allCategories.map((category) => ({
+          id: `emoji-category-${category}`,
+          name: category.charAt(0).toUpperCase() + category.slice(1),
+          type: "folder" as const,
+          children: categoryMap.get(category) || [],
+          data: { type: "emoji-category", category },
+        }));
+
+        const emojiFolder: FileItem = {
+          id: "emojis",
+          name: "Emojis",
+          type: "folder",
+          children: categoryFolders,
+          allowCreateFolder: true,
+        };
+
+        setFiles(prev => prev.map(f => f.id === "emojis" ? emojiFolder : f));
       } else {
         toast.error("Category already exists");
       }
