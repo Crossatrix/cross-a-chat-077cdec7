@@ -68,13 +68,35 @@ const Admin = () => {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchAllData();
+      fetchCategoriesAndData();
     }
   }, [isAdmin]);
 
+  const fetchCategoriesAndData = async () => {
+    // Fetch categories from database first
+    const { data: categoriesData } = await supabase
+      .from("emoji_categories")
+      .select("name")
+      .order("name", { ascending: true });
+    
+    const dbCategories = (categoriesData || []).map(c => c.name);
+    // Ensure 'general' is always present
+    if (!dbCategories.includes("general")) {
+      dbCategories.unshift("general");
+    }
+    setEmojiCategories(dbCategories);
+    
+    // Now fetch all data with updated categories
+    await fetchAllDataWithCategories(dbCategories);
+  };
+
   const fetchAllData = async () => {
+    await fetchCategoriesAndData();
+  };
+
+  const fetchAllDataWithCategories = async (categories: string[]) => {
     const [emojiFolder, reports, users, feedback] = await Promise.all([
-      fetchEmojis(),
+      fetchEmojisWithCategories(categories),
       fetchReports(),
       fetchUsers(),
       fetchFeedback(),
@@ -105,7 +127,7 @@ const Admin = () => {
     setFiles(fileStructure);
   };
 
-  const fetchEmojis = async (): Promise<FileItem> => {
+  const fetchEmojisWithCategories = async (categories: string[]): Promise<FileItem> => {
     const { data } = await supabase
       .from("custom_emojis")
       .select("*")
@@ -115,12 +137,8 @@ const Admin = () => {
     // Group emojis by category
     const categoryMap = new Map<string, FileItem[]>();
     
-    // Start with existing categories from state to preserve empty folders
-    emojiCategories.forEach(cat => categoryMap.set(cat, []));
-    // Always include general
-    if (!categoryMap.has("general")) {
-      categoryMap.set("general", []);
-    }
+    // Start with categories from database
+    categories.forEach(cat => categoryMap.set(cat, []));
     
     (data || []).forEach((emoji) => {
       const category = emoji.category || "general";
@@ -142,11 +160,8 @@ const Admin = () => {
       categoryMap.get(category)!.push(fileItem);
     });
 
-    // Update available categories
-    const allCategories = Array.from(categoryMap.keys()).sort();
-    setEmojiCategories(allCategories);
-
     // Create category folders (including empty ones)
+    const allCategories = Array.from(categoryMap.keys()).sort();
     const categoryFolders: FileItem[] = allCategories.map((category) => ({
       id: `emoji-category-${category}`,
       name: category.charAt(0).toUpperCase() + category.slice(1),
@@ -168,58 +183,20 @@ const Admin = () => {
     if (parentId === "emojis") {
       const sanitizedName = folderName.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
       if (!emojiCategories.includes(sanitizedName)) {
-        const newCategories = [...emojiCategories, sanitizedName].sort();
-        setEmojiCategories(newCategories);
-        setSelectedCategory(sanitizedName);
+        // Insert category into database
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase
+          .from("emoji_categories")
+          .insert({ name: sanitizedName, created_by: user?.id });
+        
+        if (error) {
+          toast.error("Failed to create category");
+          return;
+        }
+        
         toast.success(`Category "${folderName}" created`);
-        
-        // Rebuild emoji folder with new categories inline
-        const { data } = await supabase
-          .from("custom_emojis")
-          .select("*")
-          .order("category", { ascending: true })
-          .order("created_at", { ascending: false });
-
-        const categoryMap = new Map<string, FileItem[]>();
-        newCategories.forEach(cat => categoryMap.set(cat, []));
-        
-        (data || []).forEach((emoji) => {
-          const category = emoji.category || "general";
-          if (!categoryMap.has(category)) {
-            categoryMap.set(category, []);
-          }
-          const ext = emoji.image_url.includes(".gif") ? "gif" : 
-                      emoji.image_url.includes(".webp") ? "webp" : "png";
-          
-          const fileItem: FileItem = {
-            id: `emoji-${emoji.id}`,
-            name: emoji.name,
-            type: "file",
-            extension: ext,
-            data: emoji,
-            category: category,
-          };
-          categoryMap.get(category)!.push(fileItem);
-        });
-
-        const allCategories = Array.from(categoryMap.keys()).sort();
-        const categoryFolders: FileItem[] = allCategories.map((category) => ({
-          id: `emoji-category-${category}`,
-          name: category.charAt(0).toUpperCase() + category.slice(1),
-          type: "folder" as const,
-          children: categoryMap.get(category) || [],
-          data: { type: "emoji-category", category },
-        }));
-
-        const emojiFolder: FileItem = {
-          id: "emojis",
-          name: "Emojis",
-          type: "folder",
-          children: categoryFolders,
-          allowCreateFolder: true,
-        };
-
-        setFiles(prev => prev.map(f => f.id === "emojis" ? emojiFolder : f));
+        // Refresh data from database
+        await fetchCategoriesAndData();
       } else {
         toast.error("Category already exists");
       }
