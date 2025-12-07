@@ -412,7 +412,7 @@ const Admin = () => {
     fetchAllData();
   };
 
-  const handleAction = async (action: string, file: FileItem) => {
+  const handleAction = async (action: string, file: FileItem, extra?: any) => {
     const data = file.data;
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -492,6 +492,9 @@ const Admin = () => {
         break;
 
       case "move_emoji":
+        if (extra?.targetCategory) {
+          await handleMoveEmoji(file, extra.targetCategory);
+        }
         break;
     }
   };
