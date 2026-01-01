@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Star, Trash2 } from "lucide-react";
+import { Star, Trash2, MessageSquare, Send } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,11 +28,18 @@ interface Feedback {
   important: boolean;
   rating?: number | null;
   username?: string;
+  admin_response?: string | null;
+  admin_response_at?: string | null;
+  admin_response_by?: string | null;
+  admin_username?: string;
 }
 
 const FeedbackList = () => {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
+  const [respondingTo, setRespondingTo] = useState<string | null>(null);
+  const [responseText, setResponseText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchFeedback();
@@ -79,9 +87,20 @@ const FeedbackList = () => {
           .eq("id", item.user_id)
           .single();
         
+        let adminUsername: string | undefined;
+        if (item.admin_response_by) {
+          const { data: adminProfile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", item.admin_response_by)
+            .single();
+          adminUsername = adminProfile?.username;
+        }
+        
         return {
           ...item,
           username: profile?.username,
+          admin_username: adminUsername,
         };
       })
     );
@@ -141,6 +160,46 @@ const FeedbackList = () => {
     toast.success("Feedback deleted");
   };
 
+  const handleRespond = async (feedbackId: string) => {
+    if (!responseText.trim()) {
+      toast.error("Please enter a response");
+      return;
+    }
+
+    setSubmitting(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast.error("Not authenticated");
+      setSubmitting(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("feedback")
+      .update({
+        admin_response: responseText.trim(),
+        admin_response_at: new Date().toISOString(),
+        admin_response_by: user.id,
+        status: "resolved",
+      })
+      .eq("id", feedbackId);
+
+    setSubmitting(false);
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error("Error responding to feedback:", error);
+      }
+      toast.error("Failed to send response");
+      return;
+    }
+
+    toast.success("Response sent");
+    setRespondingTo(null);
+    setResponseText("");
+  };
+
   if (loading) {
     return <div className="p-4 text-center">Loading feedback...</div>;
   }
@@ -197,7 +256,74 @@ const FeedbackList = () => {
               </div>
             )}
             <p className="text-sm mb-4 whitespace-pre-wrap">{item.message}</p>
-            <div className="flex flex-wrap gap-2">
+            
+            {/* Admin Response Display */}
+            {item.admin_response && (
+              <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">
+                    Admin Response
+                  </span>
+                  {item.admin_username && (
+                    <span className="text-xs text-muted-foreground">
+                      by @{item.admin_username}
+                    </span>
+                  )}
+                  {item.admin_response_at && (
+                    <span className="text-xs text-muted-foreground">
+                      • {format(new Date(item.admin_response_at), "MMM d, yyyy")}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm whitespace-pre-wrap">{item.admin_response}</p>
+              </div>
+            )}
+
+            {/* Response Input */}
+            {respondingTo === item.id && (
+              <div className="mt-4 space-y-2">
+                <Textarea
+                  placeholder="Type your response..."
+                  value={responseText}
+                  onChange={(e) => setResponseText(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleRespond(item.id)}
+                    disabled={submitting}
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    {submitting ? "Sending..." : "Send Response"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setRespondingTo(null);
+                      setResponseText("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 mt-4">
+              {!item.admin_response && respondingTo !== item.id && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setRespondingTo(item.id)}
+                >
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  Respond
+                </Button>
+              )}
               {item.status === "pending" && (
                 <Button
                   size="sm"

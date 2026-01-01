@@ -57,6 +57,7 @@ const Index = () => {
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [showClearChatDialog, setShowClearChatDialog] = useState(false);
   const [aiCredits, setAiCredits] = useState<number>(15);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
@@ -418,6 +419,7 @@ const Index = () => {
   const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File, generateImage?: boolean) => {
     if (!user || !selectedConversationId) return;
 
+    setIsSendingMessage(true);
     const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
     const isAIChat = selectedUserId === AI_BOT_ID;
 
@@ -512,8 +514,11 @@ const Index = () => {
         console.error("Error sending message:", error);
       }
       toast.error("Failed to send message");
+      setIsSendingMessage(false);
       return;
     }
+
+    setIsSendingMessage(false);
 
     // If this is an AI chat, call the AI edge function
     if (isAIChat) {
@@ -991,6 +996,7 @@ const Index = () => {
               onModelChange={setSelectedAIModel}
               aiCredits={aiCredits}
               onCreditsUpdate={fetchAiCredits}
+              isSending={isSendingMessage}
               onTyping={() => {
                 if (!selectedConversationId || !user?.id) return;
                 
