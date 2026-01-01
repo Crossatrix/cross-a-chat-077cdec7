@@ -80,6 +80,17 @@ const Index = () => {
     }
   };
 
+  // Initialize notifications
+  useEffect(() => {
+    const initNotifications = async () => {
+      const permission = await requestNotificationPermission();
+      if (permission) {
+        await registerServiceWorker();
+      }
+    };
+    initNotifications();
+  }, []);
+
   useEffect(() => {
     // Set up auth state listener
     const {
@@ -145,6 +156,52 @@ const Index = () => {
         .from('profiles')
         .update({ last_seen: new Date().toISOString() })
         .eq('id', user.id);
+    };
+  }, [user]);
+
+  // Listen for incoming call signals
+  useEffect(() => {
+    if (!user) return;
+
+    const callChannel = supabase
+      .channel('incoming-calls')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'call_signals',
+          filter: `to_user_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          const signal = payload.new;
+          
+          // Only show notification for offer signals (new calls)
+          if (signal.signal_type === 'offer') {
+            // Get caller's profile
+            const { data: callerProfile } = await supabase
+              .from('profiles')
+              .select('username')
+              .eq('id', signal.from_user_id)
+              .single();
+            
+            const callerName = callerProfile?.username || 'Someone';
+            
+            showNotification(
+              '📞 Incoming Call',
+              `${callerName} is calling you`,
+              {
+                tag: `call-${signal.conversation_id}`,
+                requireInteraction: true,
+              }
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(callChannel);
     };
   }, [user]);
 
@@ -265,7 +322,7 @@ const Index = () => {
               showNotification(
                 `New message from ${data.profiles?.username || 'Someone'}`,
                 data.content || 'Sent a media file',
-                { url: '/' }
+                { tag: `message-${selectedConversationId}` }
               );
             }
           }
