@@ -30,7 +30,21 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
   return null;
 };
 
-export const showNotification = (title: string, body: string, data?: any) => {
+export const showNotification = (
+  title: string, 
+  body: string, 
+  options?: {
+    tag?: string;
+    data?: any;
+    requireInteraction?: boolean;
+    actions?: Array<{ action: string; title: string }>;
+  }
+) => {
+  // Don't show notification if the window is focused
+  if (document.hasFocus()) {
+    return;
+  }
+
   if (Notification.permission === 'granted') {
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       // Use service worker notification for better mobile support
@@ -39,8 +53,9 @@ export const showNotification = (title: string, body: string, data?: any) => {
           body,
           icon: '/favicon.ico',
           badge: '/favicon.ico',
-          tag: 'message',
-          data: data || {},
+          tag: options?.tag || 'message',
+          data: options?.data || {},
+          requireInteraction: options?.requireInteraction || false,
         });
       });
     } else {
@@ -48,7 +63,39 @@ export const showNotification = (title: string, body: string, data?: any) => {
       new Notification(title, {
         body,
         icon: '/favicon.ico',
+        tag: options?.tag || 'message',
       });
     }
   }
+};
+
+export const showCallNotification = (callerName: string, conversationId: string) => {
+  showNotification(
+    `📞 Incoming call`,
+    `${callerName} is calling you`,
+    {
+      tag: `call-${conversationId}`,
+      requireInteraction: true,
+      data: { 
+        type: 'call',
+        conversationId,
+        url: '/' 
+      },
+    }
+  );
+};
+
+export const showMessageNotification = (senderName: string, content: string, conversationId: string) => {
+  showNotification(
+    `💬 ${senderName}`,
+    content || 'Sent a media file',
+    {
+      tag: `message-${conversationId}`,
+      data: { 
+        type: 'message',
+        conversationId,
+        url: '/' 
+      },
+    }
+  );
 };
