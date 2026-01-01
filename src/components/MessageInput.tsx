@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Image as ImageIcon, Video, Mic, StopCircle, X, Sparkles, Coins } from "lucide-react";
+import { Send, Image as ImageIcon, Video, Mic, StopCircle, X, Sparkles, Coins, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,7 @@ interface CustomEmoji {
 }
 
 interface MessageInputProps {
-  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean) => void;
+  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean) => Promise<void> | void;
   disabled?: boolean;
   isAIChat?: boolean;
   onModelChange?: (model: string) => void;
@@ -22,6 +22,7 @@ interface MessageInputProps {
   onTyping?: () => void;
   aiCredits?: number;
   onCreditsUpdate?: () => void;
+  isSending?: boolean;
 }
 
 const messageSchema = z.string()
@@ -32,7 +33,7 @@ const messageSchema = z.string()
     "Message contains invalid content"
   );
 
-const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping, aiCredits, onCreditsUpdate }: MessageInputProps) => {
+const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping, aiCredits, onCreditsUpdate, isSending = false }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
@@ -364,11 +365,11 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
         />
         <Button 
           type="submit" 
-          disabled={disabled || isRecording || (!message.trim() && !selectedImage && !selectedVideo && !recordedBlob)} 
+          disabled={disabled || isRecording || isSending || (!message.trim() && !selectedImage && !selectedVideo && !recordedBlob)} 
           size="icon" 
           className="shrink-0"
         >
-          <Send className="h-4 w-4" />
+          {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
       </div>
     </form>

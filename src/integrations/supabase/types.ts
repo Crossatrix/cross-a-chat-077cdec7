@@ -204,6 +204,9 @@ export type Database = {
       }
       feedback: {
         Row: {
+          admin_response: string | null
+          admin_response_at: string | null
+          admin_response_by: string | null
           created_at: string
           id: string
           important: boolean
@@ -213,6 +216,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_response?: string | null
+          admin_response_at?: string | null
+          admin_response_by?: string | null
           created_at?: string
           id?: string
           important?: boolean
@@ -222,6 +228,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_response?: string | null
+          admin_response_at?: string | null
+          admin_response_by?: string | null
           created_at?: string
           id?: string
           important?: boolean
@@ -230,7 +239,15 @@ export type Database = {
           status?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "feedback_admin_response_by_fkey"
+            columns: ["admin_response_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       message_reads: {
         Row: {
