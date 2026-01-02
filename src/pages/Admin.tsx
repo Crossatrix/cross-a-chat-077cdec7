@@ -693,6 +693,7 @@ const Admin = () => {
               }
             }}
             emojiCategories={emojiCategories}
+            onRefresh={fetchAllData}
           />
         </div>
       </main>

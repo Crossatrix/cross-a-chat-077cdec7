@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle2, Ban, Clock, Bot, XCircle, FolderInput } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Trash2, CheckCircle2, Ban, Clock, Bot, XCircle, FolderInput, Send, MessageSquare } from "lucide-react";
 import { FileItem } from "./FileExplorer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,13 +39,52 @@ interface FilePreviewProps {
   onDelete: (file: FileItem) => void;
   onAction?: (action: string, file: FileItem, extra?: any) => void;
   emojiCategories?: string[];
+  onRefresh?: () => void;
 }
 
-const FilePreview = ({ file, onDelete, onAction, emojiCategories = [] }: FilePreviewProps) => {
+const FilePreview = ({ file, onDelete, onAction, emojiCategories = [], onRefresh }: FilePreviewProps) => {
   const { t } = useLanguage();
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [selectedMoveCategory, setSelectedMoveCategory] = useState("");
+  const [responseText, setResponseText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
+  const handleSendResponse = async (feedbackId: string) => {
+    if (!responseText.trim()) {
+      toast.error("Please enter a response");
+      return;
+    }
+
+    setSubmitting(true);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error("Not authenticated");
+      setSubmitting(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("feedback")
+      .update({
+        admin_response: responseText.trim(),
+        admin_response_at: new Date().toISOString(),
+        admin_response_by: user.id,
+        status: "resolved",
+      })
+      .eq("id", feedbackId);
+
+    setSubmitting(false);
+
+    if (error) {
+      toast.error("Failed to send response");
+      return;
+    }
+
+    toast.success("Response sent");
+    setResponseText("");
+    onRefresh?.();
+  };
   if (!file) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground bg-card border border-border rounded-lg">
@@ -299,6 +341,8 @@ const FilePreview = ({ file, onDelete, onAction, emojiCategories = [] }: FilePre
   // Feedback file preview
   if (file.data?.type === "feedback") {
     const feedback = data;
+    const feedbackId = feedback.id;
+
     return (
       <div className="h-full bg-card border border-border rounded-lg p-4 overflow-auto">
         <div className="font-mono text-sm whitespace-pre-wrap text-foreground space-y-4">
@@ -319,6 +363,50 @@ const FilePreview = ({ file, onDelete, onAction, emojiCategories = [] }: FilePre
             <p className="text-muted-foreground mb-1">Message:</p>
             <p className="bg-secondary p-2 rounded">{feedback.message}</p>
           </div>
+
+          {/* Existing Admin Response */}
+          {feedback.admin_response && (
+            <div className="border-t border-border pt-2">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                <span className="text-primary font-medium">Admin Response</span>
+                {feedback.admin_username && (
+                  <span className="text-muted-foreground text-xs">by @{feedback.admin_username}</span>
+                )}
+                {feedback.admin_response_at && (
+                  <span className="text-muted-foreground text-xs">
+                    • {new Date(feedback.admin_response_at).toLocaleString()}
+                  </span>
+                )}
+              </div>
+              <p className="bg-primary/10 border border-primary/20 p-2 rounded">{feedback.admin_response}</p>
+            </div>
+          )}
+
+          {/* Admin Reply Box */}
+          {!feedback.admin_response && (
+            <div className="border-t border-border pt-2 space-y-2">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Reply to user</span>
+              </div>
+              <Textarea
+                placeholder="Type your response..."
+                value={responseText}
+                onChange={(e) => setResponseText(e.target.value)}
+                rows={3}
+                className="resize-none font-sans"
+              />
+              <Button
+                size="sm"
+                onClick={() => handleSendResponse(feedbackId)}
+                disabled={submitting || !responseText.trim()}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {submitting ? "Sending..." : "Send Response"}
+              </Button>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
             <Button 
