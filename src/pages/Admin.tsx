@@ -256,18 +256,56 @@ const Admin = () => {
   };
 
   const fetchFeedback = async (): Promise<FileItem[]> => {
-    const { data } = await supabase
+    const { data: feedbackRows, error } = await supabase
       .from("feedback")
-      .select("*, profiles:user_id(username)")
+      .select("*")
       .order("created_at", { ascending: false });
 
-    return (data || []).map((fb: any) => ({
-      id: `feedback-${fb.id}`,
-      name: `feedback_${fb.profiles?.username || "anon"}_${new Date(fb.created_at).toISOString().split('T')[0]}`,
-      type: "file" as const,
-      extension: "txt",
-      data: { ...fb, type: "feedback", username: fb.profiles?.username },
-    }));
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error("Error fetching feedback:", error);
+      }
+      toast.error("Failed to load feedback");
+      return [];
+    }
+
+    const ids = Array.from(
+      new Set(
+        (feedbackRows || [])
+          .flatMap((fb: any) => [fb.user_id, fb.admin_response_by])
+          .filter(Boolean)
+      )
+    ) as string[];
+
+    const profileMap = new Map<string, { username: string }>();
+
+    if (ids.length > 0) {
+      const { data: profiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("id,username")
+        .in("id", ids);
+
+      if (!profileError) {
+        (profiles || []).forEach((p) => profileMap.set(p.id, { username: p.username }));
+      }
+    }
+
+    return (feedbackRows || []).map((fb: any) => {
+      const username = profileMap.get(fb.user_id)?.username;
+      const adminUsername = fb.admin_response_by
+        ? profileMap.get(fb.admin_response_by)?.username
+        : undefined;
+
+      return {
+        id: `feedback-${fb.id}`,
+        name: `feedback_${username || "anon"}_${new Date(fb.created_at)
+          .toISOString()
+          .split("T")[0]}`,
+        type: "file" as const,
+        extension: "txt",
+        data: { ...fb, type: "feedback", username, admin_username: adminUsername },
+      };
+    });
   };
 
   const compressImage = (file: File): Promise<File> => {
