@@ -28,6 +28,7 @@ interface FeedbackItem {
   rating?: number | null;
   admin_response?: string | null;
   admin_response_at?: string | null;
+  response_read?: boolean;
 }
 
 export const FeedbackDialog = () => {
@@ -37,7 +38,28 @@ export const FeedbackDialog = () => {
   const [loading, setLoading] = useState(false);
   const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [hasUnreadResponses, setHasUnreadResponses] = useState(false);
   const { t } = useLanguage();
+
+  // Check for unread responses on mount
+  useEffect(() => {
+    checkUnreadResponses();
+  }, []);
+
+  const checkUnreadResponses = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("feedback")
+      .select("id")
+      .eq("user_id", user.id)
+      .not("admin_response", "is", null)
+      .eq("response_read", false)
+      .limit(1);
+
+    setHasUnreadResponses(!!data && data.length > 0);
+  };
 
   useEffect(() => {
     if (open) {
@@ -51,7 +73,7 @@ export const FeedbackDialog = () => {
 
     const { data } = await supabase
       .from("feedback")
-      .select("id, message, status, created_at, rating, admin_response, admin_response_at")
+      .select("id, message, status, created_at, rating, admin_response, admin_response_at, response_read")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10);
@@ -91,7 +113,29 @@ export const FeedbackDialog = () => {
     fetchFeedbackHistory();
   };
 
-  const hasAdminResponses = feedbackHistory.some(f => f.admin_response);
+  const markResponsesAsRead = async () => {
+    const unreadIds = feedbackHistory
+      .filter(f => f.admin_response && !f.response_read)
+      .map(f => f.id);
+
+    if (unreadIds.length > 0) {
+      await supabase
+        .from("feedback")
+        .update({ response_read: true })
+        .in("id", unreadIds);
+      
+      setHasUnreadResponses(false);
+      fetchFeedbackHistory();
+    }
+  };
+
+  const handleShowHistory = () => {
+    const newShowHistory = !showHistory;
+    setShowHistory(newShowHistory);
+    if (newShowHistory) {
+      markResponsesAsRead();
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -99,8 +143,8 @@ export const FeedbackDialog = () => {
         <Button variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3 relative" aria-label={t("feedback.title")}>
           <MessageSquare className="h-3.5 w-3.5 md:h-4 md:w-4" />
           <span className="hidden md:inline md:ml-2">{t("feedback.title")}</span>
-          {hasAdminResponses && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full animate-pulse" />
+          {hasUnreadResponses && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-pulse" />
           )}
         </Button>
       </DialogTrigger>
@@ -117,7 +161,7 @@ export const FeedbackDialog = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowHistory(!showHistory)}
+            onClick={handleShowHistory}
             className="w-full justify-start"
           >
             {showHistory ? "Hide" : "Show"} your feedback history ({feedbackHistory.length})

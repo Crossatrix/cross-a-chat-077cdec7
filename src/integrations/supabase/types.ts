@@ -212,6 +212,7 @@ export type Database = {
           important: boolean
           message: string
           rating: number | null
+          response_read: boolean | null
           status: string
           user_id: string
         }
@@ -224,6 +225,7 @@ export type Database = {
           important?: boolean
           message: string
           rating?: number | null
+          response_read?: boolean | null
           status?: string
           user_id: string
         }
@@ -236,6 +238,7 @@ export type Database = {
           important?: boolean
           message?: string
           rating?: number | null
+          response_read?: boolean | null
           status?: string
           user_id?: string
         }
