@@ -21,6 +21,7 @@ interface Conversation {
   is_group: boolean;
   is_ai_chat: boolean;
   name?: string;
+  group_image_url?: string;
   otherUser?: {
     id: string;
     username: string;
@@ -57,7 +58,7 @@ const ConversationsList = ({
         .from("conversation_participants")
         .select(`
           conversation_id,
-          conversations!inner(id, updated_at, is_group, is_ai_chat, name)
+          conversations!inner(id, updated_at, is_group, is_ai_chat, name, group_image_url)
         `)
         .eq("user_id", currentUserId);
 
@@ -113,6 +114,7 @@ const ConversationsList = ({
           is_group: conv.is_group,
           is_ai_chat: conv.is_ai_chat,
           name: conv.name,
+          group_image_url: conv.group_image_url,
           participantCount: countMap.get(p.conversation_id) || 0,
         });
       });
@@ -304,7 +306,9 @@ const ConversationsList = ({
                 : conv.is_group 
                   ? conv.name || "Group Chat" 
                   : conv.otherUser?.username || "Unknown";
-              const avatarSrc = conv.is_group ? "" : (conv.otherUser?.avatar_url || "");
+              const avatarSrc = conv.is_group 
+                ? (conv.group_image_url || "") 
+                : (conv.otherUser?.avatar_url || "");
               const avatarFallback = conv.is_ai_chat
                 ? "🤖"
                 : conv.is_group 

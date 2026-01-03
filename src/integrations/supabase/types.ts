@@ -84,18 +84,21 @@ export type Database = {
           conversation_id: string
           id: string
           joined_at: string
+          role: Database["public"]["Enums"]["group_role"] | null
           user_id: string
         }
         Insert: {
           conversation_id: string
           id?: string
           joined_at?: string
+          role?: Database["public"]["Enums"]["group_role"] | null
           user_id: string
         }
         Update: {
           conversation_id?: string
           id?: string
           joined_at?: string
+          role?: Database["public"]["Enums"]["group_role"] | null
           user_id?: string
         }
         Relationships: [
@@ -112,6 +115,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          group_image_url: string | null
           id: string
           is_ai_chat: boolean
           is_group: boolean
@@ -121,6 +125,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          group_image_url?: string | null
           id?: string
           is_ai_chat?: boolean
           is_group?: boolean
@@ -130,6 +135,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          group_image_url?: string | null
           id?: string
           is_ai_chat?: boolean
           is_group?: boolean
@@ -606,6 +612,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_group_member: {
+        Args: { _conversation_id: string; _new_user_id: string }
+        Returns: boolean
+      }
+      change_group_role: {
+        Args: {
+          _conversation_id: string
+          _new_role: Database["public"]["Enums"]["group_role"]
+          _target_user_id: string
+        }
+        Returns: boolean
+      }
       create_group_conversation: {
         Args: { group_name: string; participant_ids: string[] }
         Returns: string
@@ -614,6 +632,7 @@ export type Database = {
         Args: { p_amount: number; p_user_id: string }
         Returns: boolean
       }
+      delete_group: { Args: { _conversation_id: string }; Returns: boolean }
       demote_from_admin: {
         Args: { target_user_id: string }
         Returns: undefined
@@ -623,6 +642,14 @@ export type Database = {
         Returns: string
       }
       get_or_reset_ai_credits: { Args: { p_user_id: string }; Returns: number }
+      has_group_role: {
+        Args: {
+          _conversation_id: string
+          _role: Database["public"]["Enums"]["group_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -630,14 +657,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_app_admin: { Args: { _user_id: string }; Returns: boolean }
       is_conversation_member: {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      is_group_admin: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_moderator: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
+      }
+      leave_group: { Args: { _conversation_id: string }; Returns: boolean }
       promote_to_admin: { Args: { target_user_id: string }; Returns: undefined }
+      remove_group_member: {
+        Args: { _conversation_id: string; _target_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"
+      group_role: "admin" | "moderator" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -766,6 +808,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      group_role: ["admin", "moderator", "member"],
     },
   },
 } as const
