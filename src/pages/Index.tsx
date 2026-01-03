@@ -23,6 +23,7 @@ import BlockedUsersList from "@/components/BlockedUsersList";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CallInterface } from "@/components/CallInterface";
 import { NewChatDialog } from "@/components/NewChatDialog";
+import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 
 interface Message {
@@ -51,6 +52,7 @@ const Index = () => {
   const [selectedUsername, setSelectedUsername] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [isGroup, setIsGroup] = useState(false);
+  const [groupImageUrl, setGroupImageUrl] = useState<string | undefined>(undefined);
   const [isInCall, setIsInCall] = useState(false);
   const [selectedAIModel, setSelectedAIModel] = useState("openai/gpt-5-mini");
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
@@ -643,11 +645,12 @@ const Index = () => {
     setSelectedUsername(displayName);
     setIsGroup(isGroupChat);
     setMessages([]);
+    setGroupImageUrl(undefined);
 
-    // Check if this is an AI conversation
+    // Check if this is an AI conversation and fetch group image if applicable
     const { data: conversation } = await supabase
       .from("conversations")
-      .select("is_ai_chat")
+      .select("is_ai_chat, group_image_url")
       .eq("id", conversationId)
       .single();
 
@@ -667,6 +670,10 @@ const Index = () => {
       }
     } else {
       setSelectedUserId("");
+      // Set group image if available
+      if (conversation?.group_image_url) {
+        setGroupImageUrl(conversation.group_image_url);
+      }
     }
   };
 
@@ -930,8 +937,43 @@ const Index = () => {
                   >
                     <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
                   </Button>
+                ) : isGroup && selectedConversationId ? (
+                  <GroupSettingsDialog
+                    conversationId={selectedConversationId}
+                    groupName={selectedUsername}
+                    groupImageUrl={groupImageUrl}
+                    currentUserId={user.id}
+                    onGroupUpdated={async () => {
+                      // Refetch conversation details
+                      const { data } = await supabase
+                        .from("conversations")
+                        .select("name, group_image_url")
+                        .eq("id", selectedConversationId)
+                        .single();
+                      if (data) {
+                        setSelectedUsername(data.name || "Group Chat");
+                        setGroupImageUrl(data.group_image_url || undefined);
+                      }
+                    }}
+                    onGroupDeleted={() => {
+                      setSelectedConversationId(null);
+                      setSelectedUsername("");
+                      setSelectedUserId("");
+                      setIsGroup(false);
+                      setMessages([]);
+                      setGroupImageUrl(undefined);
+                    }}
+                    onGroupLeft={() => {
+                      setSelectedConversationId(null);
+                      setSelectedUsername("");
+                      setSelectedUserId("");
+                      setIsGroup(false);
+                      setMessages([]);
+                      setGroupImageUrl(undefined);
+                    }}
+                  />
                 ) : (
-                  !isGroup && selectedUserId && (
+                  selectedUserId && (
                     <>
                       <Button
                         onClick={startCall}
