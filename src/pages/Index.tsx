@@ -35,6 +35,8 @@ interface Message {
   voice_url?: string;
   video_url?: string;
   updated_at?: string;
+  is_system?: boolean;
+  system_type?: string;
   profiles: {
     username: string;
     avatar_url?: string;
@@ -53,6 +55,7 @@ const Index = () => {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [isGroup, setIsGroup] = useState(false);
   const [groupImageUrl, setGroupImageUrl] = useState<string | undefined>(undefined);
+  const [isKickedFromGroup, setIsKickedFromGroup] = useState(false);
   const [isInCall, setIsInCall] = useState(false);
   const [selectedAIModel, setSelectedAIModel] = useState("openai/gpt-5-mini");
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
@@ -283,6 +286,11 @@ const Index = () => {
         .order("created_at", { ascending: true });
 
       if (error) {
+        // Check if error is due to RLS (kicked from group)
+        if (error.code === 'PGRST116' || error.message.includes('permission')) {
+          setIsKickedFromGroup(true);
+          return;
+        }
         if (import.meta.env.DEV) {
           console.error("Error fetching messages:", error);
         }
@@ -290,6 +298,7 @@ const Index = () => {
         return;
       }
 
+      setIsKickedFromGroup(false);
       setMessages(data || []);
     };
 
@@ -646,6 +655,7 @@ const Index = () => {
     setIsGroup(isGroupChat);
     setMessages([]);
     setGroupImageUrl(undefined);
+    setIsKickedFromGroup(false);
 
     // Check if this is an AI conversation and fetch group image if applicable
     const { data: conversation } = await supabase
@@ -653,6 +663,20 @@ const Index = () => {
       .select("is_ai_chat, group_image_url")
       .eq("id", conversationId)
       .single();
+
+    // Check if user is kicked from group
+    if (isGroupChat) {
+      const { data: participant } = await supabase
+        .from("conversation_participants")
+        .select("kicked_at")
+        .eq("conversation_id", conversationId)
+        .eq("user_id", user?.id)
+        .single();
+      
+      if (participant?.kicked_at) {
+        setIsKickedFromGroup(true);
+      }
+    }
 
     if (conversation?.is_ai_chat) {
       // This is an AI chat, set the AI bot ID
@@ -774,6 +798,37 @@ const Index = () => {
 
   const handleDeleteConversation = async (conversationId: string) => {
     try {
+      // Check if user is kicked from this conversation
+      const { data: participant } = await supabase
+        .from("conversation_participants")
+        .select("kicked_at")
+        .eq("conversation_id", conversationId)
+        .eq("user_id", user?.id)
+        .single();
+
+      // If user is kicked, just delete their participant record
+      if (participant?.kicked_at) {
+        const { error } = await supabase
+          .from("conversation_participants")
+          .delete()
+          .eq("conversation_id", conversationId)
+          .eq("user_id", user?.id);
+
+        if (error) throw error;
+
+        toast.success("Chat removed from your list");
+        
+        // Clear selected conversation if it was the deleted one
+        if (selectedConversationId === conversationId) {
+          setSelectedConversationId(null);
+          setSelectedUsername("");
+          setSelectedUserId("");
+          setMessages([]);
+          setIsKickedFromGroup(false);
+        }
+        return;
+      }
+
       // Delete all messages and their associated media files
       const { data: messages } = await supabase
         .from("messages")
@@ -1021,53 +1076,80 @@ const Index = () => {
           </div>
         </header>
         {selectedConversationId ? (
-          <>
-            <MessageList 
-              messages={messages} 
-              currentUserId={username} 
-              currentUserDbId={user?.id}
-              onDeleteMessage={handleDeleteMessage}
-              onUpdateMessage={handleUpdateMessage}
-              typingUsers={typingUsers}
-              conversationId={selectedConversationId}
-            />
-            <MessageInput 
-              onSend={handleSendMessage} 
-              isAIChat={selectedUserId === '00000000-0000-0000-0000-000000000000'}
-              selectedModel={selectedAIModel}
-              onModelChange={setSelectedAIModel}
-              aiCredits={aiCredits}
-              onCreditsUpdate={fetchAiCredits}
-              isSending={isSendingMessage}
-              onTyping={() => {
-                if (!selectedConversationId || !user?.id) return;
-                
-                // Don't broadcast typing to AI chats
-                const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
-                if (selectedUserId === AI_BOT_ID) return;
-                
-                // Clear existing timeout
-                if (typingTimeout) {
-                  clearTimeout(typingTimeout);
-                }
+          isKickedFromGroup ? (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="text-center space-y-4">
+                <div className="text-6xl">🚫</div>
+                <h2 className="text-xl font-semibold text-destructive">You were removed from this group</h2>
+                <p className="text-muted-foreground">You can no longer view or send messages in this group.</p>
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  className="gap-2"
+                  onClick={() => {
+                    handleDeleteConversation(selectedConversationId);
+                    setSelectedConversationId(null);
+                    setSelectedUsername("");
+                    setSelectedUserId("");
+                    setIsGroup(false);
+                    setIsKickedFromGroup(false);
+                    setMessages([]);
+                  }}
+                >
+                  <Trash2 className="h-5 w-5" />
+                  Delete This Chat
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <MessageList 
+                messages={messages} 
+                currentUserId={username} 
+                currentUserDbId={user?.id}
+                onDeleteMessage={handleDeleteMessage}
+                onUpdateMessage={handleUpdateMessage}
+                typingUsers={typingUsers}
+                conversationId={selectedConversationId}
+              />
+              <MessageInput 
+                onSend={handleSendMessage} 
+                isAIChat={selectedUserId === '00000000-0000-0000-0000-000000000000'}
+                selectedModel={selectedAIModel}
+                onModelChange={setSelectedAIModel}
+                aiCredits={aiCredits}
+                onCreditsUpdate={fetchAiCredits}
+                isSending={isSendingMessage}
+                onTyping={() => {
+                  if (!selectedConversationId || !user?.id) return;
+                  
+                  // Don't broadcast typing to AI chats
+                  const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
+                  if (selectedUserId === AI_BOT_ID) return;
+                  
+                  // Clear existing timeout
+                  if (typingTimeout) {
+                    clearTimeout(typingTimeout);
+                  }
 
-                // Broadcast typing event
-                const channel = supabase.channel(`conversation-${selectedConversationId}`);
-                channel.send({
-                  type: 'broadcast',
-                  event: 'typing',
-                  payload: { userId: user.id, username }
-                });
+                  // Broadcast typing event
+                  const channel = supabase.channel(`conversation-${selectedConversationId}`);
+                  channel.send({
+                    type: 'broadcast',
+                    event: 'typing',
+                    payload: { userId: user.id, username }
+                  });
 
-                // Set timeout to stop broadcasting
-                const timeout = setTimeout(() => {
-                  setTypingTimeout(null);
-                }, 3000);
-                
-                setTypingTimeout(timeout);
-              }}
-            />
-          </>
+                  // Set timeout to stop broadcasting
+                  const timeout = setTimeout(() => {
+                    setTypingTimeout(null);
+                  }, 3000);
+                  
+                  setTypingTimeout(timeout);
+                }}
+              />
+            </>
+          )
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground p-4">
             <div className="text-center">

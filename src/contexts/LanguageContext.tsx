@@ -75,6 +75,8 @@ const translations: Translations = {
   "newChat.userBlocked": { en: "This user is blocked", de: "Dieser Benutzer ist blockiert" },
   "newChat.found": { en: "Found", de: "Gefunden" },
   "newChat.searchFailed": { en: "Failed to search username", de: "Suche fehlgeschlagen" },
+  "newChat.noContacts": { en: "No contacts yet", de: "Noch keine Kontakte" },
+  "newChat.searchToFind": { en: "Search by username to find someone new", de: "Suche nach Benutzername, um jemanden zu finden" },
   
   // AI Chat
   "ai.nameChat": { en: "Name Your AI Chat", de: "AI-Chat benennen" },
