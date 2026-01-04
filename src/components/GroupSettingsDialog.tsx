@@ -91,7 +91,8 @@ export const GroupSettingsDialog = ({
       const { data: participants, error } = await supabase
         .from("conversation_participants")
         .select("id, user_id, role")
-        .eq("conversation_id", conversationId);
+        .eq("conversation_id", conversationId)
+        .is("kicked_at", null);
 
       if (error) throw error;
 

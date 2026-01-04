@@ -19,6 +19,8 @@ interface Message {
   voice_url?: string;
   video_url?: string;
   updated_at?: string;
+  is_system?: boolean;
+  system_type?: string;
   profiles: {
     username: string;
     avatar_url?: string;
@@ -161,6 +163,18 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
       <div className="space-y-2 md:space-y-4">
         {messages.map((message) => {
           const isCurrentUser = message.profiles?.username === currentUserId;
+          
+          // Render system messages differently
+          if (message.is_system) {
+            return (
+              <div key={message.id} className="flex justify-center my-2">
+                <div className="bg-muted/50 text-muted-foreground text-xs md:text-sm px-3 py-1 rounded-full border border-border">
+                  {message.content}
+                </div>
+              </div>
+            );
+          }
+          
           return (
             <div
               key={message.id}

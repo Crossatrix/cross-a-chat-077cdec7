@@ -56,7 +56,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
   }, [open]);
 
   const fetchUsers = async () => {
-    // Fetch recent conversation participants
+    // Fetch conversation participants - only users you've chatted with
     const { data: conversations } = await supabase
       .from("conversation_participants")
       .select("conversation_id")
@@ -64,24 +64,33 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
 
     const conversationIds = conversations?.map((c) => c.conversation_id) || [];
     
-    let recentUserIds: string[] = [];
-    if (conversationIds.length > 0) {
-      const { data: recentParticipants } = await supabase
-        .from("conversation_participants")
-        .select("user_id, joined_at")
-        .in("conversation_id", conversationIds)
-        .neq("user_id", currentUserId)
-        .order("joined_at", { ascending: false });
-
-      // Get unique user IDs from recent conversations
-      recentUserIds = [...new Set(recentParticipants?.map((p) => p.user_id) || [])].slice(0, 5);
+    if (conversationIds.length === 0) {
+      setRecentUsers([]);
+      setUsers([]);
+      return;
     }
 
-    // Fetch all profiles
+    // Get all users from conversations (people you've chatted with)
+    const { data: chatPartners } = await supabase
+      .from("conversation_participants")
+      .select("user_id, joined_at")
+      .in("conversation_id", conversationIds)
+      .neq("user_id", currentUserId);
+
+    // Get unique user IDs from conversations
+    const chatPartnerIds = [...new Set(chatPartners?.map((p) => p.user_id) || [])];
+
+    if (chatPartnerIds.length === 0) {
+      setRecentUsers([]);
+      setUsers([]);
+      return;
+    }
+
+    // Fetch profiles only for users you've chatted with
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, username, avatar_url")
-      .neq("id", currentUserId)
+      .in("id", chatPartnerIds)
       .neq("id", "00000000-0000-0000-0000-000000000000")
       .order("username");
 
@@ -92,6 +101,9 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
         .eq("blocker_id", currentUserId);
 
       const blockedIds = new Set(blockedUsers?.map((b) => b.blocked_user_id) || []);
+      
+      // Get recent user IDs (last 5 unique)
+      const recentUserIds = [...new Set(chatPartners?.map((p) => p.user_id) || [])].slice(0, 5);
       const recentUserIdsSet = new Set(recentUserIds);
       
       const filteredRecent = profiles.filter((p) => !blockedIds.has(p.id) && recentUserIdsSet.has(p.id));
@@ -369,6 +381,12 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
               </div>
               <ScrollArea className="h-64 border rounded-md p-4">
                 <div className="space-y-3">
+                  {recentUsers.length === 0 && users.length === 0 && !searchedUser && (
+                    <div className="text-center text-muted-foreground py-8">
+                      <p className="text-sm">{t("newChat.noContacts")}</p>
+                      <p className="text-xs mt-2">{t("newChat.searchToFind")}</p>
+                    </div>
+                  )}
                   {searchedUser && (
                     <div className="pb-3 mb-3 border-b">
                       <div className="flex items-center space-x-2">

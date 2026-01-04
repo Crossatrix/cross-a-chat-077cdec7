@@ -84,6 +84,7 @@ export type Database = {
           conversation_id: string
           id: string
           joined_at: string
+          kicked_at: string | null
           role: Database["public"]["Enums"]["group_role"] | null
           user_id: string
         }
@@ -91,6 +92,7 @@ export type Database = {
           conversation_id: string
           id?: string
           joined_at?: string
+          kicked_at?: string | null
           role?: Database["public"]["Enums"]["group_role"] | null
           user_id: string
         }
@@ -98,6 +100,7 @@ export type Database = {
           conversation_id?: string
           id?: string
           joined_at?: string
+          kicked_at?: string | null
           role?: Database["public"]["Enums"]["group_role"] | null
           user_id?: string
         }
@@ -301,6 +304,8 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          is_system: boolean | null
+          system_type: string | null
           updated_at: string | null
           user_id: string
           video_url: string | null
@@ -312,6 +317,8 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_system?: boolean | null
+          system_type?: string | null
           updated_at?: string | null
           user_id: string
           video_url?: string | null
@@ -323,6 +330,8 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_system?: boolean | null
+          system_type?: string | null
           updated_at?: string | null
           user_id?: string
           video_url?: string | null

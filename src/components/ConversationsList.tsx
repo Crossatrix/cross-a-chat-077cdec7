@@ -22,6 +22,7 @@ interface Conversation {
   is_ai_chat: boolean;
   name?: string;
   group_image_url?: string;
+  isKicked?: boolean;
   otherUser?: {
     id: string;
     username: string;
@@ -54,10 +55,12 @@ const ConversationsList = ({
     if (!currentUserId) return;
 
     const fetchConversations = async () => {
+      // Fetch all conversation participants for this user (including kicked)
       const { data: participantData } = await supabase
         .from("conversation_participants")
         .select(`
           conversation_id,
+          kicked_at,
           conversations!inner(id, updated_at, is_group, is_ai_chat, name, group_image_url)
         `)
         .eq("user_id", currentUserId);
@@ -69,6 +72,12 @@ const ConversationsList = ({
         setConversations([]);
         return;
       }
+
+      // Create a map of kicked status
+      const kickedMap = new Map();
+      participantData.forEach((p: any) => {
+        kickedMap.set(p.conversation_id, !!p.kicked_at);
+      });
 
       // Get participant counts
       const { data: participantCounts } = await supabase
@@ -116,6 +125,7 @@ const ConversationsList = ({
           name: conv.name,
           group_image_url: conv.group_image_url,
           participantCount: countMap.get(p.conversation_id) || 0,
+          isKicked: kickedMap.get(p.conversation_id) || false,
         });
       });
 
@@ -344,35 +354,47 @@ const ConversationsList = ({
                 <div key={conv.id} className="relative group">
                   <Button
                     variant={selectedConversationId === conv.id ? "secondary" : "ghost"}
-                    className={`w-full justify-start gap-3 h-auto py-3 pr-12 overflow-hidden ${hasUnread ? 'border-2 border-[#39ff14] bg-[#39ff14]/10' : ''}`}
+                    className={`w-full justify-start gap-3 h-auto py-3 pr-12 overflow-hidden ${hasUnread ? 'border-2 border-[#39ff14] bg-[#39ff14]/10' : ''} ${conv.isKicked ? 'opacity-60' : ''}`}
                     onClick={() => onSelectConversation(conv.id, displayName, conv.is_group)}
                   >
                     <div className="relative shrink-0">
-                      <Avatar className="h-10 w-10 border-2 border-primary">
+                      <Avatar className={`h-10 w-10 border-2 ${conv.isKicked ? 'border-destructive' : 'border-primary'}`}>
                         <AvatarImage src={avatarSrc} alt={displayName} />
                         <AvatarFallback className="bg-secondary text-foreground">
                           {avatarFallback}
                         </AvatarFallback>
                       </Avatar>
-                      {isOnline && !conv.is_ai_chat && !conv.is_group && (
+                      {conv.isKicked && (
+                        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive border-2 border-card flex items-center justify-center">
+                          <span className="text-[8px] text-destructive-foreground">✕</span>
+                        </div>
+                      )}
+                      {isOnline && !conv.is_ai_chat && !conv.is_group && !conv.isKicked && (
                         <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-card" />
                       )}
                     </div>
                     <div className="flex-1 text-left overflow-hidden min-w-0 max-w-full">
                       <div className="flex items-center gap-2">
-                        <div className="font-medium truncate">{displayName}</div>
-                        {lastSeenText && (
+                        <div className={`font-medium truncate ${conv.isKicked ? 'line-through text-muted-foreground' : ''}`}>{displayName}</div>
+                        {conv.isKicked && (
+                          <span className="text-xs text-destructive font-medium shrink-0">Removed</span>
+                        )}
+                        {!conv.isKicked && lastSeenText && (
                           <div className={`text-xs shrink-0 ${isOnline ? 'text-green-500 font-medium' : 'text-muted-foreground'}`}>
                             {lastSeenText}
                           </div>
                         )}
                       </div>
-                      {conv.is_group && conv.participantCount && (
+                      {conv.is_group && conv.participantCount && !conv.isKicked && (
                         <div className="text-xs text-muted-foreground truncate">
                           {conv.participantCount} members
                         </div>
                       )}
-                      {conv.lastMessage && (
+                      {conv.isKicked ? (
+                        <div className="text-xs text-destructive truncate mt-1">
+                          You were removed from this group
+                        </div>
+                      ) : conv.lastMessage && (
                         <div className="text-xs text-muted-foreground truncate mt-1 max-w-[60vw] md:max-w-full">
                           {conv.lastMessage}
                         </div>
