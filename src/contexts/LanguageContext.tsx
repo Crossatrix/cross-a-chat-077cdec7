@@ -275,6 +275,20 @@ const translations: Translations = {
   "call.connecting": { en: "Connecting...", de: "Verbinde..." },
   "call.cannotCallAI": { en: "Cannot call AI bot", de: "AI-Bot kann nicht angerufen werden" },
   "call.failed": { en: "Failed to start call", de: "Anruf konnte nicht gestartet werden" },
+  
+  // User Info - Online Status & Media
+  "userInfo.online": { en: "Online", de: "Online" },
+  "userInfo.offline": { en: "Offline", de: "Offline" },
+  "userInfo.lastSeen": { en: "Last seen", de: "Zuletzt gesehen" },
+  "userInfo.justNow": { en: "Just now", de: "Gerade eben" },
+  "userInfo.minutesAgo": { en: "min ago", de: "Min. her" },
+  "userInfo.hoursAgo": { en: "hours ago", de: "Std. her" },
+  "userInfo.daysAgo": { en: "days ago", de: "Tage her" },
+  "userInfo.neverSeen": { en: "Never", de: "Nie" },
+  "userInfo.images": { en: "Images", de: "Bilder" },
+  "userInfo.videos": { en: "Videos", de: "Videos" },
+  "userInfo.noImages": { en: "No shared images", de: "Keine geteilten Bilder" },
+  "userInfo.noVideos": { en: "No shared videos", de: "Keine geteilten Videos" },
 };
 
 interface LanguageContextType {

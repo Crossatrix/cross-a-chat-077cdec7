@@ -21,8 +21,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Info, UserX, Flag } from "lucide-react";
+import { Info, UserX, Flag, Image, Video, X } from "lucide-react";
 import { z } from "zod";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -40,6 +42,14 @@ interface UserProfile {
   bio: string | null;
   avatar_url: string | null;
   created_at: string;
+  last_seen: string | null;
+}
+
+interface SharedMedia {
+  id: string;
+  image_url: string | null;
+  video_url: string | null;
+  created_at: string;
 }
 
 const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: UserInfoDialogProps) => {
@@ -51,18 +61,42 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
   const [reportReason, setReportReason] = useState("");
   const [submittingReport, setSubmittingReport] = useState(false);
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
+  const [sharedMedia, setSharedMedia] = useState<SharedMedia[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
     if (open && userId) {
       fetchProfile();
+      fetchSharedMedia();
     }
+  }, [open, userId]);
+
+  // Subscribe to presence for online status
+  useEffect(() => {
+    if (!open || !userId) return;
+
+    const presenceChannel = supabase.channel(`user-presence-${userId}`)
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const userOnline = Object.values(state).some((presences: any) => 
+          presences.some((p: any) => p.user_id === userId)
+        );
+        setIsOnline(userOnline);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
   }, [open, userId]);
 
   const fetchProfile = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("username, bio, avatar_url, created_at")
+      .select("username, bio, avatar_url, created_at, last_seen")
       .eq("id", userId)
       .single();
 
@@ -70,8 +104,32 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
       console.error("Error fetching profile:", error);
     } else {
       setProfile(data);
+      // Check if user was seen in the last 2 minutes
+      if (data.last_seen) {
+        const lastSeenDate = new Date(data.last_seen);
+        const now = new Date();
+        const diffMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
+        setIsOnline(diffMinutes < 2);
+      }
     }
     setLoading(false);
+  };
+
+  const fetchSharedMedia = async () => {
+    setLoadingMedia(true);
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, image_url, video_url, created_at")
+      .eq("conversation_id", conversationId)
+      .or("image_url.neq.null,video_url.neq.null")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching shared media:", error);
+    } else {
+      setSharedMedia(data || []);
+    }
+    setLoadingMedia(false);
   };
 
   const handleBlock = async () => {
@@ -164,6 +222,27 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
     });
   };
 
+  const formatLastSeen = (dateString: string | null) => {
+    if (!dateString) return t("userInfo.neverSeen");
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffMinutes < 1) return t("userInfo.justNow");
+    if (diffMinutes < 60) return `${diffMinutes} ${t("userInfo.minutesAgo")}`;
+    
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} ${t("userInfo.hoursAgo")}`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} ${t("userInfo.daysAgo")}`;
+    
+    return formatJoinDate(dateString);
+  };
+
+  const images = sharedMedia.filter(m => m.image_url);
+  const videos = sharedMedia.filter(m => m.video_url);
+
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -172,7 +251,7 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
             <Info className="h-4 w-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>{t("userInfo.title")}</DialogTitle>
           </DialogHeader>
@@ -182,28 +261,123 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : profile ? (
-            <div className="space-y-6">
+            <div className="flex-1 overflow-hidden flex flex-col space-y-4">
+              {/* Profile Header */}
               <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={profile.avatar_url || undefined} alt={profile.username} />
-                  <AvatarFallback className="text-xl">{profile.username[0]?.toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-lg font-semibold">@{profile.username}</h3>
+                <div className="relative">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={profile.avatar_url || undefined} alt={profile.username} />
+                    <AvatarFallback className="text-xl">{profile.username[0]?.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  {/* Online Status Indicator */}
+                  <div 
+                    className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-background ${
+                      isOnline ? 'bg-green-500' : 'bg-muted-foreground'
+                    }`}
+                    title={isOnline ? t("userInfo.online") : t("userInfo.offline")}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold truncate">@{profile.username}</h3>
                   <p className="text-sm text-muted-foreground">
+                    {isOnline ? (
+                      <span className="text-green-500 font-medium">{t("userInfo.online")}</span>
+                    ) : (
+                      <span>{t("userInfo.lastSeen")}: {formatLastSeen(profile.last_seen)}</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
                     {t("userInfo.joined")} {formatJoinDate(profile.created_at)}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* Bio */}
+              <div className="space-y-1">
                 <Label className="text-sm font-medium text-muted-foreground">{t("userInfo.bio")}</Label>
-                <p className="text-sm p-3 bg-muted/50 rounded-lg min-h-[60px]">
+                <p className="text-sm p-3 bg-muted/50 rounded-lg min-h-[40px]">
                   {profile.bio || t("userInfo.noBio")}
                 </p>
               </div>
 
-              <div className="flex gap-2 pt-4 border-t">
+              {/* Shared Media Tabs */}
+              <Tabs defaultValue="images" className="flex-1 flex flex-col overflow-hidden">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="images" className="gap-2">
+                    <Image className="h-4 w-4" />
+                    {t("userInfo.images")} ({images.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="videos" className="gap-2">
+                    <Video className="h-4 w-4" />
+                    {t("userInfo.videos")} ({videos.length})
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="images" className="flex-1 overflow-hidden mt-2">
+                  {loadingMedia ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  ) : images.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4 text-sm">
+                      {t("userInfo.noImages")}
+                    </p>
+                  ) : (
+                    <ScrollArea className="h-[140px]">
+                      <div className="grid grid-cols-3 gap-2 pr-4">
+                        {images.map((media) => (
+                          <button
+                            key={media.id}
+                            onClick={() => setSelectedMedia(media.image_url)}
+                            className="aspect-square rounded-lg overflow-hidden bg-muted hover:opacity-80 transition-opacity"
+                          >
+                            <img 
+                              src={media.image_url!} 
+                              alt="" 
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="videos" className="flex-1 overflow-hidden mt-2">
+                  {loadingMedia ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  ) : videos.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4 text-sm">
+                      {t("userInfo.noVideos")}
+                    </p>
+                  ) : (
+                    <ScrollArea className="h-[140px]">
+                      <div className="grid grid-cols-3 gap-2 pr-4">
+                        {videos.map((media) => (
+                          <button
+                            key={media.id}
+                            onClick={() => setSelectedMedia(media.video_url)}
+                            className="aspect-square rounded-lg overflow-hidden bg-muted hover:opacity-80 transition-opacity relative"
+                          >
+                            <video 
+                              src={media.video_url!} 
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <Video className="h-6 w-6 text-white" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </TabsContent>
+              </Tabs>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2 border-t">
                 <Button
                   variant="outline"
                   className="flex-1 gap-2"
@@ -227,6 +401,36 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Media Viewer Modal */}
+      {selectedMedia && (
+        <Dialog open={!!selectedMedia} onOpenChange={() => setSelectedMedia(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] p-0 overflow-hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background"
+              onClick={() => setSelectedMedia(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            {selectedMedia.includes('.mp4') || selectedMedia.includes('.webm') || selectedMedia.includes('.mov') ? (
+              <video 
+                src={selectedMedia} 
+                controls 
+                autoPlay
+                className="w-full h-full max-h-[85vh] object-contain"
+              />
+            ) : (
+              <img 
+                src={selectedMedia} 
+                alt="" 
+                className="w-full h-full max-h-[85vh] object-contain"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Block Confirmation Dialog */}
       <AlertDialog open={blockConfirmOpen} onOpenChange={setBlockConfirmOpen}>
