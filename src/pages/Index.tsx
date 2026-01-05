@@ -19,6 +19,7 @@ import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
 import ConversationsList from "@/components/ConversationsList";
 import UserActionsMenu from "@/components/UserActionsMenu";
+import UserInfoDialog from "@/components/UserInfoDialog";
 import BlockedUsersList from "@/components/BlockedUsersList";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CallInterface } from "@/components/CallInterface";
@@ -1028,7 +1029,7 @@ const Index = () => {
                     }}
                   />
                 ) : (
-                  selectedUserId && (
+                  selectedUserId && selectedUserId !== '00000000-0000-0000-0000-000000000000' && (
                     <>
                       <Button
                         onClick={startCall}
@@ -1039,7 +1040,7 @@ const Index = () => {
                       >
                         <Phone className="h-4 w-4 md:h-5 md:w-5" />
                       </Button>
-                      <UserActionsMenu
+                      <UserInfoDialog
                         userId={selectedUserId}
                         username={selectedUsername}
                         currentUserId={user.id}

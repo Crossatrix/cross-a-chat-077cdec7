@@ -147,6 +147,15 @@ const translations: Translations = {
   "user.reportSubmitted": { en: "Report submitted", de: "Meldung abgeschickt" },
   "user.reportFailed": { en: "Failed to submit report", de: "Meldung fehlgeschlagen" },
   
+  // User Info
+  "userInfo.title": { en: "User Info", de: "Benutzerinfo" },
+  "userInfo.bio": { en: "Bio", de: "Biografie" },
+  "userInfo.noBio": { en: "No bio provided", de: "Keine Biografie angegeben" },
+  "userInfo.joined": { en: "Joined", de: "Beigetreten" },
+  "userInfo.loadFailed": { en: "Failed to load profile", de: "Profil konnte nicht geladen werden" },
+  "userInfo.blockConfirmTitle": { en: "Block User?", de: "Benutzer blockieren?" },
+  "userInfo.blockConfirmDescription": { en: "Are you sure you want to block", de: "Möchten Sie wirklich blockieren" },
+  
   // Feedback
   "feedback.title": { en: "Feedback", de: "Feedback" },
   "feedback.send": { en: "Send Feedback", de: "Feedback senden" },
