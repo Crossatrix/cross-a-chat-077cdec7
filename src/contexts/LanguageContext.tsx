@@ -289,6 +289,25 @@ const translations: Translations = {
   "userInfo.videos": { en: "Videos", de: "Videos" },
   "userInfo.noImages": { en: "No shared images", de: "Keine geteilten Bilder" },
   "userInfo.noVideos": { en: "No shared videos", de: "Keine geteilten Videos" },
+  
+  // Privacy Settings
+  "settings.privacy": { en: "Privacy", de: "Datenschutz" },
+  "privacy.description": { en: "Control who can see your status and add you to groups", de: "Kontrollieren Sie, wer Ihren Status sehen und Sie zu Gruppen hinzufügen kann" },
+  "privacy.showOnlineStatus": { en: "Show Online Status", de: "Online-Status anzeigen" },
+  "privacy.showOnlineStatusDescription": { en: "Allow others to see when you're online", de: "Anderen erlauben zu sehen, wenn Sie online sind" },
+  "privacy.allowGroupInvites": { en: "Allow Group Invites from Strangers", de: "Gruppeneinladungen von Fremden erlauben" },
+  "privacy.allowGroupInvitesDescription": { en: "People you haven't chatted with can add you directly to groups", de: "Personen, mit denen Sie nicht gechattet haben, können Sie direkt zu Gruppen hinzufügen" },
+  "privacy.blockFromGroups": { en: "Block from Groups", de: "Von Gruppen blockieren" },
+  "privacy.unblockFromGroups": { en: "Unblock from Groups", de: "Von Gruppen entsperren" },
+  "privacy.blockFromGroupsConfirm": { en: "Block from adding to groups?", de: "Vom Hinzufügen zu Gruppen blockieren?" },
+  "privacy.unblockFromGroupsConfirm": { en: "Unblock from groups?", de: "Von Gruppen entsperren?" },
+  "privacy.blockFromGroupsDescription": { en: "This user won't be able to directly add you to groups. They'll need to send an invite instead.", de: "Dieser Benutzer kann Sie nicht direkt zu Gruppen hinzufügen. Stattdessen muss er eine Einladung senden." },
+  "privacy.unblockFromGroupsDescription": { en: "This user will be able to add you directly to groups again.", de: "Dieser Benutzer kann Sie wieder direkt zu Gruppen hinzufügen." },
+  "privacy.groupBlocked": { en: "Blocked from adding you to groups:", de: "Blockiert vom Hinzufügen zu Gruppen:" },
+  "privacy.groupUnblocked": { en: "Can now add you to groups:", de: "Kann Sie jetzt zu Gruppen hinzufügen:" },
+  "privacy.alreadyGroupBlocked": { en: "User already blocked from groups", de: "Benutzer bereits von Gruppen blockiert" },
+  "privacy.groupBlockFailed": { en: "Failed to block from groups", de: "Blockieren von Gruppen fehlgeschlagen" },
+  "privacy.groupUnblockFailed": { en: "Failed to unblock from groups", de: "Entsperren von Gruppen fehlgeschlagen" },
 };
 
 interface LanguageContextType {
