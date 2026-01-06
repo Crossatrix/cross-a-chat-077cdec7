@@ -308,6 +308,9 @@ const translations: Translations = {
   "privacy.alreadyGroupBlocked": { en: "User already blocked from groups", de: "Benutzer bereits von Gruppen blockiert" },
   "privacy.groupBlockFailed": { en: "Failed to block from groups", de: "Blockieren von Gruppen fehlgeschlagen" },
   "privacy.groupUnblockFailed": { en: "Failed to unblock from groups", de: "Entsperren von Gruppen fehlgeschlagen" },
+  "privacy.groupBlockedUsers": { en: "Blocked from Groups", de: "Von Gruppen blockiert" },
+  "privacy.groupBlockedUsersDescription": { en: "Users who can't directly add you to groups", de: "Benutzer, die Sie nicht direkt zu Gruppen hinzufügen können" },
+  "privacy.noGroupBlockedUsers": { en: "No users blocked from groups", de: "Keine Benutzer von Gruppen blockiert" },
 };
 
 interface LanguageContextType {

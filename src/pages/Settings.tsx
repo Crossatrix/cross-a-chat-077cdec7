@@ -9,11 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Upload, Shield } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, Upload, Shield, UsersRound, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -28,9 +29,17 @@ const Settings = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showOnlineStatus, setShowOnlineStatus] = useState(true);
   const [allowGroupInvitesFromStrangers, setAllowGroupInvitesFromStrangers] = useState(true);
+  const [groupBlockedUsers, setGroupBlockedUsers] = useState<Array<{
+    id: string;
+    blocked_user_id: string;
+    created_at: string;
+    profile: { username: string; avatar_url: string | null };
+  }>>([]);
+  const [loadingGroupBlocks, setLoadingGroupBlocks] = useState(false);
 
   useEffect(() => {
     loadProfile();
+    loadGroupBlockedUsers();
   }, []);
 
   const loadProfile = async () => {
@@ -69,6 +78,62 @@ const Settings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadGroupBlockedUsers = async () => {
+    setLoadingGroupBlocks(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("group_blocks")
+        .select("id, blocked_user_id, created_at")
+        .eq("blocker_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading group blocks:", error);
+        return;
+      }
+
+      // Fetch profiles for blocked users
+      if (data && data.length > 0) {
+        const userIds = data.map(b => b.blocked_user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url")
+          .in("id", userIds);
+
+        const blocksWithProfiles = data.map(block => ({
+          ...block,
+          profile: profiles?.find(p => p.id === block.blocked_user_id) || { username: "Unknown", avatar_url: null }
+        }));
+
+        setGroupBlockedUsers(blocksWithProfiles);
+      } else {
+        setGroupBlockedUsers([]);
+      }
+    } catch (error) {
+      console.error("Error loading group blocks:", error);
+    } finally {
+      setLoadingGroupBlocks(false);
+    }
+  };
+
+  const handleUnblockFromGroups = async (blockId: string, username: string) => {
+    const { error } = await supabase
+      .from("group_blocks")
+      .delete()
+      .eq("id", blockId);
+
+    if (error) {
+      toast.error(t("privacy.groupUnblockFailed"));
+      return;
+    }
+
+    toast.success(`${t("privacy.groupUnblocked")} @${username}`);
+    setGroupBlockedUsers(prev => prev.filter(b => b.id !== blockId));
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,6 +348,63 @@ const Settings = () => {
               <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
                 {saving ? "Saving..." : t("settings.save")}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Group Blocked Users List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UsersRound className="h-5 w-5" />
+                {t("privacy.groupBlockedUsers")}
+              </CardTitle>
+              <CardDescription>{t("privacy.groupBlockedUsersDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingGroupBlocks ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : groupBlockedUsers.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4 text-sm">
+                  {t("privacy.noGroupBlockedUsers")}
+                </p>
+              ) : (
+                <ScrollArea className="max-h-[300px]">
+                  <div className="space-y-2">
+                    {groupBlockedUsers.map((block) => (
+                      <div
+                        key={block.id}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={block.profile.avatar_url || undefined} />
+                            <AvatarFallback>
+                              {block.profile.username[0]?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">@{block.profile.username}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {t("blocked.on")} {new Date(block.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleUnblockFromGroups(block.id, block.profile.username)}
+                          className="gap-1 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                          {t("blocked.unblock")}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
