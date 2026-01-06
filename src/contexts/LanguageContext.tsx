@@ -311,6 +311,21 @@ const translations: Translations = {
   "privacy.groupBlockedUsers": { en: "Blocked from Groups", de: "Von Gruppen blockiert" },
   "privacy.groupBlockedUsersDescription": { en: "Users who can't directly add you to groups", de: "Benutzer, die Sie nicht direkt zu Gruppen hinzufügen können" },
   "privacy.noGroupBlockedUsers": { en: "No users blocked from groups", de: "Keine Benutzer von Gruppen blockiert" },
+  
+  // Group Invites
+  "invites.title": { en: "Group Invites", de: "Gruppeneinladungen" },
+  "invites.description": { en: "Manage your pending group invitations", de: "Verwalten Sie Ihre ausstehenden Gruppeneinladungen" },
+  "invites.pending": { en: "Pending Invites", de: "Ausstehende Einladungen" },
+  "invites.pendingDescription": { en: "Groups you've been invited to join", de: "Gruppen, zu denen Sie eingeladen wurden" },
+  "invites.noInvites": { en: "No pending invites", de: "Keine ausstehenden Einladungen" },
+  "invites.invitedBy": { en: "Invited by", de: "Eingeladen von" },
+  "invites.accept": { en: "Accept", de: "Annehmen" },
+  "invites.decline": { en: "Decline", de: "Ablehnen" },
+  "invites.accepted": { en: "Invite accepted! You joined the group.", de: "Einladung angenommen! Sie sind der Gruppe beigetreten." },
+  "invites.declined": { en: "Invite declined", de: "Einladung abgelehnt" },
+  "invites.acceptFailed": { en: "Failed to accept invite", de: "Einladung konnte nicht angenommen werden" },
+  "invites.declineFailed": { en: "Failed to decline invite", de: "Einladung konnte nicht abgelehnt werden" },
+  "invites.alreadyMember": { en: "You're already a member of this group", de: "Sie sind bereits Mitglied dieser Gruppe" },
 };
 
 interface LanguageContextType {
