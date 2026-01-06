@@ -24,7 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Info, UserX, Flag, Image, Video, X } from "lucide-react";
+import { Info, UserX, Flag, Image, Video, X, UsersRound } from "lucide-react";
 import { z } from "zod";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -65,11 +65,14 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(false);
+  const [groupBlockConfirmOpen, setGroupBlockConfirmOpen] = useState(false);
+  const [isGroupBlocked, setIsGroupBlocked] = useState(false);
 
   useEffect(() => {
     if (open && userId) {
       fetchProfile();
       fetchSharedMedia();
+      checkGroupBlockStatus();
     }
   }, [open, userId]);
 
@@ -130,6 +133,57 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
       setSharedMedia(data || []);
     }
     setLoadingMedia(false);
+  };
+
+  const checkGroupBlockStatus = async () => {
+    const { data } = await supabase
+      .from("group_blocks")
+      .select("id")
+      .eq("blocker_id", currentUserId)
+      .eq("blocked_user_id", userId)
+      .single();
+    
+    setIsGroupBlocked(!!data);
+  };
+
+  const handleGroupBlock = async () => {
+    if (isGroupBlocked) {
+      // Unblock
+      const { error } = await supabase
+        .from("group_blocks")
+        .delete()
+        .eq("blocker_id", currentUserId)
+        .eq("blocked_user_id", userId);
+
+      if (error) {
+        toast.error(t("privacy.groupUnblockFailed"));
+        return;
+      }
+
+      toast.success(`${t("privacy.groupUnblocked")} @${username}`);
+      setIsGroupBlocked(false);
+    } else {
+      // Block
+      const { error } = await supabase
+        .from("group_blocks")
+        .insert({
+          blocker_id: currentUserId,
+          blocked_user_id: userId,
+        });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error(t("privacy.alreadyGroupBlocked"));
+        } else {
+          toast.error(t("privacy.groupBlockFailed"));
+        }
+        return;
+      }
+
+      toast.success(`${t("privacy.groupBlocked")} @${username}`);
+      setIsGroupBlocked(true);
+    }
+    setGroupBlockConfirmOpen(false);
   };
 
   const handleBlock = async () => {
@@ -377,22 +431,32 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
               </Tabs>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-2 border-t">
+              <div className="flex flex-col gap-2 pt-2 border-t">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => setBlockConfirmOpen(true)}
+                  >
+                    <UserX className="h-4 w-4" />
+                    {t("user.block")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => setReportOpen(true)}
+                  >
+                    <Flag className="h-4 w-4" />
+                    {t("user.report")}
+                  </Button>
+                </div>
                 <Button
-                  variant="outline"
-                  className="flex-1 gap-2"
-                  onClick={() => setBlockConfirmOpen(true)}
+                  variant={isGroupBlocked ? "secondary" : "outline"}
+                  className="w-full gap-2"
+                  onClick={() => setGroupBlockConfirmOpen(true)}
                 >
-                  <UserX className="h-4 w-4" />
-                  {t("user.block")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-2"
-                  onClick={() => setReportOpen(true)}
-                >
-                  <Flag className="h-4 w-4" />
-                  {t("user.report")}
+                  <UsersRound className="h-4 w-4" />
+                  {isGroupBlocked ? t("privacy.unblockFromGroups") : t("privacy.blockFromGroups")}
                 </Button>
               </div>
             </div>
@@ -480,6 +544,28 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Group Block Confirmation Dialog */}
+      <AlertDialog open={groupBlockConfirmOpen} onOpenChange={setGroupBlockConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isGroupBlocked ? t("privacy.unblockFromGroupsConfirm") : t("privacy.blockFromGroupsConfirm")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isGroupBlocked 
+                ? t("privacy.unblockFromGroupsDescription") 
+                : t("privacy.blockFromGroupsDescription")} @{username}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGroupBlock}>
+              {isGroupBlocked ? t("privacy.unblockFromGroups") : t("privacy.blockFromGroups")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

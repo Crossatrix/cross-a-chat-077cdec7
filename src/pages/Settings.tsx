@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Upload } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, Upload, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -25,6 +26,8 @@ const Settings = () => {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showOnlineStatus, setShowOnlineStatus] = useState(true);
+  const [allowGroupInvitesFromStrangers, setAllowGroupInvitesFromStrangers] = useState(true);
 
   useEffect(() => {
     loadProfile();
@@ -40,7 +43,7 @@ const Settings = () => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("username, bio, avatar_url, text_hue, text_saturation, text_lightness")
+        .select("username, bio, avatar_url, text_hue, text_saturation, text_lightness, show_online_status, allow_group_invites_from_strangers")
         .eq("id", user.id)
         .single();
 
@@ -48,6 +51,8 @@ const Settings = () => {
         setUsername(profile.username || "");
         setBio(profile.bio || "");
         setAvatarUrl(profile.avatar_url || "");
+        setShowOnlineStatus(profile.show_online_status ?? true);
+        setAllowGroupInvitesFromStrangers(profile.allow_group_invites_from_strangers ?? true);
         
         // Load saved text color settings
         if (profile.text_hue !== null && profile.text_saturation !== null && profile.text_lightness !== null) {
@@ -125,6 +130,8 @@ const Settings = () => {
           text_hue: theme.textHue,
           text_saturation: theme.textSaturation,
           text_lightness: theme.textLightness,
+          show_online_status: showOnlineStatus,
+          allow_group_invites_from_strangers: allowGroupInvitesFromStrangers,
         })
         .eq("id", user.id);
 
@@ -162,8 +169,12 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">{t("settings.profile")}</TabsTrigger>
+          <TabsTrigger value="privacy" className="gap-1">
+            <Shield className="h-3 w-3 hidden sm:inline" />
+            {t("settings.privacy")}
+          </TabsTrigger>
           <TabsTrigger value="appearance">{t("settings.appearance")}</TabsTrigger>
           <TabsTrigger value="language">{t("settings.language")}</TabsTrigger>
         </TabsList>
@@ -224,6 +235,48 @@ const Settings = () => {
                   onChange={(e) => setBio(e.target.value)}
                   placeholder={t("settings.bioPlaceholder")}
                   rows={4}
+                />
+              </div>
+
+              <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
+                {saving ? "Saving..." : t("settings.save")}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="privacy" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("settings.privacy")}</CardTitle>
+              <CardDescription>{t("privacy.description")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="show-online">{t("privacy.showOnlineStatus")}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t("privacy.showOnlineStatusDescription")}
+                  </p>
+                </div>
+                <Switch
+                  id="show-online"
+                  checked={showOnlineStatus}
+                  onCheckedChange={setShowOnlineStatus}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="allow-strangers">{t("privacy.allowGroupInvites")}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t("privacy.allowGroupInvitesDescription")}
+                  </p>
+                </div>
+                <Switch
+                  id="allow-strangers"
+                  checked={allowGroupInvitesFromStrangers}
+                  onCheckedChange={setAllowGroupInvitesFromStrangers}
                 />
               </div>
 

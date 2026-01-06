@@ -261,6 +261,54 @@ export type Database = {
           },
         ]
       }
+      group_blocks: {
+        Row: {
+          blocked_user_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_user_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_user_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      group_invites: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          invited_by: string
+          invited_user_id: string
+          status: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          invited_by: string
+          invited_user_id: string
+          status?: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          invited_by?: string
+          invited_user_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       message_reads: {
         Row: {
           id: string
@@ -356,33 +404,39 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allow_group_invites_from_strangers: boolean
           avatar_url: string | null
           bio: string | null
           created_at: string
           id: string
           last_seen: string | null
+          show_online_status: boolean
           text_hue: number | null
           text_lightness: number | null
           text_saturation: number | null
           username: string
         }
         Insert: {
+          allow_group_invites_from_strangers?: boolean
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           id: string
           last_seen?: string | null
+          show_online_status?: boolean
           text_hue?: number | null
           text_lightness?: number | null
           text_saturation?: number | null
           username: string
         }
         Update: {
+          allow_group_invites_from_strangers?: boolean
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           id?: string
           last_seen?: string | null
+          show_online_status?: boolean
           text_hue?: number | null
           text_lightness?: number | null
           text_saturation?: number | null
