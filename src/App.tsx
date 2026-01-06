@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Banned from "./pages/Banned";
 import Settings from "./pages/Settings";
+import GroupInvites from "./pages/GroupInvites";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/banned" element={<Banned />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/invites" element={<GroupInvites />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

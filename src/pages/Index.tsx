@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2 } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -938,6 +938,9 @@ const Index = () => {
             />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
+            <Button onClick={() => navigate("/invites")} variant="secondary" size="icon" className="h-8 w-8" aria-label="Group Invites">
+              <Users className="h-3.5 w-3.5" />
+            </Button>
             {isAdmin && (
               <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8" aria-label="Admin Panel">
                 <Shield className="h-3.5 w-3.5" />
