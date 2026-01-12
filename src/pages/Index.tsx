@@ -62,8 +62,9 @@ const Index = () => {
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [showClearChatDialog, setShowClearChatDialog] = useState(false);
-  const [aiCredits, setAiCredits] = useState<number>(15);
+const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
@@ -274,6 +275,44 @@ const Index = () => {
 
     fetchUserData();
   }, [user, navigate, loading]);
+
+  // Fetch pending group invites count
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchPendingInvites = async () => {
+      const { count } = await supabase
+        .from('group_invites')
+        .select('*', { count: 'exact', head: true })
+        .eq('invited_user_id', user.id)
+        .eq('status', 'pending');
+      
+      setPendingInvitesCount(count || 0);
+    };
+
+    fetchPendingInvites();
+
+    // Subscribe to invite changes
+    const channel = supabase
+      .channel('group-invites-count')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'group_invites',
+          filter: `invited_user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchPendingInvites();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user || !selectedConversationId) return;
@@ -938,8 +977,13 @@ const Index = () => {
             />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
-            <Button onClick={() => navigate("/invites")} variant="secondary" size="icon" className="h-8 w-8" aria-label="Group Invites">
+            <Button onClick={() => navigate("/invites")} variant="secondary" size="icon" className="h-8 w-8 relative" aria-label="Group Invites">
               <Users className="h-3.5 w-3.5" />
+              {pendingInvitesCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                  {pendingInvitesCount > 99 ? '99+' : pendingInvitesCount}
+                </span>
+              )}
             </Button>
             {isAdmin && (
               <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8" aria-label="Admin Panel">
