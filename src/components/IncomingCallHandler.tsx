@@ -1,9 +1,12 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Phone, PhoneOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+// Ringtone URL - using a simple web-accessible ringtone
+const RINGTONE_URL = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
 
 interface IncomingCall {
   id: string;
@@ -21,6 +24,33 @@ interface IncomingCallHandlerProps {
 export const IncomingCallHandler = ({ userId, onAcceptCall }: IncomingCallHandlerProps) => {
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const { t } = useLanguage();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize audio element
+  useEffect(() => {
+    audioRef.current = new Audio(RINGTONE_URL);
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.5;
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Play/stop ringtone based on incoming call state
+  useEffect(() => {
+    if (incomingCall && audioRef.current) {
+      audioRef.current.play().catch(err => {
+        console.log("Could not play ringtone:", err);
+      });
+    } else if (!incomingCall && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [incomingCall]);
 
   const checkForIncomingCalls = useCallback(async () => {
     if (!userId) return;
