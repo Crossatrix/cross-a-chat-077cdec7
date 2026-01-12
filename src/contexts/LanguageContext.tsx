@@ -272,9 +272,12 @@ const translations: Translations = {
   // Calls
   "call.start": { en: "Start Call", de: "Anruf starten" },
   "call.end": { en: "End Call", de: "Anruf beenden" },
-  "call.connecting": { en: "Connecting...", de: "Verbinde..." },
+"call.connecting": { en: "Connecting...", de: "Verbinde..." },
   "call.cannotCallAI": { en: "Cannot call AI bot", de: "AI-Bot kann nicht angerufen werden" },
   "call.failed": { en: "Failed to start call", de: "Anruf konnte nicht gestartet werden" },
+  "incomingCall": { en: "Incoming call...", de: "Eingehender Anruf..." },
+  "call.accept": { en: "Accept", de: "Annehmen" },
+  "call.decline": { en: "Decline", de: "Ablehnen" },
   
   // User Info - Online Status & Media
   "userInfo.online": { en: "Online", de: "Online" },

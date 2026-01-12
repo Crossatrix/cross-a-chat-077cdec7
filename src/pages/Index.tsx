@@ -23,6 +23,7 @@ import UserInfoDialog from "@/components/UserInfoDialog";
 import BlockedUsersList from "@/components/BlockedUsersList";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CallInterface } from "@/components/CallInterface";
+import { IncomingCallHandler } from "@/components/IncomingCallHandler";
 import { NewChatDialog } from "@/components/NewChatDialog";
 import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
@@ -927,7 +928,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     }
   };
 
-  const startCall = () => {
+const startCall = () => {
     if (isGroup) {
       toast.error("Group calls are not supported yet");
       return;
@@ -941,6 +942,12 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
   const endCall = () => {
     setIsInCall(false);
+  };
+
+  const handleAcceptIncomingCall = (conversationId: string, callerId: string) => {
+    setSelectedConversationId(conversationId);
+    setSelectedUserId(callerId);
+    setIsInCall(true);
   };
 
   if (loading || !user) {
@@ -959,8 +966,15 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     );
   }
 
-  return (
-    <div className="flex h-screen bg-background overflow-hidden">
+return (
+    <>
+      {/* Incoming call handler - polls every 10 seconds */}
+      <IncomingCallHandler 
+        userId={user.id} 
+        onAcceptCall={handleAcceptIncomingCall} 
+      />
+      
+      <div className="flex h-screen bg-background overflow-hidden">
       <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen w-full md:w-auto`}>
         <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0 md:hidden w-full">
           <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
@@ -1226,6 +1240,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </>
   );
 };
 
