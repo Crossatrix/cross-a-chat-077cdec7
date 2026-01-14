@@ -26,6 +26,7 @@ import { CallInterface } from "@/components/CallInterface";
 import { IncomingCallHandler } from "@/components/IncomingCallHandler";
 import { NewChatDialog } from "@/components/NewChatDialog";
 import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
+import { NotificationToggle } from "@/components/NotificationToggle";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 
 interface Message {
@@ -572,6 +573,41 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
     setIsSendingMessage(false);
 
+    // Send push notifications to other participants (except AI chats)
+    if (!isAIChat && selectedConversationId) {
+      try {
+        // Get other participants in this conversation
+        const { data: participants } = await supabase
+          .from("conversation_participants")
+          .select("user_id")
+          .eq("conversation_id", selectedConversationId)
+          .neq("user_id", user.id);
+
+        if (participants && participants.length > 0) {
+          // Send push notification to each participant
+          for (const participant of participants) {
+            supabase.functions.invoke("send-push-notification", {
+              body: {
+                recipientUserId: participant.user_id,
+                title: `💬 ${username}`,
+                body: content || "Sent a media file",
+                data: {
+                  conversationId: selectedConversationId,
+                  url: "/",
+                },
+              },
+            }).catch((err) => {
+              // Silently fail - notifications are best-effort
+              console.log("Push notification failed:", err);
+            });
+          }
+        }
+      } catch (pushError) {
+        // Silently fail - push is best-effort
+        console.log("Failed to send push notifications:", pushError);
+      }
+    }
+
     // If this is an AI chat, call the AI edge function
     if (isAIChat) {
       try {
@@ -1114,6 +1150,7 @@ return (
             )}
           </div>
           <div className="flex gap-0.5 md:gap-2 shrink-0 items-center ml-auto">
+            <NotificationToggle userId={user?.id || null} />
             <NewChatDialog
               currentUserId={user?.id || ""}
               onChatCreated={(convId, displayName, isGroup) => handleSelectConversation(convId, displayName, isGroup)}
