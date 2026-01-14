@@ -329,13 +329,6 @@ const translations: Translations = {
   "invites.acceptFailed": { en: "Failed to accept invite", de: "Einladung konnte nicht angenommen werden" },
   "invites.declineFailed": { en: "Failed to decline invite", de: "Einladung konnte nicht abgelehnt werden" },
   "invites.alreadyMember": { en: "You're already a member of this group", de: "Sie sind bereits Mitglied dieser Gruppe" },
-  
-  // Notifications
-  "notifications.enabled": { en: "Push notifications enabled", de: "Push-Benachrichtigungen aktiviert" },
-  "notifications.disabled": { en: "Push notifications disabled", de: "Push-Benachrichtigungen deaktiviert" },
-  "notifications.failed": { en: "Failed to enable notifications", de: "Aktivieren der Benachrichtigungen fehlgeschlagen" },
-  "notifications.clickToEnable": { en: "Click to enable push notifications", de: "Klicken, um Push-Benachrichtigungen zu aktivieren" },
-  "notifications.clickToDisable": { en: "Click to disable push notifications", de: "Klicken, um Push-Benachrichtigungen zu deaktivieren" },
 };
 
 interface LanguageContextType {
