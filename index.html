@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cross Chat - Modern Messaging Platform</title>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "7a8e06f4-420e-4fe0-b714-0dee2944e901",
+        });
+      });
+    </script>
     <meta name="description" content="Connect instantly with Cross Chat - A sleek, real-time messaging platform for seamless communication" />
     <meta name="author" content="Cross Chat" />
 

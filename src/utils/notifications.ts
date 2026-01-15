@@ -1,4 +1,21 @@
+// OneSignal types
+declare global {
+  interface Window {
+    OneSignalDeferred?: Array<(OneSignal: any) => Promise<void>>;
+  }
+}
+
 export const requestNotificationPermission = async (): Promise<boolean> => {
+  // OneSignal handles permission requests automatically
+  // This function now triggers OneSignal's permission prompt
+  if (window.OneSignalDeferred) {
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      await OneSignal.Notifications.requestPermission();
+    });
+    return true;
+  }
+  
+  // Fallback to native API
   if (!('Notification' in window)) {
     console.log('This browser does not support notifications');
     return false;
@@ -17,16 +34,9 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 };
 
 export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('Service Worker registered:', registration);
-      return registration;
-    } catch (error) {
-      console.error('Service Worker registration failed:', error);
-      return null;
-    }
-  }
+  // OneSignal handles its own service worker registration
+  // This is now a no-op as OneSignal manages the service worker
+  console.log('OneSignal manages service worker registration');
   return null;
 };
 
