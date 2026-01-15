@@ -1,10 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { registerServiceWorker, requestNotificationPermission } from "./utils/notifications";
 
-// Register service worker and request notification permission before app starts
-registerServiceWorker();
-requestNotificationPermission();
+// OneSignal handles service worker and notification permissions via the SDK loaded in index.html
 
 createRoot(document.getElementById("root")!).render(<App />);
