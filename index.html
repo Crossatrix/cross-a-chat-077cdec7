@@ -10,6 +10,28 @@
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: "7a8e06f4-420e-4fe0-b714-0dee2944e901",
+          notifyButton: {
+            enable: true,
+          },
+          promptOptions: {
+            slidedown: {
+              prompts: [
+                {
+                  type: "push",
+                  autoPrompt: true,
+                  text: {
+                    actionMessage: "Enable notifications to receive messages and calls",
+                    acceptButton: "Allow",
+                    cancelButton: "Maybe Later"
+                  },
+                  delay: {
+                    pageViews: 1,
+                    timeDelay: 3
+                  }
+                }
+              ]
+            }
+          }
         });
       });
     </script>
