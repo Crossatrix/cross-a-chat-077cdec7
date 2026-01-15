@@ -345,6 +345,15 @@ const Settings = () => {
                 />
               </div>
 
+              {/* OneSignal Notification Subscription */}
+              <div className="space-y-2">
+                <Label>{t("settings.notifications") || "Push Notifications"}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("privacy.notificationsDescription") || "Subscribe to receive push notifications for messages and calls"}
+                </p>
+                <div className="onesignal-customlink-container py-2" />
+              </div>
+
               <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
                 {saving ? "Saving..." : t("settings.save")}
               </Button>
