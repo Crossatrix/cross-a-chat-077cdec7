@@ -315,6 +315,15 @@ const translations: Translations = {
   "privacy.groupBlockedUsersDescription": { en: "Users who can't directly add you to groups", de: "Benutzer, die Sie nicht direkt zu Gruppen hinzufügen können" },
   "privacy.noGroupBlockedUsers": { en: "No users blocked from groups", de: "Keine Benutzer von Gruppen blockiert" },
   
+  // Device Verification
+  "privacy.deviceVerification": { en: "New Device Verification", de: "Neue Geräteverifizierung" },
+  "privacy.deviceVerificationDescription": { en: "Require a code when logging in from a new device", de: "Code beim Anmelden von einem neuen Gerät erforderlich" },
+  "privacy.verificationEmail": { en: "Verification Email", de: "Verifizierungs-E-Mail" },
+  "privacy.verificationEmailDescription": { en: "A 10-digit code will be sent to this email when logging in from a new device", de: "Ein 10-stelliger Code wird an diese E-Mail gesendet, wenn Sie sich von einem neuen Gerät anmelden" },
+  "privacy.trustedDevices": { en: "Trusted Devices", de: "Vertrauenswürdige Geräte" },
+  "privacy.trustedDevicesDescription": { en: "Devices that won't require verification", de: "Geräte, die keine Verifizierung erfordern" },
+  "privacy.noTrustedDevices": { en: "No trusted devices yet", de: "Noch keine vertrauenswürdigen Geräte" },
+  
   // Group Invites
   "invites.title": { en: "Group Invites", de: "Gruppeneinladungen" },
   "invites.description": { en: "Manage your pending group invitations", de: "Verwalten Sie Ihre ausstehenden Gruppeneinladungen" },
