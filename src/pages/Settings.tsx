@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Upload, Shield, UsersRound, X } from "lucide-react";
+import { DeviceVerificationSettings } from "@/components/DeviceVerificationSettings";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -352,6 +353,11 @@ const Settings = () => {
                   {t("privacy.notificationsDescription") || "Subscribe to receive push notifications for messages and calls"}
                 </p>
                 <div className="onesignal-customlink-container py-2" />
+              </div>
+
+              {/* Separator */}
+              <div className="border-t pt-6">
+                <DeviceVerificationSettings />
               </div>
 
               <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
