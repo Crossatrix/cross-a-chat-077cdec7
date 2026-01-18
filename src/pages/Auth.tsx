@@ -7,8 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { z } from "zod";
-import { DeviceVerificationDialog } from "@/components/DeviceVerificationDialog";
-import { getDeviceId } from "@/utils/deviceFingerprint";
 
 const usernameSchema = z.string()
   .trim()
@@ -27,16 +25,7 @@ const Auth = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showVerification, setShowVerification] = useState(false);
-  const [verificationUserId, setVerificationUserId] = useState("");
-  const [verificationEmail, setVerificationEmail] = useState("");
-  const [deviceFingerprint, setDeviceFingerprint] = useState("");
   const navigate = useNavigate();
-
-  // Set device fingerprint on mount
-  useEffect(() => {
-    setDeviceFingerprint(getDeviceId());
-  }, []);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -48,56 +37,6 @@ const Auth = () => {
     };
     checkAuth();
   }, [navigate]);
-
-  const checkDeviceVerification = async (userId: string): Promise<{ required: boolean; email?: string }> => {
-    try {
-      const { data, error } = await supabase.functions.invoke("send-device-verification/send", {
-        body: {
-          user_id: userId,
-          device_fingerprint: deviceFingerprint,
-        },
-      });
-
-      if (error) throw error;
-      return { required: data.required, email: data.email };
-    } catch (error) {
-      console.error("Error checking device verification:", error);
-      return { required: false };
-    }
-  };
-
-  const proceedAfterLogin = async (userId: string) => {
-    // Check if user is banned
-    const { data: ban } = await supabase
-      .from("user_bans")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (ban) {
-      if (ban.expires_at && new Date(ban.expires_at) < new Date()) {
-        await supabase.from("user_bans").delete().eq("id", ban.id);
-      } else {
-        navigate("/banned");
-        return;
-      }
-    }
-
-    toast.success("Welcome back!");
-    navigate("/");
-  };
-
-  const handleVerificationSuccess = async () => {
-    setShowVerification(false);
-    await proceedAfterLogin(verificationUserId);
-  };
-
-  const handleVerificationCancel = async () => {
-    // Sign out since verification was cancelled
-    await supabase.auth.signOut();
-    setShowVerification(false);
-    toast.error("Login cancelled - device verification required");
-  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,28 +66,38 @@ const Auth = () => {
 
       if (isLogin) {
         // Login
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (error) throw error;
         
-        const userId = signInData.user?.id;
-        if (!userId) throw new Error("No user ID returned");
+        // Check if user is banned
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: ban } = await supabase
+            .from("user_bans")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle();
 
-        // Check if device verification is required
-        const verificationResult = await checkDeviceVerification(userId);
-        
-        if (verificationResult.required) {
-          setVerificationUserId(userId);
-          setVerificationEmail(verificationResult.email || "");
-          setShowVerification(true);
-          setLoading(false);
-          return;
+          if (ban) {
+            // Check if ban has expired
+            if (ban.expires_at && new Date(ban.expires_at) < new Date()) {
+              // Ban has expired, remove it
+              await supabase.from("user_bans").delete().eq("id", ban.id);
+            } else {
+              // Ban is still active, redirect to banned page
+              setLoading(false);
+              navigate("/banned");
+              return;
+            }
+          }
         }
-        
-        await proceedAfterLogin(userId);
+
+        toast.success("Welcome back!");
+        navigate("/");
       } else {
         // Sign up
         const { error } = await supabase.auth.signUp({
@@ -255,16 +204,6 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
-
-      <DeviceVerificationDialog
-        open={showVerification}
-        onOpenChange={setShowVerification}
-        userId={verificationUserId}
-        maskedEmail={verificationEmail}
-        deviceFingerprint={deviceFingerprint}
-        onSuccess={handleVerificationSuccess}
-        onCancel={handleVerificationCancel}
-      />
     </div>
   );
 };

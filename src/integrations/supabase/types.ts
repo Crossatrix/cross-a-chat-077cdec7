@@ -190,63 +190,6 @@ export type Database = {
           },
         ]
       }
-      device_verification: {
-        Row: {
-          created_at: string
-          enabled: boolean
-          id: string
-          updated_at: string
-          user_id: string
-          verification_email: string | null
-        }
-        Insert: {
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          updated_at?: string
-          user_id: string
-          verification_email?: string | null
-        }
-        Update: {
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          updated_at?: string
-          user_id?: string
-          verification_email?: string | null
-        }
-        Relationships: []
-      }
-      device_verification_codes: {
-        Row: {
-          code: string
-          created_at: string
-          device_fingerprint: string
-          expires_at: string
-          id: string
-          used: boolean
-          user_id: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          device_fingerprint: string
-          expires_at: string
-          id?: string
-          used?: boolean
-          user_id: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          device_fingerprint?: string
-          expires_at?: string
-          id?: string
-          used?: boolean
-          user_id?: string
-        }
-        Relationships: []
-      }
       emoji_categories: {
         Row: {
           created_at: string
@@ -535,33 +478,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      trusted_devices: {
-        Row: {
-          created_at: string
-          device_fingerprint: string
-          device_name: string | null
-          id: string
-          last_used_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          device_fingerprint: string
-          device_name?: string | null
-          id?: string
-          last_used_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          device_fingerprint?: string
-          device_name?: string | null
-          id?: string
-          last_used_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       user_bans: {
         Row: {
