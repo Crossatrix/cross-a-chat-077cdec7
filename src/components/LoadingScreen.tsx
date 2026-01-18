@@ -4,24 +4,66 @@ interface LoadingScreenProps {
   onLoadComplete: () => void;
 }
 
+// Define all lazy imports to preload
+const lazyImports = [
+  () => import("@/pages/Auth"),
+  () => import("@/pages/Admin"),
+  () => import("@/pages/Banned"),
+  () => import("@/pages/Settings"),
+  () => import("@/pages/GroupInvites"),
+  () => import("@/pages/NotFound"),
+];
+
 const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
   const [progress, setProgress] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
+  const [loadingStage, setLoadingStage] = useState("Initializing...");
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
+    const preloadAll = async () => {
+      const totalSteps = lazyImports.length + 2; // +2 for initial and final steps
+      let currentStep = 0;
+
+      const updateProgress = (stage: string) => {
+        currentStep++;
+        setProgress((currentStep / totalSteps) * 100);
+        setLoadingStage(stage);
+      };
+
+      try {
+        // Step 1: Initial setup
+        updateProgress("Loading core modules...");
+        await new Promise((r) => setTimeout(r, 200));
+
+        // Step 2: Preload all lazy routes in parallel
+        setLoadingStage("Loading pages...");
+        const preloadPromises = lazyImports.map((importFn, index) => 
+          importFn().then(() => {
+            setProgress((prev) => Math.min(prev + (80 / lazyImports.length), 95));
+          })
+        );
+        
+        await Promise.all(preloadPromises);
+        updateProgress("Preparing interface...");
+
+        // Step 3: Final preparation
+        await new Promise((r) => setTimeout(r, 300));
+        setProgress(100);
+        setLoadingStage("Ready!");
+
+        // Fade out and complete
+        setTimeout(() => {
           setFadeOut(true);
           setTimeout(onLoadComplete, 500);
-          return 100;
-        }
-        return prev + Math.random() * 15 + 5;
-      });
-    }, 100);
+        }, 200);
+      } catch (error) {
+        console.error("Preload error:", error);
+        setFadeOut(true);
+        setTimeout(onLoadComplete, 500);
+      }
+    };
 
-    return () => clearInterval(interval);
+    preloadAll();
   }, [onLoadComplete]);
 
   return (
@@ -60,7 +102,7 @@ const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
       </h1>
       
       <p className="text-muted-foreground text-sm mb-6 animate-fade-in">
-        Loading your conversations...
+        {loadingStage}
       </p>
 
       {/* Progress Bar */}
