@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,13 +6,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+
+// Eagerly load Index (main page)
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Admin from "./pages/Admin";
-import Banned from "./pages/Banned";
-import Settings from "./pages/Settings";
-import GroupInvites from "./pages/GroupInvites";
-import NotFound from "./pages/NotFound";
+
+// Lazy load non-critical routes
+const Auth = lazy(() => import("./pages/Auth"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Banned = lazy(() => import("./pages/Banned"));
+const Settings = lazy(() => import("./pages/Settings"));
+const GroupInvites = lazy(() => import("./pages/GroupInvites"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -23,16 +28,18 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/banned" element={<Banned />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/invites" element={<GroupInvites />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/banned" element={<Banned />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/invites" element={<GroupInvites />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
