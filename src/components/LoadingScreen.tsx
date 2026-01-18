@@ -20,8 +20,11 @@ const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
   const [loadingStage, setLoadingStage] = useState("Initializing...");
 
   useEffect(() => {
+    const startTime = Date.now();
+    const MIN_DISPLAY_TIME = 3000; // 3 seconds minimum
+
     const preloadAll = async () => {
-      const totalSteps = lazyImports.length + 2; // +2 for initial and final steps
+      const totalSteps = lazyImports.length + 2;
       let currentStep = 0;
 
       const updateProgress = (stage: string) => {
@@ -37,7 +40,7 @@ const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
 
         // Step 2: Preload all lazy routes in parallel
         setLoadingStage("Loading pages...");
-        const preloadPromises = lazyImports.map((importFn, index) => 
+        const preloadPromises = lazyImports.map((importFn) => 
           importFn().then(() => {
             setProgress((prev) => Math.min(prev + (80 / lazyImports.length), 95));
           })
@@ -51,15 +54,24 @@ const LoadingScreen = ({ onLoadComplete }: LoadingScreenProps) => {
         setProgress(100);
         setLoadingStage("Ready!");
 
-        // Fade out and complete
+        // Calculate remaining time to meet minimum display time
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime);
+
+        // Wait for remaining time before fading out
         setTimeout(() => {
           setFadeOut(true);
           setTimeout(onLoadComplete, 500);
-        }, 200);
+        }, remainingTime + 200);
       } catch (error) {
         console.error("Preload error:", error);
-        setFadeOut(true);
-        setTimeout(onLoadComplete, 500);
+        // Still respect minimum time on error
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime);
+        setTimeout(() => {
+          setFadeOut(true);
+          setTimeout(onLoadComplete, 500);
+        }, remainingTime);
       }
     };
 
