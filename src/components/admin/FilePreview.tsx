@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, CheckCircle2, Ban, Clock, Bot, XCircle, FolderInput, Send, MessageSquare } from "lucide-react";
+import { Trash2, CheckCircle2, Ban, Clock, Bot, XCircle, FolderInput, Send, MessageSquare, AlertTriangle, Monitor, Globe, User, Code } from "lucide-react";
 import { FileItem } from "./FileExplorer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -436,6 +436,118 @@ const FilePreview = ({ file, onDelete, onAction, emojiCategories = [], onRefresh
                   <AlertDialogTitle>Delete feedback?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(file)}>
+                    {t("common.delete")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error file preview
+  if (file.data?.type === "error") {
+    const error = data;
+    const additionalInfo = error.additional_info || {};
+
+    return (
+      <div className="h-full bg-card border border-border rounded-lg p-4 overflow-auto">
+        <div className="font-mono text-sm whitespace-pre-wrap text-foreground space-y-4">
+          <div className="border-b border-border pb-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <p className="text-muted-foreground text-xs">ERROR LOG</p>
+            </div>
+            <h3 className="font-bold text-destructive">{file.name}.log</h3>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Code className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Error Code:</span>
+              <Badge variant="destructive">{additionalInfo.errorCode || "UNKNOWN"}</Badge>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">User:</span>
+              <span>{error.username ? `@${error.username}` : "Not logged in"}</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Time:</span>
+              <span>{new Date(error.timestamp).toLocaleString()}</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">URL:</span>
+              <span className="text-xs break-all">{error.url || "N/A"}</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Monitor className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Screen:</span>
+              <span>{additionalInfo.screenWidth}x{additionalInfo.screenHeight || "N/A"}</span>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-2">
+            <p className="text-muted-foreground mb-1 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Error Message:
+            </p>
+            <p className="bg-destructive/10 text-destructive p-2 rounded border border-destructive/20 break-all">
+              {error.error_message}
+            </p>
+          </div>
+
+          {error.error_stack && (
+            <div className="border-t border-border pt-2">
+              <p className="text-muted-foreground mb-1">Stack Trace:</p>
+              <pre className="bg-secondary p-2 rounded text-xs overflow-x-auto max-h-40 overflow-y-auto">
+                {error.error_stack}
+              </pre>
+            </div>
+          )}
+
+          {error.component_stack && (
+            <div className="border-t border-border pt-2">
+              <p className="text-muted-foreground mb-1">Component Stack:</p>
+              <pre className="bg-secondary p-2 rounded text-xs overflow-x-auto max-h-40 overflow-y-auto">
+                {error.component_stack}
+              </pre>
+            </div>
+          )}
+
+          {error.user_agent && (
+            <div className="border-t border-border pt-2">
+              <p className="text-muted-foreground mb-1">User Agent:</p>
+              <p className="bg-secondary p-2 rounded text-xs break-all">{error.user_agent}</p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Error
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete error log?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently remove this error report.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

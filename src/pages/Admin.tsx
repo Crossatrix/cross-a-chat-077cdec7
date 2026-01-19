@@ -95,11 +95,12 @@ const Admin = () => {
   };
 
   const fetchAllDataWithCategories = async (categories: string[]) => {
-    const [emojiFolder, reports, users, feedback] = await Promise.all([
+    const [emojiFolder, reports, users, feedback, errors] = await Promise.all([
       fetchEmojisWithCategories(categories),
       fetchReports(),
       fetchUsers(),
       fetchFeedback(),
+      fetchErrors(),
     ]);
 
     const fileStructure: FileItem[] = [
@@ -121,6 +122,12 @@ const Admin = () => {
         name: "Feedback",
         type: "folder",
         children: feedback,
+      },
+      {
+        id: "errors",
+        name: "Errors",
+        type: "folder",
+        children: errors,
       },
     ];
 
@@ -308,6 +315,50 @@ const Admin = () => {
     });
   };
 
+  const fetchErrors = async (): Promise<FileItem[]> => {
+    const { data: errorsData, error } = await supabase
+      .from("errors")
+      .select("*")
+      .order("timestamp", { ascending: false });
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error("Error fetching errors:", error);
+      }
+      return [];
+    }
+
+    // Get user profiles for errors with user_id
+    const userIds = Array.from(
+      new Set((errorsData || []).map((e: any) => e.user_id).filter(Boolean))
+    ) as string[];
+
+    const profileMap = new Map<string, string>();
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id,username")
+        .in("id", userIds);
+
+      (profiles || []).forEach((p) => profileMap.set(p.id, p.username));
+    }
+
+    return (errorsData || []).map((err: any) => {
+      const username = err.user_id ? profileMap.get(err.user_id) : null;
+      const errorCode = err.additional_info?.errorCode || "UNKNOWN";
+      const dateStr = new Date(err.timestamp).toISOString().split("T")[0];
+
+      return {
+        id: `error-${err.id}`,
+        name: `error_${errorCode}_${dateStr}`,
+        type: "file" as const,
+        extension: "log",
+        data: { ...err, type: "error", username },
+      };
+    });
+  };
+
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
       if (file.type === "image/gif") {
@@ -444,6 +495,9 @@ const Admin = () => {
     } else if (data.type === "feedback") {
       await supabase.from("feedback").delete().eq("id", data.id);
       toast.success("Feedback deleted");
+    } else if (data.type === "error") {
+      await supabase.from("errors").delete().eq("id", data.id);
+      toast.success("Error log deleted");
     }
 
     setSelectedFile(null);
