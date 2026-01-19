@@ -268,6 +268,50 @@ export type Database = {
         }
         Relationships: []
       }
+      errors: {
+        Row: {
+          additional_info: Json | null
+          component_stack: string | null
+          error_message: string
+          error_stack: string | null
+          id: string
+          timestamp: string
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          additional_info?: Json | null
+          component_stack?: string | null
+          error_message: string
+          error_stack?: string | null
+          id?: string
+          timestamp?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          additional_info?: Json | null
+          component_stack?: string | null
+          error_message?: string
+          error_stack?: string | null
+          id?: string
+          timestamp?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "errors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback: {
         Row: {
           admin_response: string | null
