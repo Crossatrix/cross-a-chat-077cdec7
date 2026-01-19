@@ -17,6 +17,8 @@ interface State {
 
 class ErrorBoundary extends Component<Props, State> {
   private countdownInterval: NodeJS.Timeout | null = null;
+  private globalErrorHandler: ((event: ErrorEvent) => void) | null = null;
+  private unhandledRejectionHandler: ((event: PromiseRejectionEvent) => void) | null = null;
 
   constructor(props: Props) {
     super(props);
@@ -31,6 +33,66 @@ class ErrorBoundary extends Component<Props, State> {
     };
   }
 
+  componentDidMount() {
+    // Global error handler for uncaught errors
+    this.globalErrorHandler = (event: ErrorEvent) => {
+      event.preventDefault();
+      this.handleGlobalError(event.error || new Error(event.message), 'window.onerror');
+    };
+
+    // Handler for unhandled promise rejections
+    this.unhandledRejectionHandler = (event: PromiseRejectionEvent) => {
+      event.preventDefault();
+      const error = event.reason instanceof Error 
+        ? event.reason 
+        : new Error(String(event.reason));
+      this.handleGlobalError(error, 'unhandledrejection');
+    };
+
+    window.addEventListener('error', this.globalErrorHandler);
+    window.addEventListener('unhandledrejection', this.unhandledRejectionHandler);
+  }
+
+  private async handleGlobalError(error: Error, source: string) {
+    if (this.state.hasError) return; // Prevent multiple triggers
+
+    const errorCode = this.generateErrorCode();
+    this.setState({ 
+      hasError: true, 
+      error, 
+      errorCode,
+      isSending: true 
+    });
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      await supabase.from('errors').insert({
+        user_id: user?.id || null,
+        error_message: error.message,
+        error_stack: error.stack || null,
+        component_stack: null,
+        url: window.location.href,
+        user_agent: navigator.userAgent,
+        additional_info: {
+          errorCode,
+          timestamp: new Date().toISOString(),
+          screenWidth: window.innerWidth,
+          screenHeight: window.innerHeight,
+          source,
+        },
+      });
+
+      this.setState({ sent: true });
+    } catch (sendError) {
+      console.error('Failed to send error report:', sendError);
+    } finally {
+      this.setState({ isSending: false });
+    }
+
+    this.startCountdown();
+  }
+
   private generateErrorCode(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
@@ -40,18 +102,35 @@ class ErrorBoundary extends Component<Props, State> {
     return code;
   }
 
+  private startCountdown() {
+    if (this.countdownInterval) return; // Prevent multiple countdowns
+    
+    this.countdownInterval = setInterval(() => {
+      this.setState((prevState) => {
+        if (prevState.countdown <= 1) {
+          if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+          }
+          window.location.href = '/auth';
+          return { ...prevState };
+        }
+        return { ...prevState, countdown: prevState.countdown - 1 };
+      });
+    }, 1000);
+  }
+
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
   async componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    if (this.state.isSending || this.state.sent) return; // Prevent duplicate sends
+    
     this.setState({ errorInfo, isSending: true });
 
     try {
-      // Get current user if available
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Send error to database
       await supabase.from('errors').insert({
         user_id: user?.id || null,
         error_message: error.message,
@@ -64,6 +143,7 @@ class ErrorBoundary extends Component<Props, State> {
           timestamp: new Date().toISOString(),
           screenWidth: window.innerWidth,
           screenHeight: window.innerHeight,
+          source: 'componentDidCatch',
         },
       });
 
@@ -74,25 +154,18 @@ class ErrorBoundary extends Component<Props, State> {
       this.setState({ isSending: false });
     }
 
-    // Start countdown
-    this.countdownInterval = setInterval(() => {
-      this.setState((prevState) => {
-        if (prevState.countdown <= 1) {
-          if (this.countdownInterval) {
-            clearInterval(this.countdownInterval);
-          }
-          // Redirect to auth page
-          window.location.href = '/auth';
-          return { ...prevState };
-        }
-        return { ...prevState, countdown: prevState.countdown - 1 };
-      });
-    }, 1000);
+    this.startCountdown();
   }
 
   componentWillUnmount() {
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
+    }
+    if (this.globalErrorHandler) {
+      window.removeEventListener('error', this.globalErrorHandler);
+    }
+    if (this.unhandledRejectionHandler) {
+      window.removeEventListener('unhandledrejection', this.unhandledRejectionHandler);
     }
   }
 
