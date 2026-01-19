@@ -1,0 +1,196 @@
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Props {
+  children: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+  errorCode: string;
+  countdown: number;
+  isSending: boolean;
+  sent: boolean;
+}
+
+class ErrorBoundary extends Component<Props, State> {
+  private countdownInterval: NodeJS.Timeout | null = null;
+
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      errorCode: this.generateErrorCode(),
+      countdown: 15,
+      isSending: false,
+      sent: false,
+    };
+  }
+
+  private generateErrorCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  }
+
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { hasError: true, error };
+  }
+
+  async componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.setState({ errorInfo, isSending: true });
+
+    try {
+      // Get current user if available
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Send error to database
+      await supabase.from('errors').insert({
+        user_id: user?.id || null,
+        error_message: error.message,
+        error_stack: error.stack || null,
+        component_stack: errorInfo.componentStack || null,
+        url: window.location.href,
+        user_agent: navigator.userAgent,
+        additional_info: {
+          errorCode: this.state.errorCode,
+          timestamp: new Date().toISOString(),
+          screenWidth: window.innerWidth,
+          screenHeight: window.innerHeight,
+        },
+      });
+
+      this.setState({ sent: true });
+    } catch (sendError) {
+      console.error('Failed to send error report:', sendError);
+    } finally {
+      this.setState({ isSending: false });
+    }
+
+    // Start countdown
+    this.countdownInterval = setInterval(() => {
+      this.setState((prevState) => {
+        if (prevState.countdown <= 1) {
+          if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+          }
+          // Redirect to auth page
+          window.location.href = '/auth';
+          return { ...prevState };
+        }
+        return { ...prevState, countdown: prevState.countdown - 1 };
+      });
+    }, 1000);
+  }
+
+  componentWillUnmount() {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      const { error, errorCode, countdown, isSending, sent } = this.state;
+      const progressPercentage = ((15 - countdown) / 15) * 100;
+
+      return (
+        <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center p-8 overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #0078D4 0%, #005A9E 100%)',
+            fontFamily: 'Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif',
+          }}
+        >
+          {/* Sad face emoticon */}
+          <div className="text-white text-[120px] sm:text-[180px] font-light mb-4 animate-pulse">
+            :(
+          </div>
+
+          {/* Main error message */}
+          <h1 className="text-white text-lg sm:text-2xl font-light text-center max-w-2xl mb-6 leading-relaxed">
+            Your app ran into a problem and needs to restart. We're collecting some error info, and then we'll redirect you to the login page.
+          </h1>
+
+          {/* Progress bar */}
+          <div className="w-full max-w-md mb-6">
+            <div className="h-1 bg-white/30 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-white transition-all duration-1000 ease-linear rounded-full"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <p className="text-white/80 text-sm mt-2 text-center">
+              {progressPercentage.toFixed(0)}% complete
+            </p>
+          </div>
+
+          {/* Status messages */}
+          <div className="text-white/90 text-sm sm:text-base text-center space-y-1 mb-8">
+            {isSending && (
+              <p className="flex items-center justify-center gap-2">
+                <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                Sending error report to administrators...
+              </p>
+            )}
+            {sent && (
+              <p className="text-green-300">✓ Error report sent successfully</p>
+            )}
+            <p>Redirecting in {countdown} seconds...</p>
+          </div>
+
+          {/* Technical details box */}
+          <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 sm:p-6 max-w-2xl w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-white/80 text-xs sm:text-sm font-mono">
+              <div>
+                <span className="text-white/50">Error Code:</span>
+                <span className="ml-2 text-white">{errorCode}</span>
+              </div>
+              <div>
+                <span className="text-white/50">Stop Code:</span>
+                <span className="ml-2 text-white">CRITICAL_APP_ERROR</span>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-white/50">What failed:</span>
+                <span className="ml-2 text-white break-all">
+                  {error?.message || 'Unknown error'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* QR code placeholder and help text */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 text-white/70 text-xs sm:text-sm">
+            <div className="w-16 h-16 bg-white/10 rounded flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-10 h-10 text-white/40" fill="currentColor">
+                <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v3h-3v-3zm-3 3h3v3h-3v-3zm3 3h3v3h-3v-3zm-3 3h3v3h-3v-3zm3 0h3v3h-3v-3z"/>
+              </svg>
+            </div>
+            <div className="text-center sm:text-left">
+              <p>For more information about this issue and possible fixes,</p>
+              <p>contact your administrator with error code: <strong className="text-white">{errorCode}</strong></p>
+            </div>
+          </div>
+
+          {/* Skip button */}
+          <button
+            onClick={() => window.location.href = '/auth'}
+            className="mt-8 px-6 py-2 text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded transition-colors text-sm"
+          >
+            Skip and go to login now
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;
