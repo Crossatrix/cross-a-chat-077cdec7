@@ -169,7 +169,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
             return (
               <div key={message.id} className="flex justify-center my-2">
                 <div className="bg-muted/50 text-muted-foreground text-xs md:text-sm px-3 py-1 rounded-full border border-border">
-                  {message.content}
+                  {formatMessageText(message.content)}
                 </div>
               </div>
             );
