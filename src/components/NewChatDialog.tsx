@@ -142,25 +142,7 @@ export const NewChatDialog = ({ currentUserId, onChatCreated, onUserSelected }: 
       
       // Check if selecting AI
       if (selectedUser?.username.toLowerCase() === 'ai') {
-        // Check AI chat count
-        const { data: existingAIChats, error: countError } = await supabase
-          .from('conversations')
-          .select('id')
-          .eq('is_ai_chat', true)
-          .eq('created_by', currentUserId);
-
-        if (countError) {
-          console.error('Error checking AI chats:', countError);
-          toast.error(t("ai.checkFailed"));
-          return;
-        }
-
-        if (existingAIChats && existingAIChats.length >= 5) {
-          toast.error(t("ai.limitReached"));
-          return;
-        }
-
-        // Show AI chat name input
+        // Show AI chat name input (no limit on AI chats)
         setShowAiChatNameInput(true);
         return;
       }
