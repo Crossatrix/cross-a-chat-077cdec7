@@ -6,7 +6,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import EmojiPicker from "./EmojiPicker";
-
+import EffectsPicker from "./EffectsPicker";
 interface CustomEmoji {
   id: string;
   name: string;
@@ -347,10 +347,14 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
             >
               {isRecording ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </Button>
-          </>
+        </>
         )}
         <EmojiPicker 
           onEmojiSelect={(emoji: CustomEmoji) => setMessage(prev => prev + ` :${emoji.name}: `)}
+          disabled={disabled || isRecording}
+        />
+        <EffectsPicker
+          onEffectSelect={(tag: string) => setMessage(prev => prev + tag)}
           disabled={disabled || isRecording}
         />
         <Input
