@@ -144,6 +144,62 @@ const FlipText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => {
   );
 };
 
+const FadeText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => {
+  return <span key={keyPrefix} className="inline-block animate-fade-text">{text}</span>;
+};
+
+const ZoomText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => {
+  return <span key={keyPrefix} className="inline-block animate-zoom-text">{text}</span>;
+};
+
+const SpinText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => {
+  return <span key={keyPrefix} className="inline-block animate-spin-text">{text}</span>;
+};
+
+const GlitchText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => {
+  return (
+    <span key={keyPrefix} className="inline-block relative animate-glitch">
+      <span className="relative">{text}</span>
+    </span>
+  );
+};
+
+const NeonText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => {
+  return <span key={keyPrefix} className="inline-block animate-neon">{text}</span>;
+};
+
+const JellyText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => {
+  return (
+    <span key={keyPrefix} className="inline-flex">
+      {text.split('').map((char, i) => (
+        <span
+          key={`${keyPrefix}-${i}`}
+          className="inline-block animate-jelly"
+          style={{ animationDelay: `${i * 0.05}s` }}
+        >
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      ))}
+    </span>
+  );
+};
+
+const FloatText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => {
+  return (
+    <span key={keyPrefix} className="inline-flex">
+      {text.split('').map((char, i) => (
+        <span
+          key={`${keyPrefix}-${i}`}
+          className="inline-block animate-float"
+          style={{ animationDelay: `${i * 0.1}s` }}
+        >
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      ))}
+    </span>
+  );
+};
+
 // Parse effect tags /#/effect; value/#/
 const parseEffectTags = (text: string, keyBase: number): (string | JSX.Element)[] => {
   const effectRegex = /\/#\/([^;]+);\s*([^#]+)\/#\//g;
@@ -204,6 +260,27 @@ const parseEffectTags = (text: string, keyBase: number): (string | JSX.Element)[
           break;
         case 'flip':
           parts.push(<FlipText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
+          break;
+        case 'fade':
+          parts.push(<FadeText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
+          break;
+        case 'zoom':
+          parts.push(<ZoomText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
+          break;
+        case 'spin':
+          parts.push(<SpinText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
+          break;
+        case 'glitch':
+          parts.push(<GlitchText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
+          break;
+        case 'neon':
+          parts.push(<NeonText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
+          break;
+        case 'jelly':
+          parts.push(<JellyText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
+          break;
+        case 'float':
+          parts.push(<FloatText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
           break;
         default:
           parts.push(match[0]); // Keep original if unknown
