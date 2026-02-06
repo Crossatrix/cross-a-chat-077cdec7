@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Image as ImageIcon, Video, Mic, StopCircle, X, Sparkles, Coins, Loader2 } from "lucide-react";
+import { Send, Mic, StopCircle, X, Sparkles, Coins, Loader2, Image as ImageIcon, Video } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import EmojiPicker from "./EmojiPicker";
 import EffectsPicker from "./EffectsPicker";
+import MediaPicker from "./MediaPicker";
+
 interface CustomEmoji {
   id: string;
   name: string;
@@ -41,43 +42,10 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [generateImage, setGenerateImage] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-      if (!validTypes.includes(file.type)) {
-        toast.error("Please select an image file (JPEG, PNG, GIF, or WEBP)");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image must be less than 5MB");
-        return;
-      }
-      setSelectedImage(file);
-    }
-  };
-
-  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const validTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo", "video/x-matroska"];
-      if (!validTypes.includes(file.type)) {
-        toast.error("Please select a video file (MP4, WebM, MOV, AVI, or MKV)");
-        return;
-      }
-      if (file.size > 50 * 1024 * 1024) {
-        toast.error("Video must be less than 50MB");
-        return;
-      }
-      setSelectedVideo(file);
-    }
-  };
 
   const startRecording = async () => {
     try {
@@ -165,12 +133,6 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
     setRecordedBlob(null);
     setRecordingTime(0);
     setGenerateImage(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-    if (videoInputRef.current) {
-      videoInputRef.current.value = "";
-    }
   };
 
   return (
@@ -231,12 +193,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => {
-              setSelectedImage(null);
-              if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-              }
-            }}
+            onClick={() => setSelectedImage(null)}
             className="h-6 px-2"
           >
             Remove
@@ -251,12 +208,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => {
-              setSelectedVideo(null);
-              if (videoInputRef.current) {
-                videoInputRef.current.value = "";
-              }
-            }}
+            onClick={() => setSelectedVideo(null)}
             className="h-6 px-2"
           >
             Remove
@@ -300,54 +252,25 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
       )}
       <div className="flex gap-2">
         {!isAIChat && (
-          <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-              onChange={handleImageSelect}
-              className="hidden"
-              disabled={disabled || isRecording}
-            />
-            <Button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={disabled || isRecording || !!recordedBlob}
-              size="icon"
-              variant="outline"
-              className="shrink-0"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-            <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska"
-              onChange={handleVideoSelect}
-              className="hidden"
-              disabled={disabled || isRecording}
-            />
-            <Button
-              type="button"
-              onClick={() => videoInputRef.current?.click()}
-              disabled={disabled || isRecording || !!recordedBlob}
-              size="icon"
-              variant="outline"
-              className="shrink-0"
-            >
-              <Video className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={disabled || !!selectedImage || !!selectedVideo || !!recordedBlob}
-              size="icon"
-              variant={isRecording ? "destructive" : "outline"}
-              className="shrink-0"
-            >
-              {isRecording ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </Button>
-        </>
+          <MediaPicker
+            onImageSelect={(file) => setSelectedImage(file)}
+            onVideoSelect={(file) => setSelectedVideo(file)}
+            onVoiceStart={startRecording}
+            disabled={disabled}
+            isRecording={isRecording}
+            hasMedia={!!selectedImage || !!selectedVideo || !!recordedBlob}
+          />
+        )}
+        {isRecording && (
+          <Button
+            type="button"
+            onClick={stopRecording}
+            size="icon"
+            variant="destructive"
+            className="shrink-0"
+          >
+            <StopCircle className="h-4 w-4" />
+          </Button>
         )}
         <EmojiPicker 
           onEmojiSelect={(emoji: CustomEmoji) => setMessage(prev => prev + ` :${emoji.name}: `)}
