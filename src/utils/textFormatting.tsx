@@ -202,7 +202,7 @@ const FloatText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => 
 
 // Parse effect tags /#/effect; value/#/
 const parseEffectTags = (text: string, keyBase: number): (string | JSX.Element)[] => {
-  const effectRegex = /\/#\/([^;]+);\s*([^#]+)\/#\//g;
+  const effectRegex = /\/#\/([^;]+);\s*(.+?)\/#\//g;
   const parts: (string | JSX.Element)[] = [];
   let lastIndex = 0;
   let match;
