@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Trash2 } from "lucide-react";
+import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +50,7 @@ const ConversationsList = ({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  useEmojiLoader();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -396,7 +398,7 @@ const ConversationsList = ({
                         </div>
                       ) : conv.lastMessage && (
                         <div className="text-xs text-muted-foreground truncate mt-1 max-w-[60vw] md:max-w-full">
-                          {conv.lastMessage}
+                          {formatMessageText(conv.lastMessage)}
                         </div>
                       )}
                     </div>
