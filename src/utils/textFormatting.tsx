@@ -200,6 +200,51 @@ const FloatText = ({ text, keyPrefix }: { text: string; keyPrefix: string }) => 
   );
 };
 
+// Helper to render animation component by type
+const renderAnimation = (type: string, text: string, keyPrefix: string, color?: string): JSX.Element | null => {
+  const style = color ? { color } : undefined;
+  const wrap = (el: JSX.Element) => style ? <span key={`${keyPrefix}-wrap`} style={style}>{el}</span> : el;
+  
+  switch (type) {
+    case 'randomize_letters':
+    case 'randomize':
+      return wrap(<RandomizeLetters key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'move-up-down':
+    case 'bounce':
+      return wrap(<MoveUpDown key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'wave':
+      return wrap(<WaveText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'shake':
+      return wrap(<ShakeText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'pulse':
+      return wrap(<PulseText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'glow':
+      return wrap(<GlowText key={keyPrefix} text={text} keyPrefix={keyPrefix} color={color} />);
+    case 'rainbow':
+      return wrap(<RainbowText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'typewriter':
+      return wrap(<TypewriterText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'flip':
+      return wrap(<FlipText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'fade':
+      return wrap(<FadeText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'zoom':
+      return wrap(<ZoomText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'spin':
+      return wrap(<SpinText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'glitch':
+      return wrap(<GlitchText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'neon':
+      return wrap(<NeonText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'jelly':
+      return wrap(<JellyText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    case 'float':
+      return wrap(<FloatText key={keyPrefix} text={text} keyPrefix={keyPrefix} />);
+    default:
+      return null;
+  }
+};
+
 // Parse effect tags /#/effect; value/#/
 const parseEffectTags = (text: string, keyBase: number): (string | JSX.Element)[] => {
   const effectRegex = /\/#\/([^;]+);\s*(.+?)\/#\//g;
@@ -209,7 +254,6 @@ const parseEffectTags = (text: string, keyBase: number): (string | JSX.Element)[
   let key = keyBase;
 
   while ((match = effectRegex.exec(text)) !== null) {
-    // Add text before the match
     if (match.index > lastIndex) {
       parts.push(text.substring(lastIndex, match.index));
     }
@@ -218,75 +262,40 @@ const parseEffectTags = (text: string, keyBase: number): (string | JSX.Element)[
     const effectValue = match[2].trim();
     const keyPrefix = `effect-${key++}`;
 
-    // Handle different effect types
     if (effectType === 'color') {
-      // Color effect with hex value
       parts.push(
         <span key={keyPrefix} style={{ color: effectValue }}>
           {effectValue.startsWith('#') ? effectValue : `#${effectValue}`}
         </span>
       );
+    } else if (effectType === 'combo') {
+      // Format: /#/combo; wave,bounce #FF0000 Hello/#/ or /#/combo; wave,bounce Hello/#/
+      const comboMatch = effectValue.match(/^([a-z,_-]+)\s+(#[0-9A-Fa-f]{3,6})\s+(.+)$/i);
+      const comboNoColor = effectValue.match(/^([a-z,_-]+)\s+(.+)$/i);
+      
+      if (comboMatch) {
+        const animTypes = comboMatch[1].split(',');
+        const color = comboMatch[2];
+        const comboText = comboMatch[3];
+        const firstAnim = animTypes[0];
+        const rendered = renderAnimation(firstAnim, comboText, keyPrefix, color);
+        parts.push(rendered || <span key={keyPrefix} style={{ color }}>{comboText}</span>);
+      } else if (comboNoColor) {
+        const animTypes = comboNoColor[1].split(',');
+        const comboText = comboNoColor[2];
+        const firstAnim = animTypes[0];
+        const rendered = renderAnimation(firstAnim, comboText, keyPrefix);
+        parts.push(rendered || <span key={keyPrefix}>{comboText}</span>);
+      } else {
+        parts.push(match[0]);
+      }
     } else if (effectType === 'animate' || effectType === 'animation') {
-      // The value format is "animation_type text" or just "animation_type"
       const [animationType, ...textParts] = effectValue.split(' ');
       const animatedText = textParts.join(' ') || animationType;
-      
-      switch (animationType.toLowerCase()) {
-        case 'randomize_letters':
-        case 'randomize':
-          parts.push(<RandomizeLetters key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'move-up-down':
-        case 'bounce':
-          parts.push(<MoveUpDown key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'wave':
-          parts.push(<WaveText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'shake':
-          parts.push(<ShakeText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'pulse':
-          parts.push(<PulseText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'glow':
-          parts.push(<GlowText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'rainbow':
-          parts.push(<RainbowText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'typewriter':
-          parts.push(<TypewriterText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'flip':
-          parts.push(<FlipText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'fade':
-          parts.push(<FadeText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'zoom':
-          parts.push(<ZoomText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'spin':
-          parts.push(<SpinText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'glitch':
-          parts.push(<GlitchText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'neon':
-          parts.push(<NeonText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'jelly':
-          parts.push(<JellyText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        case 'float':
-          parts.push(<FloatText key={keyPrefix} text={animatedText !== animationType ? animatedText : 'Text'} keyPrefix={keyPrefix} />);
-          break;
-        default:
-          parts.push(match[0]); // Keep original if unknown
-      }
+      const displayText = animatedText !== animationType ? animatedText : 'Text';
+      const rendered = renderAnimation(animationType.toLowerCase(), displayText, keyPrefix);
+      parts.push(rendered || match[0]);
     } else if (effectType === 'text' || effectType === 'styled') {
-      // Format: /#/text; #hexcolor content/#/
       const colorMatch = effectValue.match(/^(#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{3})\s+(.+)$/);
       if (colorMatch) {
         parts.push(
@@ -298,14 +307,12 @@ const parseEffectTags = (text: string, keyBase: number): (string | JSX.Element)[
         parts.push(match[0]);
       }
     } else {
-      // Unknown effect, keep original
       parts.push(match[0]);
     }
 
     lastIndex = effectRegex.lastIndex;
   }
 
-  // Add remaining text
   if (lastIndex < text.length) {
     parts.push(text.substring(lastIndex));
   }

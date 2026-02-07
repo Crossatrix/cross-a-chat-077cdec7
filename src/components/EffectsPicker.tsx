@@ -78,20 +78,19 @@ const EffectsPicker = ({ onEffectSelect, disabled }: EffectsPickerProps) => {
   const handleApply = () => {
     if (!text.trim()) return;
     
-    let result = text.trim();
+    const inputText = text.trim();
     
-    // Apply color first (innermost)
-    if (selectedColor) {
-      result = `/#/text; ${selectedColor} ${result}/#/`;
+    if (selectedAnimations.length > 0 && selectedColor) {
+      // Combined: /#/combo; wave,bounce #FF0000 Hello/#/
+      const anims = selectedAnimations.join(',');
+      onEffectSelect(`/#/combo; ${anims} ${selectedColor} ${inputText}/#/`);
+    } else if (selectedAnimations.length > 0) {
+      const anims = selectedAnimations.join(',');
+      onEffectSelect(`/#/combo; ${anims} ${inputText}/#/`);
+    } else if (selectedColor) {
+      onEffectSelect(`/#/text; ${selectedColor} ${inputText}/#/`);
     }
     
-    // Apply animations (wrap around, outermost first when reading)
-    // We reverse so the first selected animation is the outermost wrapper
-    [...selectedAnimations].reverse().forEach(animType => {
-      result = `/#/animate; ${animType} ${result}/#/`;
-    });
-    
-    onEffectSelect(result);
     resetAndClose();
   };
 
