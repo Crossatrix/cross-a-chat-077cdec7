@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Star, Trash2, MessageSquare, Send } from "lucide-react";
+import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ const FeedbackList = () => {
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  useEmojiLoader();
 
   useEffect(() => {
     fetchFeedback();
@@ -255,7 +257,7 @@ const FeedbackList = () => {
                 ))}
               </div>
             )}
-            <p className="text-sm mb-4 whitespace-pre-wrap">{item.message}</p>
+            <div className="text-sm mb-4 whitespace-pre-wrap">{formatMessageText(item.message)}</div>
             
             {/* Admin Response Display */}
             {item.admin_response && (
@@ -276,7 +278,7 @@ const FeedbackList = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{item.admin_response}</p>
+                <div className="text-sm whitespace-pre-wrap">{formatMessageText(item.admin_response)}</div>
               </div>
             )}
 
