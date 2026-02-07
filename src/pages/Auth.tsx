@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useAppVersion } from "@/hooks/useAppVersion";
 
 const usernameSchema = z.string()
   .trim()
@@ -26,6 +27,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const version = useAppVersion();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -204,6 +206,9 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
+      {version && (
+        <p className="text-xs text-muted-foreground mt-4">v{version}</p>
+      )}
     </div>
   );
 };

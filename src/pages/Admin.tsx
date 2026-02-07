@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, RefreshCw } from "lucide-react";
+import { ArrowLeft, Upload, Plus, RefreshCw, Save } from "lucide-react";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import FileExplorer, { FileItem } from "@/components/admin/FileExplorer";
 import FilePreview from "@/components/admin/FilePreview";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -36,6 +37,13 @@ const Admin = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const currentVersion = useAppVersion();
+  const [editVersion, setEditVersion] = useState("");
+  const [savingVersion, setSavingVersion] = useState(false);
+
+  useEffect(() => {
+    if (currentVersion) setEditVersion(currentVersion);
+  }, [currentVersion]);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -667,7 +675,7 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border bg-card p-3 shrink-0">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+        <div className="flex items-center justify-between max-w-7xl mx-auto flex-wrap gap-2">
           <div className="flex items-center gap-4">
             <Button onClick={() => navigate("/")} variant="secondary" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -676,6 +684,34 @@ const Admin = () => {
             <h1 className="text-xl font-bold text-primary">{t("admin.title")}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Input
+              value={editVersion}
+              onChange={(e) => setEditVersion(e.target.value)}
+              placeholder="Version (e.g. 1.0.0)"
+              className="w-32 h-8 text-xs"
+            />
+            <Button
+              onClick={async () => {
+                if (!editVersion.trim()) return;
+                setSavingVersion(true);
+                const { data: { user } } = await supabase.auth.getUser();
+                const { error } = await supabase
+                  .from("app_settings")
+                  .update({ value: editVersion.trim(), updated_at: new Date().toISOString(), updated_by: user?.id })
+                  .eq("key", "app_version");
+                setSavingVersion(false);
+                if (error) {
+                  toast.error("Failed to update version");
+                } else {
+                  toast.success("Version updated");
+                }
+              }}
+              variant="outline"
+              size="sm"
+              disabled={savingVersion || editVersion === currentVersion}
+            >
+              <Save className="h-4 w-4" />
+            </Button>
             <Button onClick={fetchAllData} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4" />
             </Button>

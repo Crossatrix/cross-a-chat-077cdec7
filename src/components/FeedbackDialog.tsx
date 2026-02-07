@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format } from "date-fns";
+import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 
 const feedbackSchema = z.string().trim().min(1, "Please enter your feedback").max(5000, "Feedback too long (max 5000 characters)");
 
@@ -40,6 +41,7 @@ export const FeedbackDialog = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [hasUnreadResponses, setHasUnreadResponses] = useState(false);
   const { t } = useLanguage();
+  useEmojiLoader();
 
   // Check for unread responses on mount
   useEffect(() => {
@@ -198,7 +200,7 @@ export const FeedbackDialog = () => {
                       ))}
                     </div>
                   )}
-                  <p className="text-sm line-clamp-2">{item.message}</p>
+                  <div className="text-sm line-clamp-2">{formatMessageText(item.message)}</div>
                   
                   {/* Admin Response */}
                   {item.admin_response && (
@@ -212,7 +214,7 @@ export const FeedbackDialog = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm">{item.admin_response}</p>
+                      <div className="text-sm">{formatMessageText(item.admin_response)}</div>
                     </div>
                   )}
                 </div>

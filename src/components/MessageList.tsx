@@ -158,28 +158,62 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
     setEditContent("");
   };
 
+  const getDateLabel = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.round((today.getTime() - msgDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) {
+      return date.toLocaleDateString(undefined, { weekday: "long" });
+    }
+    return date.toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "2-digit" });
+  };
+
   return (
     <ScrollArea className="flex-1 p-2 md:p-4" ref={scrollRef}>
       <div className="space-y-2 md:space-y-4">
-        {messages.map((message) => {
+        {messages.map((message, index) => {
           const isCurrentUser = message.profiles?.username === currentUserId;
+          const currentDateLabel = getDateLabel(message.created_at);
+          const prevDateLabel = index > 0 ? getDateLabel(messages[index - 1].created_at) : null;
+          const showDateSeparator = currentDateLabel !== prevDateLabel;
           
           // Render system messages differently
           if (message.is_system) {
             return (
-              <div key={message.id} className="flex justify-center my-2">
-                <div className="bg-muted/50 text-muted-foreground text-xs md:text-sm px-3 py-1 rounded-full border border-border">
-                  {formatMessageText(message.content)}
+              <div key={message.id}>
+                {showDateSeparator && (
+                  <div className="flex justify-center my-3">
+                    <div className="bg-muted/50 text-muted-foreground text-xs md:text-sm px-3 py-1 rounded-full border border-border">
+                      {currentDateLabel}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-center my-2">
+                  <div className="bg-muted/50 text-muted-foreground text-xs md:text-sm px-3 py-1 rounded-full border border-border">
+                    {formatMessageText(message.content)}
+                  </div>
                 </div>
               </div>
             );
           }
           
           return (
-            <div
-              key={message.id}
-              className={`flex gap-3 ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}
-            >
+            <div key={message.id}>
+              {showDateSeparator && (
+                <div className="flex justify-center my-3">
+                  <div className="bg-muted/50 text-muted-foreground text-xs md:text-sm px-3 py-1 rounded-full border border-border">
+                    {currentDateLabel}
+                  </div>
+                </div>
+              )}
+              <div
+                className={`flex gap-3 ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}
+              >
               <div className="flex items-start gap-1 md:gap-2">
                 <Avatar className="h-6 w-6 md:h-8 md:w-8 border-2 border-primary">
                   <AvatarImage src={message.profiles?.avatar_url || ""} alt={message.profiles?.username} />
@@ -308,6 +342,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                     </span>
                   )}
                 </div>
+              </div>
               </div>
             </div>
           );

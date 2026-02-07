@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { Info, UserX, Flag, Image, Video, X, UsersRound } from "lucide-react";
 import { z } from "zod";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 
 const reportSchema = z.string().trim().min(10, "Please provide more details (min 10 characters)").max(1000, "Reason too long (max 1000 characters)");
 
@@ -54,6 +55,7 @@ interface SharedMedia {
 
 const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: UserInfoDialogProps) => {
   const { t } = useLanguage();
+  useEmojiLoader();
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -349,9 +351,9 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
               {/* Bio */}
               <div className="space-y-1">
                 <Label className="text-sm font-medium text-muted-foreground">{t("userInfo.bio")}</Label>
-                <p className="text-sm p-3 bg-muted/50 rounded-lg min-h-[40px]">
-                  {profile.bio || t("userInfo.noBio")}
-                </p>
+                <div className="text-sm p-3 bg-muted/50 rounded-lg min-h-[40px]">
+                  {profile.bio ? formatMessageText(profile.bio) : t("userInfo.noBio")}
+                </div>
               </div>
 
               {/* Shared Media Tabs */}

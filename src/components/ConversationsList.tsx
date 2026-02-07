@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Trash2 } from "lucide-react";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +52,7 @@ const ConversationsList = ({
   const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   useEmojiLoader();
+  const version = useAppVersion();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -307,7 +309,12 @@ const ConversationsList = ({
   return (
     <div className="w-full md:w-80 border-r border-border bg-card flex flex-col h-full">
       <div className="px-4 py-3 border-b border-border shrink-0">
-        <h2 className="text-base md:text-lg font-semibold">Chats</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base md:text-lg font-semibold">Chats</h2>
+          {version && (
+            <span className="text-[10px] text-muted-foreground">v{version}</span>
+          )}
+        </div>
       </div>
       <ScrollArea className="flex-1">
         {conversations.length > 0 && (
