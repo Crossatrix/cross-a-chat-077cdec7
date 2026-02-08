@@ -149,7 +149,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 relative">
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center text-primary">
@@ -207,7 +207,7 @@ const Auth = () => {
         </CardContent>
       </Card>
       {version && (
-        <p className="text-xs text-muted-foreground mt-4">v{version}</p>
+        <p className="absolute bottom-3 left-3 text-xs text-muted-foreground">v{version}</p>
       )}
     </div>
   );

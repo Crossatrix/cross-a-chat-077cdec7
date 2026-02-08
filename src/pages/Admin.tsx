@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft, Upload, Plus, RefreshCw, Save } from "lucide-react";
 import { useAppVersion } from "@/hooks/useAppVersion";
+import ChangelogManager from "@/components/admin/ChangelogManager";
 import FileExplorer, { FileItem } from "@/components/admin/FileExplorer";
 import FilePreview from "@/components/admin/FilePreview";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -712,6 +713,7 @@ const Admin = () => {
             >
               <Save className="h-4 w-4" />
             </Button>
+            <ChangelogManager currentVersion={editVersion || currentVersion} />
             <Button onClick={fetchAllData} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4" />
             </Button>
