@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import ChangelogDialog from "@/components/ChangelogDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Trash2 } from "lucide-react";
@@ -54,6 +55,7 @@ const ConversationsList = ({
   useEmojiLoader();
   const version = useAppVersion();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -312,7 +314,12 @@ const ConversationsList = ({
         <div className="flex items-center justify-between">
           <h2 className="text-base md:text-lg font-semibold">Chats</h2>
           {version && (
-            <span className="text-[10px] text-muted-foreground">v{version}</span>
+            <button
+              onClick={() => setChangelogOpen(true)}
+              className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
+            >
+              v{version}
+            </button>
           )}
         </div>
       </div>
@@ -454,6 +461,7 @@ const ConversationsList = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ChangelogDialog open={changelogOpen} onOpenChange={setChangelogOpen} />
     </div>
   );
 };
