@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import EmojiPicker from "./EmojiPicker";
 import EffectsPicker from "./EffectsPicker";
 import MediaPicker from "./MediaPicker";
+import RichTextInput from "./RichTextInput";
 
 interface CustomEmoji {
   id: string;
@@ -280,15 +281,21 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
           onEffectSelect={(tag: string) => setMessage(prev => prev + tag)}
           disabled={disabled || isRecording}
         />
-        <Input
+        <RichTextInput
           value={message}
-          onChange={(e) => {
-            setMessage(e.target.value);
+          onChange={(val) => {
+            setMessage(val);
             onTyping?.();
           }}
           placeholder="Type a message..."
           disabled={disabled || isRecording}
-          className="flex-1 text-sm md:text-base"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              const form = e.currentTarget.closest('form');
+              if (form) form.requestSubmit();
+            }
+          }}
         />
         <Button 
           type="submit" 
