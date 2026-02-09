@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import type { EffectTagInfo } from "./RichTextInput";
 import {
   Popover,
   PopoverContent,
@@ -21,6 +22,8 @@ interface Effect {
 interface EffectsPickerProps {
   onEffectSelect: (tag: string) => void;
   disabled?: boolean;
+  editingEffect?: EffectTagInfo | null;
+  onEditCancel?: () => void;
 }
 
 const animations: Effect[] = [
@@ -77,12 +80,25 @@ const colors: { name: string; hex: string }[] = [
   { name: "Peach", hex: "#FFDAB9" },
 ];
 
-const EffectsPicker = ({ onEffectSelect, disabled }: EffectsPickerProps) => {
+const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel }: EffectsPickerProps) => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [selectedAnimations, setSelectedAnimations] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [customColor, setCustomColor] = useState("#FF0000");
+
+  // When editingEffect is set, open the picker pre-filled
+  useEffect(() => {
+    if (editingEffect) {
+      setText(editingEffect.text);
+      setSelectedAnimations(editingEffect.animations || []);
+      setSelectedColor(editingEffect.color || null);
+      if (editingEffect.color) {
+        setCustomColor(editingEffect.color);
+      }
+      setOpen(true);
+    }
+  }, [editingEffect]);
 
   const handleAnimationClick = (type: string) => {
     setSelectedAnimations(prev => 
@@ -131,6 +147,7 @@ const EffectsPicker = ({ onEffectSelect, disabled }: EffectsPickerProps) => {
         setText("");
         setSelectedAnimations([]);
         setSelectedColor(null);
+        onEditCancel?.();
       }
     }}>
       <PopoverTrigger asChild>
