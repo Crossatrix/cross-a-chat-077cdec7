@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Send, Mic, StopCircle, X, Sparkles, Coins, Loader2, Image as ImageIcon, Video } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import EmojiPicker from "./EmojiPicker";
 import EffectsPicker from "./EffectsPicker";
 import MediaPicker from "./MediaPicker";
-import RichTextInput from "./RichTextInput";
+import RichTextInput, { type EffectTagInfo } from "./RichTextInput";
 
 interface CustomEmoji {
   id: string;
@@ -43,6 +42,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [generateImage, setGenerateImage] = useState(false);
+  const [editingEffect, setEditingEffect] = useState<EffectTagInfo | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -278,8 +278,18 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
           disabled={disabled || isRecording}
         />
         <EffectsPicker
-          onEffectSelect={(tag: string) => setMessage(prev => prev + tag)}
+          onEffectSelect={(tag: string) => {
+            if (editingEffect) {
+              // Replace the old effect tag with the new one
+              setMessage(prev => prev.replace(editingEffect.fullMatch, tag));
+              setEditingEffect(null);
+            } else {
+              setMessage(prev => prev + tag);
+            }
+          }}
           disabled={disabled || isRecording}
+          editingEffect={editingEffect}
+          onEditCancel={() => setEditingEffect(null)}
         />
         <RichTextInput
           value={message}
@@ -296,6 +306,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
               if (form) form.requestSubmit();
             }
           }}
+          onEffectDoubleClick={(info) => setEditingEffect(info)}
         />
         <Button 
           type="submit" 
