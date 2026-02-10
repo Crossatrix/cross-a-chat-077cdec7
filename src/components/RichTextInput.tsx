@@ -89,6 +89,7 @@ const RichTextInput = ({
   const [isFocused, setIsFocused] = useState(false);
 
   const hasFormatting = /:\w+:|\/\#\/|_[^_]+_|\*[^*]+\*/.test(value);
+  const showPreview = hasFormatting && !isFocused;
 
   // Sync scroll
   const handleScroll = () => {
@@ -106,29 +107,21 @@ const RichTextInput = ({
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (!onEffectDoubleClick || !inputRef.current) return;
 
-      // Get cursor position from click coordinates
       const input = inputRef.current;
-      // Focus the input so we can work with selection
       input.focus();
 
-      // Find which effect tag the cursor might be in
       const tags = findEffectTags(value);
       if (tags.length === 0) return;
 
-      // Use the click position relative to the preview to estimate character position
-      // We'll try to find which tag was clicked by checking the clicked element
       const target = e.target as HTMLElement;
       const previewEl = previewRef.current;
       if (!previewEl) return;
 
-      // Walk up to find if we clicked inside an animated/colored span
       let el: HTMLElement | null = target;
       while (el && el !== previewEl) {
-        // Check if this element is a rendered effect (has animation classes or inline color)
         const hasAnimation = el.className?.includes?.("animate-") || el.className?.includes?.("inline-flex");
         const hasColor = el.style?.color && el.style.color !== "";
         if (hasAnimation || hasColor) {
-          // Find the matching tag by text content
           const clickedText = el.textContent || "";
           const matchingTag = tags.find(
             (t) => t.text === clickedText || clickedText.includes(t.text)
@@ -156,13 +149,13 @@ const RichTextInput = ({
       )}
       onClick={() => inputRef.current?.focus()}
     >
-      {/* Formatted preview layer */}
-      {hasFormatting && (
+      {/* Formatted preview layer - only visible when NOT focused */}
+      {showPreview && (
         <div
           ref={previewRef}
           className="absolute inset-0 flex items-center px-3 py-2 overflow-hidden whitespace-nowrap text-sm"
           onDoubleClick={handlePreviewDoubleClick}
-          style={{ zIndex: 1 }}
+          style={{ zIndex: 2 }}
         >
           {formatMessageText(value)}
         </div>
@@ -182,14 +175,12 @@ const RichTextInput = ({
         placeholder={placeholder}
         className={cn(
           "relative w-full h-full px-3 py-2 bg-transparent outline-none text-sm",
-          hasFormatting
-            ? "text-transparent selection:bg-primary/30"
-            : "text-foreground",
+          showPreview ? "text-transparent" : "text-foreground",
           "placeholder:text-muted-foreground"
         )}
         style={{
           caretColor: "hsl(var(--foreground))",
-          zIndex: hasFormatting ? 2 : 1,
+          zIndex: 1,
         }}
       />
     </div>
