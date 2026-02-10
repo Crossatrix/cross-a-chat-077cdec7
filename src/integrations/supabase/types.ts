@@ -752,6 +752,27 @@ export type Database = {
           },
         ]
       }
+      user_changelog_seen: {
+        Row: {
+          id: string
+          last_seen_changelog_id: string
+          seen_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_seen_changelog_id: string
+          seen_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_seen_changelog_id?: string
+          seen_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_reports: {
         Row: {
           ai_reason: string | null
