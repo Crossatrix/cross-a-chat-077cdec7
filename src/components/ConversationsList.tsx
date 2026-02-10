@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare, Trash2 } from "lucide-react";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 import { useAppVersion } from "@/hooks/useAppVersion";
+import { useUnseenChangelog } from "@/hooks/useUnseenChangelog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,7 @@ const ConversationsList = ({
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   useEmojiLoader();
   const version = useAppVersion();
+  const { hasUnseen, markSeen } = useUnseenChangelog(currentUserId);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [changelogOpen, setChangelogOpen] = useState(false);
 
@@ -315,10 +317,18 @@ const ConversationsList = ({
           <h2 className="text-base md:text-lg font-semibold">Chats</h2>
           {version && (
             <button
-              onClick={() => setChangelogOpen(true)}
-              className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => {
+                setChangelogOpen(true);
+                markSeen();
+              }}
+              className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary transition-colors"
             >
               v{version}
+              {hasUnseen && (
+                <span className="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold uppercase animate-pulse">
+                  NEW
+                </span>
+              )}
             </button>
           )}
         </div>
