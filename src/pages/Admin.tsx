@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, RefreshCw, Save, Bug } from "lucide-react";
+import { ArrowLeft, Upload, Plus, RefreshCw, Save } from "lucide-react";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import ChangelogManager from "@/components/admin/ChangelogManager";
 import FileExplorer, { FileItem } from "@/components/admin/FileExplorer";
@@ -714,15 +714,6 @@ const Admin = () => {
               <Save className="h-4 w-4" />
             </Button>
             <ChangelogManager currentVersion={editVersion || currentVersion} />
-            <Button
-              onClick={() => { throw new Error("Admin test crash — triggered manually from admin panel"); }}
-              variant="outline"
-              size="sm"
-              className="text-destructive border-destructive/50 hover:bg-destructive/10"
-              title="Test Crash (BSOD)"
-            >
-              <Bug className="h-4 w-4" />
-            </Button>
             <Button onClick={fetchAllData} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4" />
             </Button>
