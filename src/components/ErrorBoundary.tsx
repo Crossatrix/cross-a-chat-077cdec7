@@ -53,8 +53,24 @@ class ErrorBoundary extends Component<Props, State> {
     window.addEventListener('unhandledrejection', this.unhandledRejectionHandler);
   }
 
+  private isExtensionError(error: Error): boolean {
+    const msg = error.message?.toLowerCase() || '';
+    const stack = error.stack?.toLowerCase() || '';
+    const extensionPatterns = [
+      'extension', 'chrome-extension', 'moz-extension', 'safari-extension',
+      'failed to execute', 'removeChild', 'insertBefore', 'appendChild',
+      'not a child of this node', 'the node to be removed is not a child',
+      'hydrat', 'script error', 'ResizeObserver loop',
+    ];
+    return extensionPatterns.some(p => msg.includes(p) || stack.includes(p));
+  }
+
   private async handleGlobalError(error: Error, source: string) {
-    if (this.state.hasError) return; // Prevent multiple triggers
+    if (this.state.hasError) return;
+    if (this.isExtensionError(error)) {
+      console.warn('[ErrorBoundary] Suppressed likely extension/DOM error:', error.message);
+      return;
+    }
 
     const errorCode = this.generateErrorCode();
     this.setState({ 
@@ -119,7 +135,18 @@ class ErrorBoundary extends Component<Props, State> {
     }, 1000);
   }
 
-  static getDerivedStateFromError(error: Error): Partial<State> {
+  static getDerivedStateFromError(error: Error): Partial<State> | null {
+    const msg = error.message?.toLowerCase() || '';
+    const stack = error.stack?.toLowerCase() || '';
+    const extensionPatterns = [
+      'extension', 'chrome-extension', 'moz-extension', 'safari-extension',
+      'failed to execute', 'removeChild', 'insertBefore', 'appendChild',
+      'not a child of this node', 'the node to be removed is not a child',
+      'hydrat', 'script error', 'ResizeObserver loop',
+    ];
+    if (extensionPatterns.some(p => msg.includes(p) || stack.includes(p))) {
+      return null; // Don't trigger BSOD for extension errors
+    }
     return { hasError: true, error };
   }
 
