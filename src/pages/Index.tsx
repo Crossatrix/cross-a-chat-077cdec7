@@ -50,7 +50,7 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [username, setUsername] = useState<string>("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedUsername, setSelectedUsername] = useState<string>("");
@@ -264,11 +264,11 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .single();
+        .eq("user_id", user.id);
 
-      setIsAdmin(!!roles);
+      const staffRoles = ['moderator_lite', 'moderator', 'elder_moderator', 'admin'];
+      const hasStaffRole = (roles || []).some(r => staffRoles.includes(r.role));
+      setIsStaff(hasStaffRole);
 
       // Fetch AI credits
       fetchAiCredits();
@@ -999,7 +999,7 @@ return (
                 </span>
               )}
             </Button>
-            {isAdmin && (
+            {isStaff && (
               <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8" aria-label="Admin Panel">
                 <Shield className="h-3.5 w-3.5" />
               </Button>
@@ -1121,7 +1121,7 @@ return (
             />
             <BlockedUsersList currentUserId={user?.id || ""} />
             <FeedbackDialog />
-            {isAdmin && (
+            {isStaff && (
               <Button onClick={() => navigate("/admin")} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Admin Panel">
                 <Shield className="h-3.5 w-3.5 md:hidden" />
                 <span className="hidden md:inline md:text-sm">Admin</span>
