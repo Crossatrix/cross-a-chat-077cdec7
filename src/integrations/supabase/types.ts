@@ -976,6 +976,10 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      is_elder_moderator_or_above: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       is_group_admin: {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
@@ -984,15 +988,29 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      is_moderator_or_above: { Args: { _user_id: string }; Returns: boolean }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
       leave_group: { Args: { _conversation_id: string }; Returns: boolean }
       promote_to_admin: { Args: { target_user_id: string }; Returns: undefined }
       remove_group_member: {
         Args: { _conversation_id: string; _target_user_id: string }
         Returns: boolean
       }
+      set_user_role: {
+        Args: {
+          new_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role:
+        | "admin"
+        | "user"
+        | "moderator_lite"
+        | "moderator"
+        | "elder_moderator"
       group_role: "admin" | "moderator" | "member"
     }
     CompositeTypes: {
@@ -1121,7 +1139,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: [
+        "admin",
+        "user",
+        "moderator_lite",
+        "moderator",
+        "elder_moderator",
+      ],
       group_role: ["admin", "moderator", "member"],
     },
   },

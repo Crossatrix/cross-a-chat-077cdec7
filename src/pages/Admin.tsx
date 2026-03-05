@@ -19,9 +19,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { StaffRole, getStaffRole, CAN, ROLE_CONFIG } from "@/utils/roleConfig";
 
 const Admin = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -47,7 +48,7 @@ const Admin = () => {
   }, [currentVersion]);
 
   useEffect(() => {
-    const checkAdmin = async () => {
+    const checkStaffAccess = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -58,44 +59,41 @@ const Admin = () => {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .single();
+        .eq("user_id", user.id);
 
-      if (!roles) {
+      const role = getStaffRole((roles || []) as { role: string }[]);
+
+      if (!role) {
         toast.error(t("admin.accessDenied"));
         navigate("/");
         return;
       }
 
-      setIsAdmin(true);
+      setStaffRole(role);
       setLoading(false);
     };
 
-    checkAdmin();
+    checkStaffAccess();
   }, [navigate, t]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (staffRole) {
       fetchCategoriesAndData();
     }
-  }, [isAdmin]);
+  }, [staffRole]);
 
   const fetchCategoriesAndData = async () => {
-    // Fetch categories from database first
     const { data: categoriesData } = await supabase
       .from("emoji_categories")
       .select("name")
       .order("name", { ascending: true });
     
     const dbCategories = (categoriesData || []).map(c => c.name);
-    // Ensure 'general' is always present
     if (!dbCategories.includes("general")) {
       dbCategories.unshift("general");
     }
     setEmojiCategories(dbCategories);
     
-    // Now fetch all data with updated categories
     await fetchAllDataWithCategories(dbCategories);
   };
 
@@ -104,41 +102,67 @@ const Admin = () => {
   };
 
   const fetchAllDataWithCategories = async (categories: string[]) => {
-    const [emojiFolder, reports, users, feedback, errors] = await Promise.all([
-      fetchEmojisWithCategories(categories),
-      fetchReports(),
-      fetchUsers(),
-      fetchFeedback(),
-      fetchErrors(),
-    ]);
+    const promises: Promise<any>[] = [];
+    
+    // Always fetch users (all staff can see users for banning)
+    promises.push(fetchUsers());
+    
+    // Conditional fetches based on role
+    if (CAN.manageEmojis(staffRole)) {
+      promises.push(fetchEmojisWithCategories(categories));
+    }
+    if (CAN.seeReports(staffRole)) {
+      promises.push(fetchReports());
+    }
+    if (CAN.readFeedback(staffRole)) {
+      promises.push(fetchFeedback());
+    }
+    if (CAN.seeErrors(staffRole)) {
+      promises.push(fetchErrors());
+    }
 
-    const fileStructure: FileItem[] = [
-      emojiFolder,
-      {
+    const results = await Promise.all(promises);
+    
+    let idx = 0;
+    const users = results[idx++];
+    
+    const fileStructure: FileItem[] = [];
+    
+    if (CAN.manageEmojis(staffRole)) {
+      fileStructure.push(results[idx++]);
+    }
+    if (CAN.seeReports(staffRole)) {
+      fileStructure.push({
         id: "reports",
         name: "Reports",
         type: "folder",
-        children: reports,
-      },
-      {
-        id: "users",
-        name: "Users",
-        type: "folder",
-        children: users,
-      },
-      {
+        children: results[idx++],
+      });
+    }
+    
+    fileStructure.push({
+      id: "users",
+      name: "Users",
+      type: "folder",
+      children: users,
+    });
+    
+    if (CAN.readFeedback(staffRole)) {
+      fileStructure.push({
         id: "feedback",
         name: "Feedback",
         type: "folder",
-        children: feedback,
-      },
-      {
+        children: results[idx++],
+      });
+    }
+    if (CAN.seeErrors(staffRole)) {
+      fileStructure.push({
         id: "errors",
         name: "Errors",
         type: "folder",
-        children: errors,
-      },
-    ];
+        children: results[idx++],
+      });
+    }
 
     setFiles(fileStructure);
   };
@@ -150,10 +174,7 @@ const Admin = () => {
       .order("category", { ascending: true })
       .order("created_at", { ascending: false });
 
-    // Group emojis by category
     const categoryMap = new Map<string, FileItem[]>();
-    
-    // Start with categories from database
     categories.forEach(cat => categoryMap.set(cat, []));
     
     (data || []).forEach((emoji) => {
@@ -164,19 +185,16 @@ const Admin = () => {
       const ext = emoji.image_url.includes(".gif") ? "gif" : 
                   emoji.image_url.includes(".webp") ? "webp" : "png";
       
-      const fileItem: FileItem = {
+      categoryMap.get(category)!.push({
         id: `emoji-${emoji.id}`,
         name: emoji.name,
         type: "file",
         extension: ext,
         data: emoji,
         category: category,
-      };
-
-      categoryMap.get(category)!.push(fileItem);
+      });
     });
 
-    // Create category folders (including empty ones)
     const allCategories = Array.from(categoryMap.keys()).sort();
     const categoryFolders: FileItem[] = allCategories.map((category) => ({
       id: `emoji-category-${category}`,
@@ -199,7 +217,6 @@ const Admin = () => {
     if (parentId === "emojis") {
       const sanitizedName = folderName.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
       if (!emojiCategories.includes(sanitizedName)) {
-        // Insert category into database
         const { data: { user } } = await supabase.auth.getUser();
         const { error } = await supabase
           .from("emoji_categories")
@@ -211,7 +228,6 @@ const Admin = () => {
         }
         
         toast.success(`Category "${folderName}" created`);
-        // Refresh data from database
         await fetchCategoriesAndData();
       } else {
         toast.error("Category already exists");
@@ -245,16 +261,29 @@ const Admin = () => {
       .order("created_at", { ascending: false });
 
     const { data: bans } = await supabase.from("user_bans").select("*");
-    const { data: adminRoles } = await supabase
+    const { data: allRoles } = await supabase
       .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin");
+      .select("user_id, role");
 
     const banMap = new Map(bans?.map((b) => [b.user_id, b]) || []);
-    const adminSet = new Set(adminRoles?.map((r) => r.user_id) || []);
+    
+    // Build a map of user_id -> highest staff role
+    const roleMap = new Map<string, StaffRole | null>();
+    (allRoles || []).forEach((r) => {
+      const existing = roleMap.get(r.user_id);
+      const current = getStaffRole([r as { role: string }]);
+      if (current) {
+        if (!existing || (ROLE_CONFIG[current] && (!existing || 
+          ["moderator_lite", "moderator", "elder_moderator", "admin"].indexOf(current) > 
+          ["moderator_lite", "moderator", "elder_moderator", "admin"].indexOf(existing)))) {
+          roleMap.set(r.user_id, current);
+        }
+      }
+    });
 
     return (profiles || []).map((user) => {
       const ban = banMap.get(user.id);
+      const userStaffRole = roleMap.get(user.id) || null;
       return {
         id: `user-${user.id}`,
         name: user.username,
@@ -265,7 +294,8 @@ const Admin = () => {
           type: "user",
           banned: !!ban,
           banExpiresAt: ban?.expires_at,
-          isAdmin: adminSet.has(user.id),
+          isAdmin: userStaffRole === "admin",
+          staffRole: userStaffRole,
         },
       };
     });
@@ -278,9 +308,7 @@ const Admin = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      if (import.meta.env.DEV) {
-        console.error("Error fetching feedback:", error);
-      }
+      if (import.meta.env.DEV) console.error("Error fetching feedback:", error);
       toast.error("Failed to load feedback");
       return [];
     }
@@ -296,14 +324,12 @@ const Admin = () => {
     const profileMap = new Map<string, { username: string }>();
 
     if (ids.length > 0) {
-      const { data: profiles, error: profileError } = await supabase
+      const { data: profiles } = await supabase
         .from("profiles")
         .select("id,username")
         .in("id", ids);
 
-      if (!profileError) {
-        (profiles || []).forEach((p) => profileMap.set(p.id, { username: p.username }));
-      }
+      (profiles || []).forEach((p) => profileMap.set(p.id, { username: p.username }));
     }
 
     return (feedbackRows || []).map((fb: any) => {
@@ -314,9 +340,7 @@ const Admin = () => {
 
       return {
         id: `feedback-${fb.id}`,
-        name: `feedback_${username || "anon"}_${new Date(fb.created_at)
-          .toISOString()
-          .split("T")[0]}`,
+        name: `feedback_${username || "anon"}_${new Date(fb.created_at).toISOString().split("T")[0]}`,
         type: "file" as const,
         extension: "txt",
         data: { ...fb, type: "feedback", username, admin_username: adminUsername },
@@ -331,13 +355,10 @@ const Admin = () => {
       .order("timestamp", { ascending: false });
 
     if (error) {
-      if (import.meta.env.DEV) {
-        console.error("Error fetching errors:", error);
-      }
+      if (import.meta.env.DEV) console.error("Error fetching errors:", error);
       return [];
     }
 
-    // Get user profiles for errors with user_id
     const userIds = Array.from(
       new Set((errorsData || []).map((e: any) => e.user_id).filter(Boolean))
     ) as string[];
@@ -370,46 +391,24 @@ const Admin = () => {
 
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
-      if (file.type === "image/gif") {
-        resolve(file);
-        return;
-      }
-
+      if (file.type === "image/gif") { resolve(file); return; }
       const img = new Image();
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
-
       img.onload = () => {
         const maxSize = 128;
         let { width, height } = img;
-
         if (width > maxSize || height > maxSize) {
-          if (width > height) {
-            height = (height / width) * maxSize;
-            width = maxSize;
-          } else {
-            width = (width / height) * maxSize;
-            height = maxSize;
-          }
+          if (width > height) { height = (height / width) * maxSize; width = maxSize; }
+          else { width = (width / height) * maxSize; height = maxSize; }
         }
-
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = width; canvas.height = height;
         ctx?.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(new File([blob], file.name, { type: "image/webp", lastModified: Date.now() }));
-            } else {
-              reject(new Error("Compression failed"));
-            }
-          },
-          "image/webp",
-          0.8
-        );
+        canvas.toBlob((blob) => {
+          if (blob) resolve(new File([blob], file.name, { type: "image/webp", lastModified: Date.now() }));
+          else reject(new Error("Compression failed"));
+        }, "image/webp", 0.8);
       };
-
       img.onerror = () => reject(new Error("Failed to load image"));
       img.src = URL.createObjectURL(file);
     });
@@ -419,75 +418,39 @@ const Admin = () => {
     const file = e.target.files?.[0];
     if (file) {
       const validTypes = ["image/png", "image/gif", "image/webp", "image/jpeg"];
-      if (!validTypes.includes(file.type)) {
-        toast.error(t("emoji.invalidFormat"));
-        return;
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error(t("emoji.tooLarge"));
-        return;
-      }
-      try {
-        const compressedFile = await compressImage(file);
-        setSelectedEmojiFile(compressedFile);
-      } catch {
-        toast.error(t("emoji.compressionFailed"));
-      }
+      if (!validTypes.includes(file.type)) { toast.error(t("emoji.invalidFormat")); return; }
+      if (file.size > 2 * 1024 * 1024) { toast.error(t("emoji.tooLarge")); return; }
+      try { setSelectedEmojiFile(await compressImage(file)); }
+      catch { toast.error(t("emoji.compressionFailed")); }
     }
   };
 
   const handleUploadEmoji = async () => {
-    if (!selectedEmojiFile || !newEmojiName.trim()) {
-      toast.error(t("emoji.enterName"));
-      return;
-    }
-
+    if (!selectedEmojiFile || !newEmojiName.trim()) { toast.error(t("emoji.enterName")); return; }
     const sanitizedName = newEmojiName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "_");
     setUploading(true);
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
       const fileExt = selectedEmojiFile.name.split(".").pop();
       const fileName = `${sanitizedName}_${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("custom-emojis")
-        .upload(fileName, selectedEmojiFile);
-
+      const { error: uploadError } = await supabase.storage.from("custom-emojis").upload(fileName, selectedEmojiFile);
       if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("custom-emojis")
-        .getPublicUrl(fileName);
-
-      const { error: insertError } = await supabase
-        .from("custom_emojis")
-        .insert({
-          name: sanitizedName,
-          image_url: urlData.publicUrl,
-          created_by: user.id,
-          category: selectedCategory,
-        });
-
+      const { data: urlData } = supabase.storage.from("custom-emojis").getPublicUrl(fileName);
+      const { error: insertError } = await supabase.from("custom_emojis").insert({
+        name: sanitizedName, image_url: urlData.publicUrl, created_by: user.id, category: selectedCategory,
+      });
       if (insertError) throw insertError;
-
       toast.success(t("emoji.added"));
-      setNewEmojiName("");
-      setSelectedEmojiFile(null);
+      setNewEmojiName(""); setSelectedEmojiFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       fetchAllData();
-    } catch (error: any) {
-      toast.error(error.message || t("emoji.addFailed"));
-    } finally {
-      setUploading(false);
-    }
+    } catch (error: any) { toast.error(error.message || t("emoji.addFailed")); }
+    finally { setUploading(false); }
   };
 
   const handleDelete = async (file: FileItem) => {
     const data = file.data;
-
     if (file.extension === "png" || file.extension === "gif" || file.extension === "webp") {
       try {
         const urlParts = data.image_url.split("/");
@@ -495,9 +458,7 @@ const Admin = () => {
         await supabase.storage.from("custom-emojis").remove([fileName]);
         await supabase.from("custom_emojis").delete().eq("id", data.id);
         toast.success(t("emoji.deleted"));
-      } catch {
-        toast.error(t("emoji.deleteFailed"));
-      }
+      } catch { toast.error(t("emoji.deleteFailed")); }
     } else if (data.type === "report") {
       await supabase.from("user_reports").delete().eq("id", data.id);
       toast.success("Report deleted");
@@ -508,7 +469,6 @@ const Admin = () => {
       await supabase.from("errors").delete().eq("id", data.id);
       toast.success("Error log deleted");
     }
-
     setSelectedFile(null);
     fetchAllData();
   };
@@ -521,143 +481,107 @@ const Admin = () => {
       case "ai_review":
         toast.info(t("ai.reviewing"));
         try {
-          const { error } = await supabase.functions.invoke("ai-moderator", {
-            body: { reportId: data.id },
-          });
+          const { error } = await supabase.functions.invoke("ai-moderator", { body: { reportId: data.id } });
           if (error) throw error;
           toast.success(t("ai.reviewComplete"));
           fetchAllData();
-        } catch {
-          toast.error(t("ai.reviewFailed"));
-        }
+        } catch { toast.error(t("ai.reviewFailed")); }
         break;
-
       case "resolve":
-        await supabase
-          .from("user_reports")
-          .update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: user?.id })
-          .eq("id", data.id);
+        await supabase.from("user_reports").update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", data.id);
         toast.success("Report resolved");
         fetchAllData();
         break;
-
       case "ban":
         setPendingBanUserId(data.reported_user_id);
         setBanDialogOpen(true);
         break;
-
       case "temp_ban":
-        setPendingBanUserId(data.reported_user_id);
+        setPendingBanUserId(data.reported_user_id || data.id);
         setTempBanDialogOpen(true);
         break;
-
       case "ban_user":
         setPendingBanUserId(data.id);
         setBanDialogOpen(true);
         break;
-
+      case "temp_ban_user":
+        setPendingBanUserId(data.id);
+        setTempBanDialogOpen(true);
+        break;
       case "unban":
         await supabase.from("user_bans").delete().eq("user_id", data.id);
         toast.success("User unbanned");
         fetchAllData();
         break;
-
       case "promote":
         await supabase.rpc("promote_to_admin", { target_user_id: data.id });
         toast.success("User promoted to admin");
         fetchAllData();
         break;
-
       case "demote":
         await supabase.rpc("demote_from_admin", { target_user_id: data.id });
         toast.success("Admin role removed");
         fetchAllData();
         break;
-
+      case "set_role":
+        if (extra?.role) {
+          const { error } = await supabase.rpc("set_user_role" as any, { target_user_id: data.id, new_role: extra.role });
+          if (error) { toast.error(error.message); return; }
+          toast.success(`Role updated to ${extra.role === 'user' ? 'User' : extra.role}`);
+          fetchAllData();
+        }
+        break;
       case "resolve_feedback":
         await supabase.from("feedback").update({ status: "resolved" }).eq("id", data.id);
         toast.success("Feedback resolved");
         fetchAllData();
         break;
-
       case "reopen":
         await supabase.from("feedback").update({ status: "pending" }).eq("id", data.id);
         toast.success("Feedback reopened");
         fetchAllData();
         break;
-
       case "toggle_important":
         await supabase.from("feedback").update({ important: !data.important }).eq("id", data.id);
         toast.success(data.important ? "Unmarked as important" : "Marked as important");
         fetchAllData();
         break;
-
       case "move_emoji":
-        if (extra?.targetCategory) {
-          await handleMoveEmoji(file, extra.targetCategory);
-        }
+        if (extra?.targetCategory) await handleMoveEmoji(file, extra.targetCategory);
         break;
     }
   };
 
   const handleMoveEmoji = async (file: FileItem, targetCategory: string) => {
-    const data = file.data;
     try {
-      await supabase
-        .from("custom_emojis")
-        .update({ category: targetCategory })
-        .eq("id", data.id);
+      await supabase.from("custom_emojis").update({ category: targetCategory }).eq("id", file.data.id);
       toast.success(`Emoji moved to ${targetCategory}`);
       setSelectedFile(null);
       fetchAllData();
-    } catch {
-      toast.error("Failed to move emoji");
-    }
+    } catch { toast.error("Failed to move emoji"); }
   };
 
   const handleBan = async () => {
-    if (!pendingBanUserId || !banReason.trim()) {
-      toast.error("Please enter a ban reason");
-      return;
-    }
-
+    if (!pendingBanUserId || !banReason.trim()) { toast.error("Please enter a ban reason"); return; }
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from("user_bans").insert({
-      user_id: pendingBanUserId,
-      banned_by: user?.id,
-      reason: banReason,
-    });
-
+    await supabase.from("user_bans").insert({ user_id: pendingBanUserId, banned_by: user?.id, reason: banReason });
     toast.success("User banned permanently");
-    setBanDialogOpen(false);
-    setBanReason("");
-    setPendingBanUserId(null);
+    setBanDialogOpen(false); setBanReason(""); setPendingBanUserId(null);
     fetchAllData();
   };
 
   const handleTempBan = async () => {
-    if (!pendingBanUserId || !banReason.trim()) {
-      toast.error("Please enter a ban reason");
-      return;
-    }
-
+    if (!pendingBanUserId || !banReason.trim()) { toast.error("Please enter a ban reason"); return; }
     const { data: { user } } = await supabase.auth.getUser();
     const days = parseInt(tempBanDays) || 7;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
-
     await supabase.from("user_bans").insert({
-      user_id: pendingBanUserId,
-      banned_by: user?.id,
-      reason: `${days} day temp ban: ${banReason}`,
-      expires_at: expiresAt.toISOString(),
+      user_id: pendingBanUserId, banned_by: user?.id,
+      reason: `${days} day temp ban: ${banReason}`, expires_at: expiresAt.toISOString(),
     });
-
     toast.success(`User banned for ${days} days`);
-    setTempBanDialogOpen(false);
-    setBanReason("");
-    setTempBanDays("7");
-    setPendingBanUserId(null);
+    setTempBanDialogOpen(false); setBanReason(""); setTempBanDays("7"); setPendingBanUserId(null);
     fetchAllData();
   };
 
@@ -669,9 +593,9 @@ const Admin = () => {
     );
   }
 
-  if (!isAdmin) {
-    return null;
-  }
+  if (!staffRole) return null;
+
+  const RoleIcon = ROLE_CONFIG[staffRole].icon;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -682,47 +606,58 @@ const Admin = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               {t("admin.backToChat")}
             </Button>
-            <h1 className="text-xl font-bold text-primary">{t("admin.title")}</h1>
+            <div className="flex items-center gap-2">
+              <RoleIcon className={`h-5 w-5 ${ROLE_CONFIG[staffRole].colorClass}`} />
+              <h1 className="text-xl font-bold text-primary">{t("admin.title")}</h1>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${ROLE_CONFIG[staffRole].badgeClass}`}>
+                {ROLE_CONFIG[staffRole].label}
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Input
-              value={editVersion}
-              onChange={(e) => setEditVersion(e.target.value)}
-              placeholder="Version (e.g. 1.0.0)"
-              className="w-32 h-8 text-xs"
-            />
-            <Button
-              onClick={async () => {
-                if (!editVersion.trim()) return;
-                setSavingVersion(true);
-                const { data: { user } } = await supabase.auth.getUser();
-                const { error } = await supabase
-                  .from("app_settings")
-                  .update({ value: editVersion.trim(), updated_at: new Date().toISOString(), updated_by: user?.id })
-                  .eq("key", "app_version");
-                setSavingVersion(false);
-                if (error) {
-                  toast.error("Failed to update version");
-                } else {
-                  toast.success("Version updated");
-                }
-              }}
-              variant="outline"
-              size="sm"
-              disabled={savingVersion || editVersion === currentVersion}
-            >
-              <Save className="h-4 w-4" />
-            </Button>
-            <ChangelogManager currentVersion={editVersion || currentVersion} />
-            <Button
-              onClick={() => { throw new Error("Admin test crash — triggered manually from admin panel"); }}
-              variant="outline"
-              size="sm"
-              className="text-destructive border-destructive/50 hover:bg-destructive/10"
-              title="Test Crash (BSOD)"
-            >
-              <Bug className="h-4 w-4" />
-            </Button>
+            {CAN.manageVersion(staffRole) && (
+              <>
+                <Input
+                  value={editVersion}
+                  onChange={(e) => setEditVersion(e.target.value)}
+                  placeholder="Version (e.g. 1.0.0)"
+                  className="w-32 h-8 text-xs"
+                />
+                <Button
+                  onClick={async () => {
+                    if (!editVersion.trim()) return;
+                    setSavingVersion(true);
+                    const { data: { user } } = await supabase.auth.getUser();
+                    const { error } = await supabase
+                      .from("app_settings")
+                      .update({ value: editVersion.trim(), updated_at: new Date().toISOString(), updated_by: user?.id })
+                      .eq("key", "app_version");
+                    setSavingVersion(false);
+                    if (error) toast.error("Failed to update version");
+                    else toast.success("Version updated");
+                  }}
+                  variant="outline"
+                  size="sm"
+                  disabled={savingVersion || editVersion === currentVersion}
+                >
+                  <Save className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            {CAN.manageChangelog(staffRole) && (
+              <ChangelogManager currentVersion={editVersion || currentVersion} />
+            )}
+            {CAN.manageVersion(staffRole) && (
+              <Button
+                onClick={() => { throw new Error("Admin test crash — triggered manually from admin panel"); }}
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                title="Test Crash (BSOD)"
+              >
+                <Bug className="h-4 w-4" />
+              </Button>
+            )}
             <Button onClick={fetchAllData} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4" />
             </Button>
@@ -730,47 +665,45 @@ const Admin = () => {
         </div>
       </header>
 
-      {/* Emoji Upload Bar */}
-      <div className="border-b border-border bg-card/50 p-3 shrink-0">
-        <div className="flex flex-col sm:flex-row gap-2 max-w-7xl mx-auto flex-wrap">
-          <Input
-            placeholder={t("emoji.namePlaceholder")}
-            value={newEmojiName}
-            onChange={(e) => setNewEmojiName(e.target.value)}
-            className="flex-1 max-w-xs"
-          />
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="h-9 px-3 rounded-md border border-input bg-background text-sm"
-          >
-            {emojiCategories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </option>
-            ))}
-          </select>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/gif,image/webp"
-            onChange={handleEmojiFileSelect}
-            className="hidden"
-          />
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            size="sm"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            {selectedEmojiFile ? selectedEmojiFile.name.slice(0, 15) + "..." : t("emoji.selectImage")}
-          </Button>
-          <Button onClick={handleUploadEmoji} disabled={uploading || !selectedEmojiFile || !newEmojiName.trim()} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            {uploading ? t("common.loading") : "Add Emoji"}
-          </Button>
+      {/* Emoji Upload Bar - only for elder_moderator+ */}
+      {CAN.manageEmojis(staffRole) && (
+        <div className="border-b border-border bg-card/50 p-3 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2 max-w-7xl mx-auto flex-wrap">
+            <Input
+              placeholder={t("emoji.namePlaceholder")}
+              value={newEmojiName}
+              onChange={(e) => setNewEmojiName(e.target.value)}
+              className="flex-1 max-w-xs"
+            />
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+            >
+              {emojiCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </option>
+              ))}
+            </select>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/gif,image/webp"
+              onChange={handleEmojiFileSelect}
+              className="hidden"
+            />
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()} size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              {selectedEmojiFile ? selectedEmojiFile.name.slice(0, 15) + "..." : t("emoji.selectImage")}
+            </Button>
+            <Button onClick={handleUploadEmoji} disabled={uploading || !selectedEmojiFile || !newEmojiName.trim()} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              {uploading ? t("common.loading") : "Add Emoji"}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* File Explorer Layout */}
       <main className="flex-1 flex flex-col md:flex-row gap-4 p-4 max-w-7xl mx-auto w-full min-h-0">
@@ -790,11 +723,12 @@ const Admin = () => {
               if (action === "move_emoji" && extra?.targetCategory) {
                 handleMoveEmoji(file, extra.targetCategory);
               } else {
-                handleAction(action, file);
+                handleAction(action, file, extra);
               }
             }}
             emojiCategories={emojiCategories}
             onRefresh={fetchAllData}
+            staffRole={staffRole}
           />
         </div>
       </main>
@@ -809,21 +743,12 @@ const Admin = () => {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="banReason">Reason</Label>
-              <Input
-                id="banReason"
-                value={banReason}
-                onChange={(e) => setBanReason(e.target.value)}
-                placeholder="Enter ban reason..."
-              />
+              <Input id="banReason" value={banReason} onChange={(e) => setBanReason(e.target.value)} placeholder="Enter ban reason..." />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBanDialogOpen(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button variant="destructive" onClick={handleBan}>
-              Ban Permanently
-            </Button>
+            <Button variant="outline" onClick={() => setBanDialogOpen(false)}>{t("common.cancel")}</Button>
+            <Button variant="destructive" onClick={handleBan}>Ban Permanently</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -838,32 +763,16 @@ const Admin = () => {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="tempBanDays">Duration (days)</Label>
-              <Input
-                id="tempBanDays"
-                type="number"
-                min="1"
-                max="14"
-                value={tempBanDays}
-                onChange={(e) => setTempBanDays(e.target.value)}
-              />
+              <Input id="tempBanDays" type="number" min="1" max="14" value={tempBanDays} onChange={(e) => setTempBanDays(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tempBanReason">Reason</Label>
-              <Input
-                id="tempBanReason"
-                value={banReason}
-                onChange={(e) => setBanReason(e.target.value)}
-                placeholder="Enter ban reason..."
-              />
+              <Input id="tempBanReason" value={banReason} onChange={(e) => setBanReason(e.target.value)} placeholder="Enter ban reason..." />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTempBanDialogOpen(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button variant="destructive" onClick={handleTempBan}>
-              Apply Temp Ban
-            </Button>
+            <Button variant="outline" onClick={() => setTempBanDialogOpen(false)}>{t("common.cancel")}</Button>
+            <Button variant="destructive" onClick={handleTempBan}>Apply Temp Ban</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
