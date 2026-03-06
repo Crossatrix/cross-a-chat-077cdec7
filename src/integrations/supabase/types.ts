@@ -921,6 +921,179 @@ export type Database = {
           },
         ]
       }
+      video_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_comments_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_likes: {
+        Row: {
+          created_at: string
+          id: string
+          is_like: boolean
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_like: boolean
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_like?: boolean
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_likes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      videos: {
+        Row: {
+          comments_count: number
+          created_at: string
+          description: string | null
+          dislikes_count: number
+          duration: number | null
+          id: string
+          likes_count: number
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          video_url: string
+          views_count: number
+        }
+        Insert: {
+          comments_count?: number
+          created_at?: string
+          description?: string | null
+          dislikes_count?: number
+          duration?: number | null
+          id?: string
+          likes_count?: number
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          video_url: string
+          views_count?: number
+        }
+        Update: {
+          comments_count?: number
+          created_at?: string
+          description?: string | null
+          dislikes_count?: number
+          duration?: number | null
+          id?: string
+          likes_count?: number
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+          views_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
