@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2, Users } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -27,6 +27,7 @@ import { IncomingCallHandler } from "@/components/IncomingCallHandler";
 import { NewChatDialog } from "@/components/NewChatDialog";
 import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
+import VideoFeed from "@/components/video/VideoFeed";
 
 interface Message {
   id: string;
@@ -66,6 +67,7 @@ const Index = () => {
 const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<"chats" | "videos">("chats");
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
@@ -974,7 +976,35 @@ return (
         onAcceptCall={handleAcceptIncomingCall} 
       />
       
-      <div className="flex h-screen bg-background overflow-hidden">
+      <div className="flex flex-col h-screen bg-background overflow-hidden">
+      {/* Bottom navigation bar */}
+      <div className="order-last md:order-none flex border-t md:border-t-0 md:border-b border-border bg-card shrink-0 z-10">
+        <button
+          onClick={() => { setActiveTab("chats"); }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            activeTab === "chats" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <MessageCircle className="h-5 w-5" />
+          <span>Chats</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab("videos"); setSelectedConversationId(null); }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            activeTab === "videos" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Play className="h-5 w-5" />
+          <span>Videos</span>
+        </button>
+      </div>
+
+      {activeTab === "videos" ? (
+        <div className="flex-1 min-h-0">
+          <VideoFeed currentUserId={user.id} />
+        </div>
+      ) : (
+      <div className="flex flex-1 min-h-0 overflow-hidden">
       <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen w-full md:w-auto`}>
         <header className="flex items-center justify-between p-2 md:p-4 border-b border-border bg-card shrink-0 md:hidden w-full">
           <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
@@ -1222,6 +1252,8 @@ return (
           </div>
         )}
       </div>
+    </div>
+    )}
 
       <AlertDialog open={showClearChatDialog} onOpenChange={setShowClearChatDialog}>
         <AlertDialogContent>
