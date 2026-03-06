@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Edit2, Check, X } from "lucide-react";
 import UserActionsMenu from "./UserActionsMenu";
 import TypingIndicator from "./TypingIndicator";
+import StaffBadge from "./StaffBadge";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -232,7 +233,8 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
               </div>
               <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"} flex-1`}>
                 <div className="flex items-center gap-2 mb-0.5 md:mb-1">
-                  <span className="text-[10px] md:text-xs text-muted-foreground">
+                  <span className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1">
+                    <StaffBadge userId={message.user_id} size={14} />
                     {message.profiles?.username || "Unknown"}
                   </span>
                   {isCurrentUser && (
