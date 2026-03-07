@@ -7,6 +7,7 @@ import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2 } fr
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
+import CreatorBadge from "./CreatorBadge";
 
 interface Video {
   id: string;
@@ -232,6 +233,7 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1">
                   <StaffBadge userId={video.user_id} size={16} />
+                  <CreatorBadge userId={video.user_id} size={16} />
                   <span className="font-medium text-sm truncate">{video.profiles.username}</span>
                 </div>
               </div>
@@ -280,6 +282,7 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1">
                         <StaffBadge userId={comment.user_id} size={12} />
+                        <CreatorBadge userId={comment.user_id} size={12} />
                         <span className="text-xs font-medium">{comment.profiles.username}</span>
                         <span className="text-[10px] text-muted-foreground">{formatDate(comment.created_at)}</span>
                       </div>
