@@ -5,6 +5,7 @@ import ChangelogDialog from "@/components/ChangelogDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Trash2 } from "lucide-react";
+import StaffBadge from "@/components/StaffBadge";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import { useUnseenChangelog } from "@/hooks/useUnseenChangelog";
@@ -401,7 +402,10 @@ const ConversationsList = ({
                     </div>
                     <div className="flex-1 text-left overflow-hidden min-w-0 max-w-full">
                       <div className="flex items-center gap-2">
-                        <div className={`font-medium truncate ${conv.isKicked ? 'line-through text-muted-foreground' : ''}`}>{displayName}</div>
+                        <div className={`font-medium truncate flex items-center gap-1 ${conv.isKicked ? 'line-through text-muted-foreground' : ''}`}>
+                          {displayName}
+                          {conv.otherUser && !conv.is_ai_chat && <StaffBadge userId={conv.otherUser.id} size={14} />}
+                        </div>
                         {conv.isKicked && (
                           <span className="text-xs text-destructive font-medium shrink-0">Removed</span>
                         )}
