@@ -222,6 +222,48 @@ export type Database = {
           },
         ]
       }
+      creator_verifications: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_verifications_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_emojis: {
         Row: {
           category: string
