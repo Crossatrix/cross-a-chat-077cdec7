@@ -998,11 +998,24 @@ return (
           <Play className="h-5 w-5" />
           <span>Videos</span>
         </button>
+        <button
+          onClick={() => { setActiveTab("shorts"); setSelectedConversationId(null); }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            activeTab === "shorts" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Zap className="h-5 w-5" />
+          <span>Shorts</span>
+        </button>
       </div>
 
       {activeTab === "videos" ? (
         <div className="flex-1 min-h-0">
           <VideoFeed currentUserId={user.id} />
+        </div>
+      ) : activeTab === "shorts" ? (
+        <div className="flex-1 min-h-0">
+          <ShortsFeed currentUserId={user.id} />
         </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">
