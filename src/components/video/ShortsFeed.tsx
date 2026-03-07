@@ -1,0 +1,288 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { ThumbsUp, ThumbsDown, MessageCircle, UserPlus, UserMinus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import StaffBadge from "@/components/StaffBadge";
+import CreatorBadge from "./CreatorBadge";
+
+interface Short {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  video_url: string;
+  views_count: number;
+  likes_count: number;
+  dislikes_count: number;
+  created_at: string;
+  profiles: { username: string; avatar_url: string | null };
+}
+
+interface ShortsFeedProps {
+  currentUserId: string;
+}
+
+const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
+  const [shorts, setShorts] = useState<Short[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [userLikes, setUserLikes] = useState<Record<string, boolean | null>>({});
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
+  const [localCounts, setLocalCounts] = useState<Record<string, { likes: number; dislikes: number }>>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const viewedSet = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    fetchShorts();
+  }, []);
+
+  const fetchShorts = async () => {
+    setLoading(true);
+    // Fetch shorts: videos under 3 minutes (180 seconds) with duration set, or all short-titled for now
+    // We'll fetch videos with duration <= 180 OR duration IS NULL (and let client filter)
+    const { data } = await supabase
+      .from("videos")
+      .select("*, profiles(username, avatar_url)")
+      .or("duration.lte.180,duration.is.null")
+      .order("created_at", { ascending: false });
+
+    if (data) {
+      // Prioritize verified creators
+      const { data: verifications } = await supabase
+        .from("creator_verifications")
+        .select("user_id, status");
+
+      const verifiedMap = new Map<string, string>();
+      verifications?.forEach(v => verifiedMap.set(v.user_id, v.status));
+
+      const sorted = [...(data as unknown as Short[])].sort((a, b) => {
+        const aStatus = verifiedMap.get(a.user_id) || "";
+        const bStatus = verifiedMap.get(b.user_id) || "";
+        const priority = (s: string) => s === "verified_plus" ? 3 : s === "verified" ? 2 : 0;
+        return priority(bStatus) - priority(aStatus);
+      });
+
+      setShorts(sorted);
+      
+      // Init local counts
+      const counts: Record<string, { likes: number; dislikes: number }> = {};
+      sorted.forEach(s => { counts[s.id] = { likes: s.likes_count, dislikes: s.dislikes_count }; });
+      setLocalCounts(counts);
+
+      // Fetch user's likes for all shorts
+      if (sorted.length > 0) {
+        const { data: likes } = await supabase
+          .from("video_likes")
+          .select("video_id, is_like")
+          .eq("user_id", currentUserId)
+          .in("video_id", sorted.map(s => s.id));
+
+        const likesMap: Record<string, boolean | null> = {};
+        likes?.forEach(l => { likesMap[l.video_id] = l.is_like; });
+        setUserLikes(likesMap);
+      }
+
+      // Fetch follows
+      const uniqueCreators = [...new Set(sorted.map(s => s.user_id))];
+      if (uniqueCreators.length > 0) {
+        const { data: follows } = await supabase
+          .from("video_follows")
+          .select("following_id")
+          .eq("follower_id", currentUserId)
+          .in("following_id", uniqueCreators);
+        
+        const fMap: Record<string, boolean> = {};
+        follows?.forEach(f => { fMap[f.following_id] = true; });
+        setFollowingMap(fMap);
+      }
+    }
+    setLoading(false);
+  };
+
+  // Handle scroll snap
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+    const container = containerRef.current;
+    const scrollTop = container.scrollTop;
+    const height = container.clientHeight;
+    const newIndex = Math.round(scrollTop / height);
+    
+    if (newIndex !== currentIndex && newIndex >= 0 && newIndex < shorts.length) {
+      setCurrentIndex(newIndex);
+    }
+  }, [currentIndex, shorts.length]);
+
+  // Play/pause videos based on current index
+  useEffect(() => {
+    videoRefs.current.forEach((video, i) => {
+      if (!video) return;
+      if (i === currentIndex) {
+        video.play().catch(() => {});
+        // Count view
+        if (!viewedSet.current.has(shorts[i]?.id)) {
+          viewedSet.current.add(shorts[i]?.id);
+          supabase.from("videos").update({ views_count: shorts[i].views_count + 1 }).eq("id", shorts[i].id);
+        }
+      } else {
+        video.pause();
+      }
+    });
+  }, [currentIndex, shorts]);
+
+  const handleLike = async (shortId: string, isLike: boolean) => {
+    const prev = userLikes[shortId] ?? null;
+
+    if (prev === isLike) {
+      await supabase.from("video_likes").delete().eq("video_id", shortId).eq("user_id", currentUserId);
+      setUserLikes(p => ({ ...p, [shortId]: null }));
+      setLocalCounts(p => ({
+        ...p,
+        [shortId]: {
+          likes: p[shortId].likes - (isLike ? 1 : 0),
+          dislikes: p[shortId].dislikes - (!isLike ? 1 : 0),
+        }
+      }));
+    } else {
+      await supabase.from("video_likes").upsert(
+        { video_id: shortId, user_id: currentUserId, is_like: isLike },
+        { onConflict: "video_id,user_id" }
+      );
+      setUserLikes(p => ({ ...p, [shortId]: isLike }));
+      setLocalCounts(p => ({
+        ...p,
+        [shortId]: {
+          likes: p[shortId].likes + (isLike ? 1 : 0) - (prev === true ? 1 : 0),
+          dislikes: p[shortId].dislikes + (!isLike ? 1 : 0) - (prev === false ? 1 : 0),
+        }
+      }));
+    }
+
+    // Sync server counts
+    const { count: newLikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", shortId).eq("is_like", true);
+    const { count: newDislikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", shortId).eq("is_like", false);
+    await supabase.from("videos").update({ likes_count: newLikes ?? 0, dislikes_count: newDislikes ?? 0 }).eq("id", shortId);
+    setLocalCounts(p => ({ ...p, [shortId]: { likes: newLikes ?? 0, dislikes: newDislikes ?? 0 } }));
+  };
+
+  const handleFollow = async (creatorId: string) => {
+    if (followingMap[creatorId]) {
+      await supabase.from("video_follows").delete().eq("follower_id", currentUserId).eq("following_id", creatorId);
+      setFollowingMap(p => ({ ...p, [creatorId]: false }));
+    } else {
+      await supabase.from("video_follows").insert({ follower_id: currentUserId, following_id: creatorId });
+      setFollowingMap(p => ({ ...p, [creatorId]: true }));
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Loading shorts...</p>
+      </div>
+    );
+  }
+
+  if (shorts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full px-4 text-center">
+        <h3 className="text-lg font-semibold mb-2">No shorts yet</h3>
+        <p className="text-sm text-muted-foreground">Upload a video under 3 minutes to create a short!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="h-full overflow-y-scroll snap-y snap-mandatory"
+      onScroll={handleScroll}
+      style={{ scrollSnapType: "y mandatory" }}
+    >
+      {shorts.map((short, index) => (
+        <div
+          key={short.id}
+          className="h-full snap-start snap-always relative flex items-center justify-center bg-black"
+          style={{ scrollSnapAlign: "start" }}
+        >
+          <video
+            ref={(el) => { videoRefs.current[index] = el; }}
+            src={short.video_url}
+            className="h-full w-full object-contain"
+            loop
+            muted={index !== currentIndex}
+            playsInline
+            preload="metadata"
+            onClick={(e) => {
+              const video = e.currentTarget;
+              if (video.paused) video.play();
+              else video.pause();
+            }}
+          />
+
+          {/* Right side action buttons */}
+          <div className="absolute right-3 bottom-24 flex flex-col items-center gap-4">
+            {/* Like */}
+            <button
+              className="flex flex-col items-center gap-0.5"
+              onClick={() => handleLike(short.id, true)}
+            >
+              <div className={`p-2 rounded-full ${userLikes[short.id] === true ? "bg-primary text-primary-foreground" : "bg-black/40 text-white"}`}>
+                <ThumbsUp className="h-5 w-5" />
+              </div>
+              <span className="text-white text-xs font-medium drop-shadow">{localCounts[short.id]?.likes || 0}</span>
+            </button>
+
+            {/* Dislike */}
+            <button
+              className="flex flex-col items-center gap-0.5"
+              onClick={() => handleLike(short.id, false)}
+            >
+              <div className={`p-2 rounded-full ${userLikes[short.id] === false ? "bg-destructive text-destructive-foreground" : "bg-black/40 text-white"}`}>
+                <ThumbsDown className="h-5 w-5" />
+              </div>
+              <span className="text-white text-xs font-medium drop-shadow">{localCounts[short.id]?.dislikes || 0}</span>
+            </button>
+
+            {/* Follow */}
+            {short.user_id !== currentUserId && (
+              <button
+                className="flex flex-col items-center gap-0.5"
+                onClick={() => handleFollow(short.user_id)}
+              >
+                <div className={`p-2 rounded-full ${followingMap[short.user_id] ? "bg-secondary text-secondary-foreground" : "bg-black/40 text-white"}`}>
+                  {followingMap[short.user_id] ? <UserMinus className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+                </div>
+              </button>
+            )}
+          </div>
+
+          {/* Bottom info overlay */}
+          <div className="absolute bottom-4 left-3 right-16 text-white drop-shadow-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <Avatar className="h-8 w-8 border-2 border-white">
+                <AvatarImage src={short.profiles.avatar_url || ""} />
+                <AvatarFallback className="bg-secondary text-foreground text-xs">
+                  {short.profiles.username?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex items-center gap-1">
+                <StaffBadge userId={short.user_id} size={14} />
+                <CreatorBadge userId={short.user_id} size={14} />
+                <span className="font-semibold text-sm">{short.profiles.username}</span>
+              </div>
+            </div>
+            <p className="text-sm font-medium line-clamp-2">{short.title}</p>
+            {short.description && (
+              <p className="text-xs opacity-80 line-clamp-1 mt-0.5">{short.description}</p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default ShortsFeed;
