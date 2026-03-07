@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -28,6 +28,7 @@ import { NewChatDialog } from "@/components/NewChatDialog";
 import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 import VideoFeed from "@/components/video/VideoFeed";
+import ShortsFeed from "@/components/video/ShortsFeed";
 
 interface Message {
   id: string;
@@ -67,7 +68,7 @@ const Index = () => {
 const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<"chats" | "videos">("chats");
+  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "shorts">("chats");
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
@@ -997,11 +998,24 @@ return (
           <Play className="h-5 w-5" />
           <span>Videos</span>
         </button>
+        <button
+          onClick={() => { setActiveTab("shorts"); setSelectedConversationId(null); }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            activeTab === "shorts" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Zap className="h-5 w-5" />
+          <span>Shorts</span>
+        </button>
       </div>
 
       {activeTab === "videos" ? (
         <div className="flex-1 min-h-0">
           <VideoFeed currentUserId={user.id} />
+        </div>
+      ) : activeTab === "shorts" ? (
+        <div className="flex-1 min-h-0">
+          <ShortsFeed currentUserId={user.id} />
         </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">

@@ -10,6 +10,7 @@ import ChangelogManager from "@/components/admin/ChangelogManager";
 import FileExplorer, { FileItem } from "@/components/admin/FileExplorer";
 import FilePreview from "@/components/admin/FilePreview";
 import { useLanguage } from "@/contexts/LanguageContext";
+import CreatorVerificationManager from "@/components/admin/CreatorVerificationManager";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { StaffRole, getStaffRole, CAN, ROLE_CONFIG } from "@/utils/roleConfig";
+import { StaffRole, getStaffRole, CAN, ROLE_CONFIG, isAtLeast } from "@/utils/roleConfig";
 
 const Admin = () => {
   const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
@@ -701,6 +702,15 @@ const Admin = () => {
               <Plus className="h-4 w-4 mr-2" />
               {uploading ? t("common.loading") : "Add Emoji"}
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Creator Verification Manager - moderator+ */}
+      {isAtLeast(staffRole, "moderator") && (
+        <div className="border-b border-border bg-card/50 p-3 shrink-0">
+          <div className="max-w-7xl mx-auto">
+            <CreatorVerificationManager staffRole={staffRole} />
           </div>
         </div>
       )}

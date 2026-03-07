@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import VideoUploadDialog from "./VideoUploadDialog";
 import VideoPlayer from "./VideoPlayer";
 import StaffBadge from "@/components/StaffBadge";
+import CreatorBadge from "./CreatorBadge";
 
 interface Video {
   id: string;
@@ -41,7 +42,26 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       .from("videos")
       .select("*, profiles(username, avatar_url)")
       .order("created_at", { ascending: false });
-    if (data) setVideos(data as unknown as Video[]);
+    
+    if (data) {
+      // Fetch creator verifications to prioritize verified creators
+      const { data: verifications } = await supabase
+        .from("creator_verifications")
+        .select("user_id, status");
+
+      const verifiedMap = new Map<string, string>();
+      verifications?.forEach(v => verifiedMap.set(v.user_id, v.status));
+
+      const sorted = [...(data as unknown as Video[])].sort((a, b) => {
+        const aStatus = verifiedMap.get(a.user_id) || "";
+        const bStatus = verifiedMap.get(b.user_id) || "";
+        const priority = (s: string) => s === "verified_plus" ? 3 : s === "verified" ? 2 : 0;
+        // Secondary sort by created_at (already sorted by DB, so only re-sort by priority)
+        return priority(bStatus) - priority(aStatus);
+      });
+
+      setVideos(sorted);
+    }
     setLoading(false);
   };
 
@@ -119,6 +139,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                     <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{video.title}</h3>
                     <div className="flex items-center gap-1 mt-1">
                       <StaffBadge userId={video.user_id} size={12} />
+                      <CreatorBadge userId={video.user_id} size={12} />
                       <span className="text-xs text-muted-foreground truncate">{video.profiles.username}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
