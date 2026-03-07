@@ -100,31 +100,36 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
   };
 
   const handleLike = async (isLike: boolean) => {
-    if (userLike === isLike) {
+    const prevLike = userLike;
+
+    if (prevLike === isLike) {
       // Remove like/dislike
       await supabase.from("video_likes").delete().eq("video_id", video.id).eq("user_id", currentUserId);
+      setUserLike(null);
       setLikesCount((c) => isLike ? c - 1 : c);
       setDislikesCount((c) => !isLike ? c - 1 : c);
-      setUserLike(null);
     } else {
-      const wasOpposite = userLike !== null;
+      // Upsert like/dislike
       await supabase.from("video_likes").upsert(
         { video_id: video.id, user_id: currentUserId, is_like: isLike },
         { onConflict: "video_id,user_id" }
       );
+      setUserLike(isLike);
       if (isLike) {
         setLikesCount((c) => c + 1);
-        if (wasOpposite) setDislikesCount((c) => c - 1);
+        if (prevLike === false) setDislikesCount((c) => c - 1);
       } else {
         setDislikesCount((c) => c + 1);
-        if (wasOpposite) setLikesCount((c) => c - 1);
+        if (prevLike === true) setLikesCount((c) => c - 1);
       }
-      setUserLike(isLike);
     }
-    // Update counts on server
-    const newLikes = likesCount + (userLike === true ? -1 : userLike === null && isLike ? 1 : 0);
-    const newDislikes = dislikesCount + (userLike === false ? -1 : userLike === null && !isLike ? 1 : 0);
-    // We rely on local state; server counts are approximate
+
+    // Recalculate server counts
+    const { count: newLikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", video.id).eq("is_like", true);
+    const { count: newDislikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", video.id).eq("is_like", false);
+    await supabase.from("videos").update({ likes_count: newLikes ?? 0, dislikes_count: newDislikes ?? 0 }).eq("id", video.id);
+    setLikesCount(newLikes ?? 0);
+    setDislikesCount(newDislikes ?? 0);
   };
 
   const handleFollow = async () => {
