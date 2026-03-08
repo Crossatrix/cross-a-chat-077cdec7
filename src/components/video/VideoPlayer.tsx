@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
@@ -277,14 +277,33 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                 <ThumbsDown className="h-4 w-4" /> {dislikesCount}
               </Button>
               {video.user_id !== currentUserId && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 ml-auto"
-                  onClick={() => setReportOpen(true)}
-                >
-                  <Flag className="h-4 w-4" /> Report
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 ml-auto"
+                    onClick={async () => {
+                      await supabase.from("video_not_interested" as any).insert({
+                        user_id: currentUserId,
+                        video_id: video.id,
+                        creator_id: video.user_id,
+                        category: (video as any).category || "other",
+                      });
+                      toast.success("We'll show less content like this");
+                      onBack();
+                    }}
+                  >
+                    <EyeOff className="h-4 w-4" /> Not Interested
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => setReportOpen(true)}
+                  >
+                    <Flag className="h-4 w-4" /> Report
+                  </Button>
+                </>
               )}
             </div>
 

@@ -1104,6 +1104,41 @@ export type Database = {
           },
         ]
       }
+      video_not_interested: {
+        Row: {
+          category: string
+          created_at: string
+          creator_id: string
+          id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          creator_id: string
+          id?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          creator_id?: string
+          id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_not_interested_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_reports: {
         Row: {
           ai_reason: string | null

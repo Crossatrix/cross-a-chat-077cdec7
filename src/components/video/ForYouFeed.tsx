@@ -43,7 +43,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     setLoading(true);
 
     // Fetch all signals in parallel: category prefs, follows, liked video creators
-    const [prefsRes, followsRes, likesRes] = await Promise.all([
+    const [prefsRes, followsRes, likesRes, notInterestedRes] = await Promise.all([
       supabase
         .from("video_category_views")
         .select("category, view_count")
@@ -58,10 +58,24 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
         .select("video_id")
         .eq("user_id", currentUserId)
         .eq("is_like", true),
+      supabase
+        .from("video_not_interested" as any)
+        .select("video_id, creator_id, category")
+        .eq("user_id", currentUserId),
     ]);
 
     const preferredCategories = (prefsRes.data || []).slice(0, 5).map(p => p.category);
     setTopCategories(preferredCategories);
+
+    // Build not-interested signals
+    const niData = (notInterestedRes.data || []) as any[];
+    const notInterestedVideoIds = new Set(niData.map((n: any) => n.video_id));
+    const notInterestedCreators: Record<string, number> = {};
+    const notInterestedCategories: Record<string, number> = {};
+    niData.forEach((n: any) => {
+      notInterestedCreators[n.creator_id] = (notInterestedCreators[n.creator_id] || 0) + 1;
+      notInterestedCategories[n.category] = (notInterestedCategories[n.category] || 0) + 1;
+    });
 
     const followedCreators = new Set((followsRes.data || []).map(f => f.following_id));
 
@@ -95,11 +109,16 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
 
     const allVideos = data as unknown as Video[];
 
+    // Filter out exact not-interested videos, then apply scoring
+    const filteredVideos = allVideos.filter(v => !notInterestedVideoIds.has(v.id));
+
     if (!hasSignals) {
-      // No signals — show trending, penalize heavily disliked videos
-      const trending = [...allVideos].sort((a, b) => {
-        const scoreA = a.views_count - (a.dislikes_count > a.likes_count && (a.likes_count + a.dislikes_count) > 0 ? (a.dislikes_count / (a.likes_count + a.dislikes_count)) * a.views_count * 2 : 0);
-        const scoreB = b.views_count - (b.dislikes_count > b.likes_count && (b.likes_count + b.dislikes_count) > 0 ? (b.dislikes_count / (b.likes_count + b.dislikes_count)) * b.views_count * 2 : 0);
+      // No signals — show trending, penalize heavily disliked videos and not-interested signals
+      const trending = [...filteredVideos].sort((a, b) => {
+        const niPenaltyA = (notInterestedCreators[a.user_id] || 0) * 3 + (notInterestedCategories[a.category] || 0) * 1.5;
+        const niPenaltyB = (notInterestedCreators[b.user_id] || 0) * 3 + (notInterestedCategories[b.category] || 0) * 1.5;
+        const scoreA = a.views_count - niPenaltyA * 100 - (a.dislikes_count > a.likes_count && (a.likes_count + a.dislikes_count) > 0 ? (a.dislikes_count / (a.likes_count + a.dislikes_count)) * a.views_count * 2 : 0);
+        const scoreB = b.views_count - niPenaltyB * 100 - (b.dislikes_count > b.likes_count && (b.likes_count + b.dislikes_count) > 0 ? (b.dislikes_count / (b.likes_count + b.dislikes_count)) * b.views_count * 2 : 0);
         return scoreB - scoreA;
       });
       setVideos(trending.slice(0, 50));
@@ -121,8 +140,12 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     const totalCatViews = Object.values(prefMap).reduce((a, b) => a + b, 0) || 1;
 
     // Score each video
-    const scored = allVideos.map(video => {
+    const scored = filteredVideos.map(video => {
       let score = 0;
+
+      // Not-interested penalties (creator and category)
+      score -= (notInterestedCreators[video.user_id] || 0) * 4;
+      score -= (notInterestedCategories[video.category] || 0) * 2;
 
       // Creator signals (strongest: followed or liked creator)
       if (followedCreators.has(video.user_id)) score += 5;

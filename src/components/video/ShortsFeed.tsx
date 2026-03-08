@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2, Flag } from "lucide-react";
+import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2, Flag, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
@@ -416,6 +416,24 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
               >
                 <div className={`p-2 rounded-full ${followingMap[short.user_id] ? "bg-secondary text-secondary-foreground" : "bg-black/40 text-white"}`}>
                   {followingMap[short.user_id] ? <UserMinus className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+                </div>
+              </button>
+            )}
+            {short.user_id !== currentUserId && (
+              <button
+                className="flex flex-col items-center gap-0.5"
+                onClick={async () => {
+                  await supabase.from("video_not_interested" as any).insert({
+                    user_id: currentUserId,
+                    video_id: short.id,
+                    creator_id: short.user_id,
+                    category: short.category || "other",
+                  });
+                  toast.success("We'll show less content like this");
+                }}
+              >
+                <div className="p-2 rounded-full bg-black/40 text-white">
+                  <EyeOff className="h-5 w-5" />
                 </div>
               </button>
             )}
