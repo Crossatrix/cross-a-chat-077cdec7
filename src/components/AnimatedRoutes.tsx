@@ -1,7 +1,8 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import PageTransition from "./PageTransition";
+import { useMaintenanceMode } from "@/hooks/useMaintenanceMode";
 
 // Eagerly load Index (main page)
 import Index from "@/pages/Index";
@@ -13,6 +14,7 @@ const Banned = lazy(() => import("@/pages/Banned"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const GroupInvites = lazy(() => import("@/pages/GroupInvites"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const Maintenance = lazy(() => import("@/pages/Maintenance"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -22,6 +24,18 @@ const LoadingSpinner = () => (
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const { isMaintenanceMode, isAdmin, loading } = useMaintenanceMode();
+
+  if (loading) return <LoadingSpinner />;
+
+  // During maintenance, non-admins can only see maintenance + auth pages
+  const isMaintenancePage = location.pathname === "/maintenance";
+  const isAuthPage = location.pathname === "/auth";
+  const isAdminPage = location.pathname === "/admin";
+
+  if (isMaintenanceMode && !isAdmin && !isMaintenancePage && !isAuthPage) {
+    return <Navigate to="/maintenance" replace />;
+  }
 
   return (
     <AnimatePresence mode="wait">
@@ -72,6 +86,14 @@ const AnimatedRoutes = () => {
             element={
               <PageTransition>
                 <GroupInvites />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/maintenance"
+            element={
+              <PageTransition>
+                <Maintenance />
               </PageTransition>
             }
           />

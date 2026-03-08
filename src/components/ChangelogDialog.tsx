@@ -72,7 +72,7 @@ const ChangelogDialog = ({ open, onOpenChange }: ChangelogDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-md max-h-[80vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary animate-pulse" />
@@ -88,7 +88,7 @@ const ChangelogDialog = ({ open, onOpenChange }: ChangelogDialogProps) => {
         )}
 
         {!loading && (
-          <ScrollArea className="flex-1 pr-2">
+          <ScrollArea className="flex-1 pr-2 max-h-[60vh]">
             {entries.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No updates yet.</p>
             ) : (

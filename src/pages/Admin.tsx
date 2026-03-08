@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, RefreshCw, Save, Bug } from "lucide-react";
+import { ArrowLeft, Upload, Plus, RefreshCw, Save, Bug, Wrench } from "lucide-react";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import ChangelogManager from "@/components/admin/ChangelogManager";
 import FileExplorer, { FileItem } from "@/components/admin/FileExplorer";
@@ -43,10 +43,24 @@ const Admin = () => {
   const currentVersion = useAppVersion();
   const [editVersion, setEditVersion] = useState("");
   const [savingVersion, setSavingVersion] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [togglingMaintenance, setTogglingMaintenance] = useState(false);
 
   useEffect(() => {
     if (currentVersion) setEditVersion(currentVersion);
   }, [currentVersion]);
+
+  useEffect(() => {
+    const fetchMaintenanceStatus = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "maintenance_mode")
+        .single();
+      setMaintenanceMode(data?.value === "true");
+    };
+    fetchMaintenanceStatus();
+  }, []);
 
   useEffect(() => {
     const checkStaffAccess = async () => {
@@ -718,6 +732,46 @@ const Admin = () => {
             )}
             {CAN.manageChangelog(staffRole) && (
               <ChangelogManager currentVersion={editVersion || currentVersion} />
+            )}
+            {CAN.manageVersion(staffRole) && (
+              <Button
+                onClick={async () => {
+                  setTogglingMaintenance(true);
+                  const { data: { user } } = await supabase.auth.getUser();
+                  const newValue = !maintenanceMode;
+                  const until = newValue
+                    ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+                    : "";
+
+                  await supabase
+                    .from("app_settings")
+                    .update({ value: String(newValue), updated_at: new Date().toISOString(), updated_by: user?.id })
+                    .eq("key", "maintenance_mode");
+
+                  await supabase
+                    .from("app_settings")
+                    .update({ value: until, updated_at: new Date().toISOString(), updated_by: user?.id })
+                    .eq("key", "maintenance_until");
+
+                  if (newValue && user) {
+                    await supabase.from("feedback").insert({
+                      user_id: user.id,
+                      message: `🔧 MAINTENANCE MODE enabled manually by admin for 24 hours.`,
+                      important: true,
+                    });
+                  }
+
+                  setMaintenanceMode(newValue);
+                  setTogglingMaintenance(false);
+                  toast.success(newValue ? "Maintenance mode enabled (24h)" : "Maintenance mode disabled");
+                }}
+                variant={maintenanceMode ? "destructive" : "outline"}
+                size="sm"
+                disabled={togglingMaintenance}
+                title={maintenanceMode ? "Disable Maintenance Mode" : "Enable Maintenance Mode"}
+              >
+                <Wrench className="h-4 w-4" />
+              </Button>
             )}
             {CAN.manageVersion(staffRole) && (
               <Button

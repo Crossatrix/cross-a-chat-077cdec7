@@ -15,6 +15,51 @@ interface State {
   sent: boolean;
 }
 
+// Track crashes in memory for auto-maintenance trigger
+const CRASH_STORAGE_KEY = 'app_crash_timestamps';
+
+function recordCrash(): number {
+  try {
+    const now = Date.now();
+    const oneHourAgo = now - 60 * 60 * 1000;
+    const stored = JSON.parse(localStorage.getItem(CRASH_STORAGE_KEY) || '[]') as number[];
+    const recent = stored.filter(t => t > oneHourAgo);
+    recent.push(now);
+    localStorage.setItem(CRASH_STORAGE_KEY, JSON.stringify(recent));
+    return recent.length;
+  } catch {
+    return 0;
+  }
+}
+
+async function triggerMaintenanceMode() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const until = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    await supabase
+      .from('app_settings')
+      .update({ value: 'true', updated_at: new Date().toISOString(), updated_by: user?.id || null })
+      .eq('key', 'maintenance_mode');
+
+    await supabase
+      .from('app_settings')
+      .update({ value: until, updated_at: new Date().toISOString(), updated_by: user?.id || null })
+      .eq('key', 'maintenance_until');
+
+    // Send crash report as feedback to admins
+    if (user) {
+      await supabase.from('feedback').insert({
+        user_id: user.id,
+        message: `⚠️ AUTO-MAINTENANCE TRIGGERED: The app crashed 50+ times in the last hour. Maintenance mode has been enabled automatically for 24 hours. Please investigate the errors in the admin panel.`,
+        important: true,
+      });
+    }
+  } catch (e) {
+    console.error('Failed to trigger maintenance mode:', e);
+  }
+}
+
 class ErrorBoundary extends Component<Props, State> {
   private countdownInterval: NodeJS.Timeout | null = null;
   private globalErrorHandler: ((event: ErrorEvent) => void) | null = null;
@@ -34,13 +79,11 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidMount() {
-    // Global error handler for uncaught errors
     this.globalErrorHandler = (event: ErrorEvent) => {
       event.preventDefault();
       this.handleGlobalError(event.error || new Error(event.message), 'window.onerror');
     };
 
-    // Handler for unhandled promise rejections
     this.unhandledRejectionHandler = (event: PromiseRejectionEvent) => {
       event.preventDefault();
       const error = event.reason instanceof Error 
@@ -72,6 +115,12 @@ class ErrorBoundary extends Component<Props, State> {
       return;
     }
 
+    // Record crash and check threshold
+    const crashCount = recordCrash();
+    if (crashCount >= 50) {
+      triggerMaintenanceMode();
+    }
+
     const errorCode = this.generateErrorCode();
     this.setState({ 
       hasError: true, 
@@ -96,6 +145,7 @@ class ErrorBoundary extends Component<Props, State> {
           screenWidth: window.innerWidth,
           screenHeight: window.innerHeight,
           source,
+          crashCount,
         },
       });
 
@@ -119,7 +169,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   private startCountdown() {
-    if (this.countdownInterval) return; // Prevent multiple countdowns
+    if (this.countdownInterval) return;
     
     this.countdownInterval = setInterval(() => {
       this.setState((prevState) => {
@@ -145,14 +195,20 @@ class ErrorBoundary extends Component<Props, State> {
       'hydrat', 'script error', 'ResizeObserver loop',
     ];
     if (extensionPatterns.some(p => msg.includes(p) || stack.includes(p))) {
-      return null; // Don't trigger BSOD for extension errors
+      return null;
     }
     return { hasError: true, error };
   }
 
   async componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    if (this.state.isSending || this.state.sent) return; // Prevent duplicate sends
+    if (this.state.isSending || this.state.sent) return;
     
+    // Record crash and check threshold
+    const crashCount = recordCrash();
+    if (crashCount >= 50) {
+      triggerMaintenanceMode();
+    }
+
     this.setState({ errorInfo, isSending: true });
 
     try {
@@ -171,6 +227,7 @@ class ErrorBoundary extends Component<Props, State> {
           screenWidth: window.innerWidth,
           screenHeight: window.innerHeight,
           source: 'componentDidCatch',
+          crashCount,
         },
       });
 
@@ -208,17 +265,14 @@ class ErrorBoundary extends Component<Props, State> {
             fontFamily: 'Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif',
           }}
         >
-          {/* Sad face emoticon */}
           <div className="text-white text-[120px] sm:text-[180px] font-light mb-4 animate-pulse">
             :(
           </div>
 
-          {/* Main error message */}
           <h1 className="text-white text-lg sm:text-2xl font-light text-center max-w-2xl mb-6 leading-relaxed">
             Your app ran into a problem and needs to restart. We're collecting some error info, and then we'll redirect you to the login page.
           </h1>
 
-          {/* Progress bar */}
           <div className="w-full max-w-md mb-6">
             <div className="h-1 bg-white/30 rounded-full overflow-hidden">
               <div 
@@ -231,7 +285,6 @@ class ErrorBoundary extends Component<Props, State> {
             </p>
           </div>
 
-          {/* Status messages */}
           <div className="text-white/90 text-sm sm:text-base text-center space-y-1 mb-8">
             {isSending && (
               <p className="flex items-center justify-center gap-2">
@@ -245,7 +298,6 @@ class ErrorBoundary extends Component<Props, State> {
             <p>Redirecting in {countdown} seconds...</p>
           </div>
 
-          {/* Technical details box */}
           <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 sm:p-6 max-w-2xl w-full">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-white/80 text-xs sm:text-sm font-mono">
               <div>
@@ -265,7 +317,6 @@ class ErrorBoundary extends Component<Props, State> {
             </div>
           </div>
 
-          {/* QR code placeholder and help text */}
           <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 text-white/70 text-xs sm:text-sm">
             <div className="w-16 h-16 bg-white/10 rounded flex items-center justify-center">
               <svg viewBox="0 0 24 24" className="w-10 h-10 text-white/40" fill="currentColor">
@@ -278,7 +329,6 @@ class ErrorBoundary extends Component<Props, State> {
             </div>
           </div>
 
-          {/* Skip button */}
           <button
             onClick={() => window.location.href = '/auth'}
             className="mt-8 px-6 py-2 text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded transition-colors text-sm"
