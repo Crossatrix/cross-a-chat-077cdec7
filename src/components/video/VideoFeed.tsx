@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import VideoUploadDialog from "./VideoUploadDialog";
 import VideoPlayer from "./VideoPlayer";
@@ -31,6 +32,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchVideos();
@@ -76,6 +78,15 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     return d.toLocaleDateString();
   };
 
+  const filteredVideos = useMemo(() => {
+    if (!searchQuery.trim()) return videos;
+    const q = searchQuery.toLowerCase();
+    return videos.filter(v =>
+      v.title.toLowerCase().includes(q) ||
+      v.profiles.username.toLowerCase().includes(q)
+    );
+  }, [videos, searchQuery]);
+
   if (selectedVideo) {
     return (
       <VideoPlayer
@@ -93,12 +104,29 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
         <VideoUploadDialog userId={currentUserId} onUploaded={fetchVideos} />
       </div>
 
+      <div className="px-3 pt-2 pb-1 shrink-0">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by title or creator..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-8 h-9 text-sm"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2">
+              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            </button>
+          )}
+        </div>
+      </div>
+
       <ScrollArea className="flex-1">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-muted-foreground">Loading videos...</p>
           </div>
-        ) : videos.length === 0 ? (
+        ) : filteredVideos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
             <Play className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No videos yet</h3>
@@ -106,7 +134,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
-            {videos.map((video) => (
+            {filteredVideos.map((video) => (
               <div
                 key={video.id}
                 className="rounded-xl overflow-hidden border border-border bg-card cursor-pointer hover:border-primary/50 transition-colors"
