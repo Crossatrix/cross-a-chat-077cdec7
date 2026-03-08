@@ -147,9 +147,11 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
     if (isFollowing) {
       await supabase.from("video_follows").delete().eq("follower_id", currentUserId).eq("following_id", video.user_id);
       setIsFollowing(false);
+      setFollowerCount(c => Math.max(0, c - 1));
     } else {
       await supabase.from("video_follows").insert({ follower_id: currentUserId, following_id: video.user_id });
       setIsFollowing(true);
+      setFollowerCount(c => c + 1);
     }
   };
 
