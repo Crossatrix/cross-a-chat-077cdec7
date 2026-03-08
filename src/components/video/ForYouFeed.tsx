@@ -36,10 +36,23 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
   const [topCategories, setTopCategories] = useState<string[]>([]);
+  const [ageVerified, setAgeVerified] = useState(false);
+  const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
+  const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
 
   useEffect(() => {
     fetchForYou();
+    checkAgeVerification();
   }, []);
+
+  const checkAgeVerification = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("age_verified")
+      .eq("id", currentUserId)
+      .single();
+    if (data) setAgeVerified(!!(data as any).age_verified);
+  };
 
   const fetchForYou = async () => {
     setLoading(true);
