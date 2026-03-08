@@ -344,7 +344,6 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
       <AgeVerificationDialog
         open={ageVerifyOpen}
         onOpenChange={setAgeVerifyOpen}
-        currentUserId={currentUserId}
         onVerified={() => {
           setAgeVerified(true);
           setAgeVerifyOpen(false);
