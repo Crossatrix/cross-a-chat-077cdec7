@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Wrench, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 const Maintenance = () => {
   const [maintenanceUntil, setMaintenanceUntil] = useState<string | null>(null);
@@ -92,6 +93,20 @@ const Maintenance = () => {
                   {i < 2 && <span className="text-2xl font-bold text-muted-foreground/50 -mt-4">:</span>}
                 </div>
               ))}
+            </div>
+            <div className="space-y-2">
+              <Progress value={(() => {
+                const totalMs = 24 * 60 * 60 * 1000;
+                const remaining = Math.max(0, new Date(maintenanceUntil).getTime() - Date.now());
+                return Math.min(100, ((totalMs - remaining) / totalMs) * 100);
+              })()} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {Math.round((() => {
+                  const totalMs = 24 * 60 * 60 * 1000;
+                  const remaining = Math.max(0, new Date(maintenanceUntil).getTime() - Date.now());
+                  return Math.min(100, ((totalMs - remaining) / totalMs) * 100);
+                })())}% complete
+              </p>
             </div>
           </div>
         )}
