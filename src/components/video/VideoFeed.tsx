@@ -100,7 +100,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     setLoading(false);
   };
 
-  const handleVerifyCreator = async (userId: string, e: React.MouseEvent) => {
+  const handleVerifyCreator = async (userId: string, status: "verified" | "verified_plus", e: React.MouseEvent) => {
     e.stopPropagation();
     const { data: existing } = await supabase
       .from("creator_verifications")
@@ -113,22 +113,27 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       return;
     }
 
-    if (existing.status === "verified" || existing.status === "verified_plus") {
-      toast.info("Already verified");
+    if (status === "verified_plus" && !isAdmin) {
+      toast.error("Only admins can grant Verified Creator+");
+      return;
+    }
+
+    if (existing.status === status) {
+      toast.info(`Already ${status === "verified_plus" ? "Verified+" : "Verified"}`);
       return;
     }
 
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("creator_verifications")
-      .update({ status: "verified", verified_by: user?.id, updated_at: new Date().toISOString() })
+      .update({ status, verified_by: user?.id, updated_at: new Date().toISOString() })
       .eq("user_id", userId);
 
     if (error) {
       toast.error("Failed to verify: " + error.message);
     } else {
       invalidateCreatorCache(userId);
-      toast.success("Creator verified!");
+      toast.success(`Creator set to ${status === "verified_plus" ? "Verified+" : "Verified"}!`);
       fetchVideos();
     }
   };
