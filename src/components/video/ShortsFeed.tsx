@@ -51,6 +51,7 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const viewedSet = useRef<Set<string>>(new Set());
