@@ -192,6 +192,23 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
                 </Select>
               )}
               {canVerifyPlus && (
+                <Select
+                  value={c.featuredTier || "none"}
+                  onValueChange={(val) => handleSetFeatured(c.user_id, val)}
+                >
+                  <SelectTrigger className="w-28 h-8 text-xs">
+                    <Flame className="h-3 w-3 mr-1" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Fire</SelectItem>
+                    <SelectItem value="epic">🔥 Epic</SelectItem>
+                    <SelectItem value="legendary">💜 Legendary</SelectItem>
+                    <SelectItem value="mythic">💎 Mythic</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              {canVerifyPlus && (
                 <Button
                   size="sm"
                   variant={c.isOfficial ? "secondary" : "outline"}
