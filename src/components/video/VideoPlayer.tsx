@@ -192,6 +192,44 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     return d.toLocaleDateString();
   };
 
+  const handleReport = async () => {
+    if (!reportReason.trim()) return;
+    setReporting(true);
+    try {
+      const { error } = await supabase.from("video_reports" as any).insert({
+        video_id: video.id,
+        reporter_id: currentUserId,
+        reason: reportReason.trim(),
+      });
+      if (error) throw error;
+
+      // Trigger AI moderation
+      toast.info("Analyzing report with AI...");
+      const { data: reports } = await supabase
+        .from("video_reports" as any)
+        .select("id")
+        .eq("video_id", video.id)
+        .eq("reporter_id", currentUserId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (reports && reports.length > 0) {
+        const { error: fnError } = await supabase.functions.invoke("video-moderator", {
+          body: { reportId: (reports[0] as any).id },
+        });
+        if (fnError) console.error("AI review error:", fnError);
+      }
+
+      toast.success("Video reported! Staff will review it.");
+      setReportOpen(false);
+      setReportReason("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to report video");
+    } finally {
+      setReporting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
