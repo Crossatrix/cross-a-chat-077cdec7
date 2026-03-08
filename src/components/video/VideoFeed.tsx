@@ -374,7 +374,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                     <div className="flex items-center gap-1 mt-1">
                       <StaffBadge userId={video.user_id} size={12} />
                       <CreatorBadge userId={video.user_id} size={12} />
-                      <span className="text-xs text-muted-foreground truncate">{video.profiles.username}</span>
+                      <span className="text-xs text-muted-foreground truncate cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}>{video.profiles.username}</span>
                       {isStaff && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
