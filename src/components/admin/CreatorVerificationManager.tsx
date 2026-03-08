@@ -5,10 +5,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { RefreshCw, Award } from "lucide-react";
+import { RefreshCw, Award, Flame } from "lucide-react";
 import CreatorBadge, { invalidateCreatorCache } from "@/components/video/CreatorBadge";
 import { StaffRole, isAtLeast } from "@/utils/roleConfig";
 import officialIcon from "@/assets/roles/official_notifications.png";
+import { invalidateFeaturedCache, type FeaturedTier } from "@/components/video/FeaturedAvatar";
 
 interface CreatorEntry {
   id: string;
