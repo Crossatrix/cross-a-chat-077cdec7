@@ -327,6 +327,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
     }
   };
 
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">Loading shorts...</p>
