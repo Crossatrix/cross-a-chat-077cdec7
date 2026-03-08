@@ -44,6 +44,12 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
   const [userLikes, setUserLikes] = useState<Record<string, boolean | null>>({});
   const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
   const [localCounts, setLocalCounts] = useState<Record<string, { likes: number; dislikes: number }>>({});
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
+  const [commentsVideoOwnerId, setCommentsVideoOwnerId] = useState<string | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const viewedSet = useRef<Set<string>>(new Set());
