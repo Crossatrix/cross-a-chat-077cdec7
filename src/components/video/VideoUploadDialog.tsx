@@ -78,6 +78,11 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
 
       if (insertError) throw insertError;
 
+      // Notify followers via chat (fire-and-forget)
+      supabase.functions.invoke("notify-followers", {
+        body: { creatorId: userId, videoTitle: title.trim() },
+      }).catch((err) => console.error("Failed to notify followers:", err));
+
       toast.success("Video uploaded!");
       setTitle("");
       setDescription("");
