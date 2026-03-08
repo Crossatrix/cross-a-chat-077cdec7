@@ -51,6 +51,18 @@ const Admin = () => {
   }, [currentVersion]);
 
   useEffect(() => {
+    const fetchMaintenanceStatus = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "maintenance_mode")
+        .single();
+      setMaintenanceMode(data?.value === "true");
+    };
+    fetchMaintenanceStatus();
+  }, []);
+
+  useEffect(() => {
     const checkStaffAccess = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
