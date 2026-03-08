@@ -423,13 +423,23 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
               <button
                 className="flex flex-col items-center gap-0.5"
                 onClick={async () => {
-                  await supabase.from("video_not_interested" as any).insert({
+                  const { data: inserted } = await supabase.from("video_not_interested" as any).insert({
                     user_id: currentUserId,
                     video_id: short.id,
                     creator_id: short.user_id,
                     category: short.category || "other",
+                  }).select("id").single();
+                  toast("We'll show less content like this", {
+                    action: {
+                      label: "Undo",
+                      onClick: async () => {
+                        if (inserted) {
+                          await supabase.from("video_not_interested" as any).delete().eq("id", (inserted as any).id);
+                          toast.success("Removed from Not Interested");
+                        }
+                      },
+                    },
                   });
-                  toast.success("We'll show less content like this");
                 }}
               >
                 <div className="p-2 rounded-full bg-black/40 text-white">

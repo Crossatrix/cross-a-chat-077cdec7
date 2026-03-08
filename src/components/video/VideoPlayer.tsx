@@ -283,13 +283,23 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                     size="sm"
                     className="gap-1 ml-auto"
                     onClick={async () => {
-                      await supabase.from("video_not_interested" as any).insert({
+                      const { data: inserted } = await supabase.from("video_not_interested" as any).insert({
                         user_id: currentUserId,
                         video_id: video.id,
                         creator_id: video.user_id,
                         category: (video as any).category || "other",
+                      }).select("id").single();
+                      toast("We'll show less content like this", {
+                        action: {
+                          label: "Undo",
+                          onClick: async () => {
+                            if (inserted) {
+                              await supabase.from("video_not_interested" as any).delete().eq("id", (inserted as any).id);
+                              toast.success("Removed from Not Interested");
+                            }
+                          },
+                        },
                       });
-                      toast.success("We'll show less content like this");
                       onBack();
                     }}
                   >
