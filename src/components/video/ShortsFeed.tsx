@@ -98,6 +98,11 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
       sorted.forEach(s => { counts[s.id] = { likes: s.likes_count, dislikes: s.dislikes_count }; });
       setLocalCounts(counts);
 
+      // Fetch comment counts
+      const cCounts: Record<string, number> = {};
+      sorted.forEach(s => { cCounts[s.id] = s.comments_count || 0; });
+      setCommentCounts(cCounts);
+
       if (sorted.length > 0) {
         const { data: likes } = await supabase
           .from("video_likes")
