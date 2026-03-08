@@ -126,7 +126,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
           <div className="flex items-center justify-center py-20">
             <p className="text-muted-foreground">Loading videos...</p>
           </div>
-        ) : videos.length === 0 ? (
+        ) : filteredVideos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
             <Play className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No videos yet</h3>
