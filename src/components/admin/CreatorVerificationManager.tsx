@@ -108,6 +108,31 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
     fetchCreators();
   };
 
+  const handleSetFeatured = async (userId: string, tier: string) => {
+    if (tier === "none") {
+      const { error } = await supabase
+        .from("featured_creators")
+        .delete()
+        .eq("user_id", userId);
+      if (error) {
+        toast.error("Failed to remove featured status");
+        return;
+      }
+      toast.success("Featured status removed");
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("featured_creators")
+        .upsert({ user_id: userId, tier, granted_by: user?.id, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) {
+        toast.error("Failed to set featured: " + error.message);
+        return;
+      }
+      toast.success(`Featured as ${tier}`);
+    }
+    invalidateFeaturedCache(userId);
+  };
+
   const statusLabel = (s: string) => {
     if (s === "verified_plus") return "Verified+";
     if (s === "verified") return "Verified";
