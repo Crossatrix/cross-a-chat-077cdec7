@@ -120,16 +120,23 @@ const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel, 
     if (!text.trim()) return;
     
     const inputText = text.trim();
+    let tag = "";
     
     if (selectedAnimations.length > 0 && selectedColor) {
-      // Combined: /#/combo; wave,bounce #FF0000 Hello/#/
       const anims = selectedAnimations.join(',');
-      onEffectSelect(`/#/combo; ${anims} ${selectedColor} ${inputText}/#/`);
+      tag = `/#/combo; ${anims} ${selectedColor} ${inputText}/#/`;
     } else if (selectedAnimations.length > 0) {
       const anims = selectedAnimations.join(',');
-      onEffectSelect(`/#/combo; ${anims} ${inputText}/#/`);
+      tag = `/#/combo; ${anims} ${inputText}/#/`;
     } else if (selectedColor) {
-      onEffectSelect(`/#/text; ${selectedColor} ${inputText}/#/`);
+      tag = `/#/text; ${selectedColor} ${inputText}/#/`;
+    } else if (sendAsSystem) {
+      // Plain text system message
+      tag = inputText;
+    }
+    
+    if (tag) {
+      onEffectSelect(tag, sendAsSystem);
     }
     
     resetAndClose();
