@@ -130,6 +130,79 @@ const Settings = () => {
     }
   };
 
+  const loadNotInterested = async () => {
+    setLoadingNotInterested(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("video_not_interested" as any)
+        .select("id, video_id, category, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading not interested:", error);
+        return;
+      }
+
+      const items = (data || []) as any[];
+      if (items.length > 0) {
+        const videoIds = items.map((i: any) => i.video_id);
+        const { data: videos } = await supabase
+          .from("videos")
+          .select("id, title, thumbnail_url")
+          .in("id", videoIds);
+
+        const enriched = items.map((item: any) => ({
+          ...item,
+          video: videos?.find((v: any) => v.id === item.video_id) || undefined,
+        }));
+        setNotInterestedItems(enriched);
+      } else {
+        setNotInterestedItems([]);
+      }
+    } catch (error) {
+      console.error("Error loading not interested:", error);
+    } finally {
+      setLoadingNotInterested(false);
+    }
+  };
+
+  const handleRemoveNotInterested = async (id: string) => {
+    const { error } = await supabase
+      .from("video_not_interested" as any)
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to remove");
+      return;
+    }
+
+    toast.success("Removed from Not Interested");
+    setNotInterestedItems(prev => prev.filter(i => i.id !== id));
+  };
+
+  const handleClearAllNotInterested = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("video_not_interested" as any)
+      .delete()
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error("Failed to clear");
+      return;
+    }
+
+    toast.success("Cleared all Not Interested preferences");
+    setNotInterestedItems([]);
+  };
+
   const handleUnblockFromGroups = async (blockId: string, username: string) => {
     const { error } = await supabase
       .from("group_blocks")
