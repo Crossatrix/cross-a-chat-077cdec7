@@ -55,6 +55,10 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const [newComment, setNewComment] = useState("");
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportVideoId, setReportVideoId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reporting, setReporting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const viewedSet = useRef<Set<string>>(new Set());
