@@ -187,6 +187,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
         video={selectedVideo}
         currentUserId={currentUserId}
         onBack={() => setSelectedVideo(null)}
+        onCreatorClick={onCreatorClick}
       />
     );
   }
