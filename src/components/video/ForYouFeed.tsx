@@ -46,6 +46,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   useEffect(() => {
     fetchForYou();
     checkAgeVerification();
+    fetchFollowedPosts();
   }, []);
 
   const checkAgeVerification = async () => {
