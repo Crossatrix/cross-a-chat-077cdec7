@@ -363,7 +363,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
 
                 {/* Info */}
                 <div className="p-2.5 flex gap-2">
-                  <Avatar className="h-8 w-8 shrink-0 mt-0.5">
+                  <Avatar className="h-8 w-8 shrink-0 mt-0.5 cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}>
                     <AvatarImage src={video.profiles.avatar_url || ""} />
                     <AvatarFallback className="bg-secondary text-foreground text-xs">
                       {video.profiles.username?.charAt(0).toUpperCase()}
