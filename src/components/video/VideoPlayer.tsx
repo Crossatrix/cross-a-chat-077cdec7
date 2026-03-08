@@ -5,11 +5,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
+import { getCategoryLabel } from "@/utils/videoCategories";
 
 interface Video {
   id: string;
@@ -304,6 +305,38 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                     }}
                   >
                     <EyeOff className="h-4 w-4" /> Not Interested
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={async () => {
+                      const cat = (video as any).category || "other";
+                      const { error } = await supabase.from("blocked_categories" as any).insert({
+                        user_id: currentUserId,
+                        category: cat,
+                      });
+                      if (error && error.code === "23505") {
+                        toast.info("Category already blocked");
+                        return;
+                      }
+                      if (error) {
+                        toast.error("Failed to block category");
+                        return;
+                      }
+                      toast(`Blocked ${getCategoryLabel(cat)}`, {
+                        action: {
+                          label: "Undo",
+                          onClick: async () => {
+                            await supabase.from("blocked_categories" as any).delete().eq("user_id", currentUserId).eq("category", cat);
+                            toast.success("Unblocked category");
+                          },
+                        },
+                      });
+                      onBack();
+                    }}
+                  >
+                    <Ban className="h-4 w-4" /> Block Category
                   </Button>
                   <Button
                     variant="outline"
