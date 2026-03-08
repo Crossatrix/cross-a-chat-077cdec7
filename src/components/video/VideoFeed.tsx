@@ -14,6 +14,7 @@ import CreatorProfile from "./CreatorProfile";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
 import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
+import VideoLeaderboard from "./VideoLeaderboard";
 
 interface Video {
   id: string;
@@ -334,6 +335,13 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       </div>
 
       <ScrollArea className="flex-1">
+        <VideoLeaderboard
+          onSelectVideo={(videoId) => {
+            const v = videos.find(v => v.id === videoId);
+            if (v) handleSelectVideo(v);
+          }}
+          onCreatorClick={(id) => setSelectedCreatorId(id)}
+        />
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-muted-foreground">Loading videos...</p>

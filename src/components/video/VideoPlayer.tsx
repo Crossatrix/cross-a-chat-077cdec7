@@ -74,10 +74,33 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     return () => { supabase.removeChannel(channel); };
   }, [video.id]);
 
+  const getWeekStart = () => {
+    const now = new Date();
+    const day = now.getDay();
+    const offset = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + offset);
+    monday.setHours(0, 0, 0, 0);
+    return monday.toISOString().split("T")[0];
+  };
+
   const incrementView = async () => {
     if (viewCounted) return;
     setViewCounted(true);
     await supabase.from("videos").update({ views_count: video.views_count + 1 }).eq("id", video.id);
+    // Track weekly stats
+    const weekStart = getWeekStart();
+    const { data: existing } = await supabase
+      .from("video_weekly_stats")
+      .select("id, weekly_views")
+      .eq("video_id", video.id)
+      .eq("week_start", weekStart)
+      .maybeSingle();
+    if (existing) {
+      await supabase.from("video_weekly_stats").update({ weekly_views: existing.weekly_views + 1, updated_at: new Date().toISOString() }).eq("id", existing.id);
+    } else {
+      await supabase.from("video_weekly_stats").insert({ video_id: video.id, week_start: weekStart, weekly_views: 1 });
+    }
   };
 
   const fetchComments = async () => {
@@ -148,6 +171,26 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     await supabase.from("videos").update({ likes_count: newLikes ?? 0, dislikes_count: newDislikes ?? 0 }).eq("id", video.id);
     setLikesCount(newLikes ?? 0);
     setDislikesCount(newDislikes ?? 0);
+
+    // Update weekly stats for likes/dislikes
+    const weekStart = getWeekStart();
+    const { data: weeklyData } = await supabase
+      .from("video_weekly_stats")
+      .select("id")
+      .eq("video_id", video.id)
+      .eq("week_start", weekStart)
+      .maybeSingle();
+
+    // Count this week's likes/dislikes
+    const weekStartDate = weekStart + "T00:00:00.000Z";
+    const { count: weekLikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", video.id).eq("is_like", true).gte("created_at", weekStartDate);
+    const { count: weekDislikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", video.id).eq("is_like", false).gte("created_at", weekStartDate);
+
+    if (weeklyData) {
+      await supabase.from("video_weekly_stats").update({ weekly_likes: weekLikes ?? 0, weekly_dislikes: weekDislikes ?? 0, updated_at: new Date().toISOString() }).eq("id", weeklyData.id);
+    } else {
+      await supabase.from("video_weekly_stats").insert({ video_id: video.id, week_start: weekStart, weekly_likes: weekLikes ?? 0, weekly_dislikes: weekDislikes ?? 0 });
+    }
   };
 
   const handleFollow = async () => {

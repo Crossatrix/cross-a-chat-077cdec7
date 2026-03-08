@@ -1347,6 +1347,44 @@ export type Database = {
           },
         ]
       }
+      video_weekly_stats: {
+        Row: {
+          id: string
+          updated_at: string
+          video_id: string
+          week_start: string
+          weekly_dislikes: number
+          weekly_likes: number
+          weekly_views: number
+        }
+        Insert: {
+          id?: string
+          updated_at?: string
+          video_id: string
+          week_start: string
+          weekly_dislikes?: number
+          weekly_likes?: number
+          weekly_views?: number
+        }
+        Update: {
+          id?: string
+          updated_at?: string
+          video_id?: string
+          week_start?: string
+          weekly_dislikes?: number
+          weekly_likes?: number
+          weekly_views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_weekly_stats_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           category: string
