@@ -149,16 +149,28 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   };
 
   const handleUnverifyCreator = async (userId: string) => {
+    const { data: existing } = await supabase
+      .from("creator_verifications")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!existing) {
+      toast.info("Creator is not verified");
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("creator_verifications")
-      .delete()
+      .update({ status: "creator", verified_by: user?.id, updated_at: new Date().toISOString() })
       .eq("user_id", userId);
 
     if (error) {
       toast.error("Failed to unverify: " + error.message);
     } else {
       invalidateCreatorCache(userId);
-      toast.success("Creator verification removed!");
+      toast.success("Creator set back to unverified!");
       fetchVideos();
     }
   };
