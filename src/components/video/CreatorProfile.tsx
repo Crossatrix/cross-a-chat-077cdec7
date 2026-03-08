@@ -190,11 +190,11 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
         <h2 className="text-sm font-semibold truncate flex-1">{profile.username}</h2>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:overflow-visible" style={{ overflow: 'visible' }}>
         {/* Profile header */}
-        <div className="p-4 space-y-4">
+        <div className="p-4 pt-10 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="shrink-0 p-6 -m-6 overflow-visible">
+            <div className="shrink-0 -mt-8">
               <FeaturedAvatar
                 userId={creatorId}
                 avatarUrl={profile.avatar_url}
