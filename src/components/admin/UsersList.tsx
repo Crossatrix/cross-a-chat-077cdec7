@@ -56,14 +56,20 @@ const UsersList = () => {
       .select("user_id, role")
       .eq("role", "admin");
 
+    const { data: officials } = await supabase
+      .from("official_accounts")
+      .select("user_id");
+
     const banMap = new Map(bans?.map(b => [b.user_id, b.expires_at]) || []);
     const adminIds = new Set(roles?.map(r => r.user_id) || []);
+    const officialIds = new Set(officials?.map(o => o.user_id) || []);
     
     const usersWithStatus = profiles?.map(p => ({
       ...p,
       banned: banMap.has(p.id),
       banExpiresAt: banMap.get(p.id),
-      isAdmin: adminIds.has(p.id)
+      isAdmin: adminIds.has(p.id),
+      isOfficial: officialIds.has(p.id),
     })) || [];
 
     setUsers(usersWithStatus);
