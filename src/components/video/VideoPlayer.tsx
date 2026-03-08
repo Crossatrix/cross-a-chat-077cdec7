@@ -36,9 +36,10 @@ interface VideoPlayerProps {
   video: Video;
   currentUserId: string;
   onBack: () => void;
+  onCreatorClick?: (creatorId: string) => void;
 }
 
-const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
+const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlayerProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [userLike, setUserLike] = useState<boolean | null>(null);
