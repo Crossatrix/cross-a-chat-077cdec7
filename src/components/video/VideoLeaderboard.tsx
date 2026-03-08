@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Trophy, Eye, ThumbsUp, ThumbsDown, Crown, Medal, Award, ChevronDown, ChevronUp } from "lucide-react";
+import { Trophy, Eye, ThumbsUp, ThumbsDown, Medal, Award, ChevronDown, ChevronUp } from "lucide-react";
+import crownImg from "@/assets/crown.png";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
