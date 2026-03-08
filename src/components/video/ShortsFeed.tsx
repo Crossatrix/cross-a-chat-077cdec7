@@ -7,12 +7,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2, Flag, EyeOff, Ban } from "lucide-react";
-import { getCategoryLabel } from "@/utils/videoCategories";
+import { getCategoryLabel, getCategoryIcon } from "@/utils/videoCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
-import { getCategoryIcon } from "@/utils/videoCategories";
 
 interface Short {
   id: string;
