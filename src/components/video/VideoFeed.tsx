@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle, ShieldAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VideoUploadDialog from "./VideoUploadDialog";
@@ -15,6 +15,7 @@ import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
 import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
 import VideoLeaderboard from "./VideoLeaderboard";
+import AgeVerificationDialog from "./AgeVerificationDialog";
 
 interface Video {
   id: string;
