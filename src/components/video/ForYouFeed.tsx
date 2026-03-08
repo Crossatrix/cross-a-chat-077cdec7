@@ -116,7 +116,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     const allVideos = data as unknown as Video[];
 
     // Filter out exact not-interested videos, then apply scoring
-    const filteredVideos = allVideos.filter(v => !notInterestedVideoIds.has(v.id));
+    const filteredVideos = allVideos.filter(v => !notInterestedVideoIds.has(v.id) && !blockedCats.has(v.category));
 
     if (!hasSignals) {
       // No signals — show trending, penalize heavily disliked videos and not-interested signals
