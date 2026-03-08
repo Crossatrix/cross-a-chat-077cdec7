@@ -49,6 +49,10 @@ const Maintenance = () => {
           .from("app_settings")
           .update({ value: "false" })
           .eq("key", "maintenance_mode");
+        toast({
+          title: "🎉 We're back online!",
+          description: "Maintenance is complete. Enjoy the app!",
+        });
         navigate("/");
       }
     };
