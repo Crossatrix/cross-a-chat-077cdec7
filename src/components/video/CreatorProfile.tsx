@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StaffBadge from "@/components/StaffBadge";
+import { formatMessageText } from "@/utils/textFormatting";
 import CreatorBadge from "./CreatorBadge";
 
 interface Video {
