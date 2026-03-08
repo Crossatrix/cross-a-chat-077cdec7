@@ -45,12 +45,14 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
   const [likesCount, setLikesCount] = useState(video.likes_count);
   const [dislikesCount, setDislikesCount] = useState(video.dislikes_count);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
   const [viewCounted, setViewCounted] = useState(false);
 
   useEffect(() => {
     fetchComments();
     fetchUserLike();
     fetchFollowStatus();
+    fetchFollowerCount();
     incrementView();
   }, [video.id]);
 
@@ -100,6 +102,14 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
     setIsFollowing(!!data);
   };
 
+  const fetchFollowerCount = async () => {
+    const { count } = await supabase
+      .from("video_follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", video.user_id);
+    setFollowerCount(count ?? 0);
+  };
+
   const handleLike = async (isLike: boolean) => {
     const prevLike = userLike;
 
@@ -137,9 +147,11 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
     if (isFollowing) {
       await supabase.from("video_follows").delete().eq("follower_id", currentUserId).eq("following_id", video.user_id);
       setIsFollowing(false);
+      setFollowerCount(c => Math.max(0, c - 1));
     } else {
       await supabase.from("video_follows").insert({ follower_id: currentUserId, following_id: video.user_id });
       setIsFollowing(true);
+      setFollowerCount(c => c + 1);
     }
   };
 
@@ -236,6 +248,7 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
                   <CreatorBadge userId={video.user_id} size={16} />
                   <span className="font-medium text-sm truncate">{video.profiles.username}</span>
                 </div>
+                <p className="text-xs text-muted-foreground">{followerCount} {followerCount === 1 ? 'follower' : 'followers'}</p>
               </div>
               {video.user_id !== currentUserId && (
                 <Button

@@ -51,6 +51,7 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const viewedSet = useRef<Set<string>>(new Set());
@@ -118,15 +119,18 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
 
       const uniqueCreators = [...new Set(sorted.map(s => s.user_id))];
       if (uniqueCreators.length > 0) {
-        const { data: follows } = await supabase
-          .from("video_follows")
-          .select("following_id")
-          .eq("follower_id", currentUserId)
-          .in("following_id", uniqueCreators);
+        const [{ data: follows }, { data: allFollows }] = await Promise.all([
+          supabase.from("video_follows").select("following_id").eq("follower_id", currentUserId).in("following_id", uniqueCreators),
+          supabase.from("video_follows").select("following_id").in("following_id", uniqueCreators),
+        ]);
         
         const fMap: Record<string, boolean> = {};
         follows?.forEach(f => { fMap[f.following_id] = true; });
         setFollowingMap(fMap);
+
+        const fcMap: Record<string, number> = {};
+        allFollows?.forEach(f => { fcMap[f.following_id] = (fcMap[f.following_id] || 0) + 1; });
+        setFollowerCounts(fcMap);
       }
     }
     setLoading(false);
@@ -271,9 +275,11 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
     if (followingMap[creatorId]) {
       await supabase.from("video_follows").delete().eq("follower_id", currentUserId).eq("following_id", creatorId);
       setFollowingMap(p => ({ ...p, [creatorId]: false }));
+      setFollowerCounts(p => ({ ...p, [creatorId]: Math.max(0, (p[creatorId] || 0) - 1) }));
     } else {
       await supabase.from("video_follows").insert({ follower_id: currentUserId, following_id: creatorId });
       setFollowingMap(p => ({ ...p, [creatorId]: true }));
+      setFollowerCounts(p => ({ ...p, [creatorId]: (p[creatorId] || 0) + 1 }));
     }
   };
 
@@ -380,10 +386,13 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
                   {short.profiles.username?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex items-center gap-1">
-                <StaffBadge userId={short.user_id} size={14} />
-                <CreatorBadge userId={short.user_id} size={14} />
-                <span className="font-semibold text-sm">{short.profiles.username}</span>
+              <div>
+                <div className="flex items-center gap-1">
+                  <StaffBadge userId={short.user_id} size={14} />
+                  <CreatorBadge userId={short.user_id} size={14} />
+                  <span className="font-semibold text-sm">{short.profiles.username}</span>
+                </div>
+                <span className="text-[10px] opacity-70">{followerCounts[short.user_id] || 0} followers</span>
               </div>
             </div>
             <p className="text-sm font-medium line-clamp-2">{short.title}</p>
