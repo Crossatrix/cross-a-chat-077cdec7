@@ -479,6 +479,21 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
           </div>
         )}
       </ScrollArea>
+      <AgeVerificationDialog
+        open={ageVerifyOpen}
+        onOpenChange={(open) => {
+          setAgeVerifyOpen(open);
+          if (!open) setPendingAdultVideo(null);
+        }}
+        onVerified={() => {
+          setAgeVerified(true);
+          if (pendingAdultVideo) {
+            setSelectedVideo(pendingAdultVideo);
+            trackCategoryView(pendingAdultVideo.category);
+            setPendingAdultVideo(null);
+          }
+        }}
+      />
     </div>
   );
 };
