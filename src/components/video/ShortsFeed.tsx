@@ -386,10 +386,13 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
                   {short.profiles.username?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex items-center gap-1">
-                <StaffBadge userId={short.user_id} size={14} />
-                <CreatorBadge userId={short.user_id} size={14} />
-                <span className="font-semibold text-sm">{short.profiles.username}</span>
+              <div>
+                <div className="flex items-center gap-1">
+                  <StaffBadge userId={short.user_id} size={14} />
+                  <CreatorBadge userId={short.user_id} size={14} />
+                  <span className="font-semibold text-sm">{short.profiles.username}</span>
+                </div>
+                <span className="text-[10px] opacity-70">{followerCounts[short.user_id] || 0} followers</span>
               </div>
             </div>
             <p className="text-sm font-medium line-clamp-2">{short.title}</p>
