@@ -45,6 +45,7 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
   const [likesCount, setLikesCount] = useState(video.likes_count);
   const [dislikesCount, setDislikesCount] = useState(video.dislikes_count);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
   const [viewCounted, setViewCounted] = useState(false);
 
   useEffect(() => {
