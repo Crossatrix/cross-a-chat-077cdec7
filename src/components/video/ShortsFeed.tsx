@@ -635,6 +635,15 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Age Verification Dialog */}
+      <AgeVerificationDialog
+        open={ageVerifyOpen}
+        onOpenChange={setAgeVerifyOpen}
+        onVerified={() => {
+          setAgeVerified(true);
+          setAgeVerifyOpen(false);
+        }}
+      />
     </div>
   );
 };
