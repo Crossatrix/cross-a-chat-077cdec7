@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
