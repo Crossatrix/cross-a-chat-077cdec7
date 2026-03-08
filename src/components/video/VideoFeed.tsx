@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VideoUploadDialog from "./VideoUploadDialog";
 import VideoPlayer from "./VideoPlayer";
+import CreatorProfile from "./CreatorProfile";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
 import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
