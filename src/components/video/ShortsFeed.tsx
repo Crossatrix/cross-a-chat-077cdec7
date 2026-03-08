@@ -214,6 +214,58 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
     setLocalCounts(p => ({ ...p, [shortId]: { likes: newLikes ?? 0, dislikes: newDislikes ?? 0 } }));
   };
 
+  const openComments = (videoId: string, videoOwnerId: string) => {
+    setCommentsVideoId(videoId);
+    setCommentsVideoOwnerId(videoOwnerId);
+    setCommentsOpen(true);
+    fetchComments(videoId);
+  };
+
+  const fetchComments = async (videoId: string) => {
+    const { data } = await supabase
+      .from("video_comments")
+      .select("*, profiles(username, avatar_url)")
+      .eq("video_id", videoId)
+      .order("created_at", { ascending: true });
+    if (data) setComments(data as unknown as Comment[]);
+  };
+
+  const handleComment = async () => {
+    if (!newComment.trim() || !commentsVideoId) return;
+    const { error } = await supabase.from("video_comments").insert({
+      video_id: commentsVideoId,
+      user_id: currentUserId,
+      content: newComment.trim(),
+    });
+    if (error) {
+      toast.error("Failed to post comment");
+    } else {
+      setNewComment("");
+      fetchComments(commentsVideoId);
+      setCommentCounts(p => ({ ...p, [commentsVideoId]: (p[commentsVideoId] || 0) + 1 }));
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!commentsVideoId) return;
+    await supabase.from("video_comments").delete().eq("id", commentId);
+    fetchComments(commentsVideoId);
+    setCommentCounts(p => ({ ...p, [commentsVideoId]: Math.max(0, (p[commentsVideoId] || 0) - 1) }));
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    return d.toLocaleDateString();
+  };
+
   const handleFollow = async (creatorId: string) => {
     if (followingMap[creatorId]) {
       await supabase.from("video_follows").delete().eq("follower_id", currentUserId).eq("following_id", creatorId);
