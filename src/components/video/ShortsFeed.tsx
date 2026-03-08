@@ -275,9 +275,11 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
     if (followingMap[creatorId]) {
       await supabase.from("video_follows").delete().eq("follower_id", currentUserId).eq("following_id", creatorId);
       setFollowingMap(p => ({ ...p, [creatorId]: false }));
+      setFollowerCounts(p => ({ ...p, [creatorId]: Math.max(0, (p[creatorId] || 0) - 1) }));
     } else {
       await supabase.from("video_follows").insert({ follower_id: currentUserId, following_id: creatorId });
       setFollowingMap(p => ({ ...p, [creatorId]: true }));
+      setFollowerCounts(p => ({ ...p, [creatorId]: (p[creatorId] || 0) + 1 }));
     }
   };
 
