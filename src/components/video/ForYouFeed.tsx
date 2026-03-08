@@ -43,7 +43,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     setLoading(true);
 
     // Fetch all signals in parallel: category prefs, follows, liked video creators
-    const [prefsRes, followsRes, likesRes] = await Promise.all([
+    const [prefsRes, followsRes, likesRes, notInterestedRes] = await Promise.all([
       supabase
         .from("video_category_views")
         .select("category, view_count")
@@ -58,6 +58,10 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
         .select("video_id")
         .eq("user_id", currentUserId)
         .eq("is_like", true),
+      supabase
+        .from("video_not_interested" as any)
+        .select("video_id, creator_id, category")
+        .eq("user_id", currentUserId),
     ]);
 
     const preferredCategories = (prefsRes.data || []).slice(0, 5).map(p => p.category);
