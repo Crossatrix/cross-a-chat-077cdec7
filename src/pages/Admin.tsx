@@ -735,6 +735,46 @@ const Admin = () => {
             )}
             {CAN.manageVersion(staffRole) && (
               <Button
+                onClick={async () => {
+                  setTogglingMaintenance(true);
+                  const { data: { user } } = await supabase.auth.getUser();
+                  const newValue = !maintenanceMode;
+                  const until = newValue
+                    ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+                    : "";
+
+                  await supabase
+                    .from("app_settings")
+                    .update({ value: String(newValue), updated_at: new Date().toISOString(), updated_by: user?.id })
+                    .eq("key", "maintenance_mode");
+
+                  await supabase
+                    .from("app_settings")
+                    .update({ value: until, updated_at: new Date().toISOString(), updated_by: user?.id })
+                    .eq("key", "maintenance_until");
+
+                  if (newValue && user) {
+                    await supabase.from("feedback").insert({
+                      user_id: user.id,
+                      message: `🔧 MAINTENANCE MODE enabled manually by admin for 24 hours.`,
+                      important: true,
+                    });
+                  }
+
+                  setMaintenanceMode(newValue);
+                  setTogglingMaintenance(false);
+                  toast.success(newValue ? "Maintenance mode enabled (24h)" : "Maintenance mode disabled");
+                }}
+                variant={maintenanceMode ? "destructive" : "outline"}
+                size="sm"
+                disabled={togglingMaintenance}
+                title={maintenanceMode ? "Disable Maintenance Mode" : "Enable Maintenance Mode"}
+              >
+                <Wrench className="h-4 w-4" />
+              </Button>
+            )}
+            {CAN.manageVersion(staffRole) && (
+              <Button
                 onClick={() => { throw new Error("Admin test crash — triggered manually from admin panel"); }}
                 variant="outline"
                 size="sm"
