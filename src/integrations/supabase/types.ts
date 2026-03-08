@@ -963,6 +963,30 @@ export type Database = {
           },
         ]
       }
+      video_category_views: {
+        Row: {
+          category: string
+          id: string
+          updated_at: string
+          user_id: string
+          view_count: number
+        }
+        Insert: {
+          category: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          view_count?: number
+        }
+        Update: {
+          category?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       video_comments: {
         Row: {
           content: string
@@ -1082,6 +1106,7 @@ export type Database = {
       }
       videos: {
         Row: {
+          category: string
           comments_count: number
           created_at: string
           description: string | null
@@ -1097,6 +1122,7 @@ export type Database = {
           views_count: number
         }
         Insert: {
+          category?: string
           comments_count?: number
           created_at?: string
           description?: string | null
@@ -1112,6 +1138,7 @@ export type Database = {
           views_count?: number
         }
         Update: {
+          category?: string
           comments_count?: number
           created_at?: string
           description?: string | null

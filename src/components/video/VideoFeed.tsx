@@ -1,13 +1,17 @@
 import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Search, X } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import VideoUploadDialog from "./VideoUploadDialog";
 import VideoPlayer from "./VideoPlayer";
 import StaffBadge from "@/components/StaffBadge";
-import CreatorBadge from "./CreatorBadge";
+import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
+import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
 
 interface Video {
   id: string;
@@ -21,6 +25,7 @@ interface Video {
   dislikes_count: number;
   comments_count: number;
   created_at: string;
+  category: string;
   profiles: { username: string; avatar_url: string | null };
 }
 
@@ -33,10 +38,36 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [userCategoryPrefs, setUserCategoryPrefs] = useState<Record<string, number>>({});
+  const [isStaff, setIsStaff] = useState(false);
 
   useEffect(() => {
     fetchVideos();
+    fetchCategoryPrefs();
+    checkStaffStatus();
   }, []);
+
+  const checkStaffStatus = async () => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", currentUserId);
+    const staffRoles = ["moderator", "elder_moderator", "admin"];
+    setIsStaff((data || []).some(r => staffRoles.includes(r.role)));
+  };
+
+  const fetchCategoryPrefs = async () => {
+    const { data } = await supabase
+      .from("video_category_views")
+      .select("category, view_count")
+      .eq("user_id", currentUserId);
+    if (data) {
+      const prefs: Record<string, number> = {};
+      data.forEach(d => { prefs[d.category] = d.view_count; });
+      setUserCategoryPrefs(prefs);
+    }
+  };
 
   const fetchVideos = async () => {
     setLoading(true);
@@ -46,7 +77,6 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       .order("created_at", { ascending: false });
     
     if (data) {
-      // Fetch creator verifications to prioritize verified creators
       const { data: verifications } = await supabase
         .from("creator_verifications")
         .select("user_id, status");
@@ -58,13 +88,45 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
         const aStatus = verifiedMap.get(a.user_id) || "";
         const bStatus = verifiedMap.get(b.user_id) || "";
         const priority = (s: string) => s === "verified_plus" ? 3 : s === "verified" ? 2 : 0;
-        // Secondary sort by created_at (already sorted by DB, so only re-sort by priority)
         return priority(bStatus) - priority(aStatus);
       });
 
       setVideos(sorted);
     }
     setLoading(false);
+  };
+
+  const handleVerifyCreator = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { data: existing } = await supabase
+      .from("creator_verifications")
+      .select("id, status")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!existing) {
+      toast.error("User is not a creator yet");
+      return;
+    }
+
+    if (existing.status === "verified" || existing.status === "verified_plus") {
+      toast.info("Already verified");
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("creator_verifications")
+      .update({ status: "verified", verified_by: user?.id, updated_at: new Date().toISOString() })
+      .eq("user_id", userId);
+
+    if (error) {
+      toast.error("Failed to verify: " + error.message);
+    } else {
+      invalidateCreatorCache(userId);
+      toast.success("Creator verified!");
+      fetchVideos();
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -79,13 +141,66 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   };
 
   const filteredVideos = useMemo(() => {
-    if (!searchQuery.trim()) return videos;
-    const q = searchQuery.toLowerCase();
-    return videos.filter(v =>
-      v.title.toLowerCase().includes(q) ||
-      v.profiles.username.toLowerCase().includes(q)
-    );
-  }, [videos, searchQuery]);
+    let result = videos;
+
+    // Filter by category
+    if (selectedCategory) {
+      result = result.filter(v => v.category === selectedCategory);
+    }
+
+    // Filter by search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(v =>
+        v.title.toLowerCase().includes(q) ||
+        v.profiles.username.toLowerCase().includes(q)
+      );
+    }
+
+    // If no category filter and no search, personalize by watch history
+    if (!selectedCategory && !searchQuery.trim() && Object.keys(userCategoryPrefs).length > 0) {
+      const totalViews = Object.values(userCategoryPrefs).reduce((a, b) => a + b, 0);
+      result = [...result].sort((a, b) => {
+        const aWeight = (userCategoryPrefs[a.category] || 0) / totalViews;
+        const bWeight = (userCategoryPrefs[b.category] || 0) / totalViews;
+        // Keep existing priority sort but boost preferred categories
+        return bWeight - aWeight;
+      });
+    }
+
+    return result;
+  }, [videos, searchQuery, selectedCategory, userCategoryPrefs]);
+
+  const handleSelectVideo = (video: Video) => {
+    setSelectedVideo(video);
+    // Track category view
+    trackCategoryView(video.category);
+  };
+
+  const trackCategoryView = async (category: string) => {
+    const { data: existing } = await supabase
+      .from("video_category_views")
+      .select("id, view_count")
+      .eq("user_id", currentUserId)
+      .eq("category", category)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("video_category_views")
+        .update({ view_count: existing.view_count + 1, updated_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    } else {
+      await supabase
+        .from("video_category_views")
+        .insert({ user_id: currentUserId, category, view_count: 1 });
+    }
+
+    setUserCategoryPrefs(prev => ({
+      ...prev,
+      [category]: (prev[category] || 0) + 1,
+    }));
+  };
 
   if (selectedVideo) {
     return (
@@ -104,7 +219,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
         <VideoUploadDialog userId={currentUserId} onUploaded={fetchVideos} />
       </div>
 
-      <div className="px-3 pt-2 pb-1 shrink-0">
+      <div className="px-3 pt-2 pb-1 shrink-0 space-y-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -118,6 +233,27 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
               <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
             </button>
           )}
+        </div>
+
+        {/* Category filter chips */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+          <Badge
+            variant={selectedCategory === null ? "default" : "outline"}
+            className="cursor-pointer shrink-0 text-xs"
+            onClick={() => setSelectedCategory(null)}
+          >
+            All
+          </Badge>
+          {VIDEO_CATEGORIES.map((cat) => (
+            <Badge
+              key={cat.value}
+              variant={selectedCategory === cat.value ? "default" : "outline"}
+              className="cursor-pointer shrink-0 text-xs"
+              onClick={() => setSelectedCategory(selectedCategory === cat.value ? null : cat.value)}
+            >
+              {cat.icon} {cat.label}
+            </Badge>
+          ))}
         </div>
       </div>
 
@@ -138,7 +274,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
               <div
                 key={video.id}
                 className="rounded-xl overflow-hidden border border-border bg-card cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => setSelectedVideo(video)}
+                onClick={() => handleSelectVideo(video)}
               >
                 {/* Thumbnail */}
                 <div className="relative aspect-video bg-muted">
@@ -153,6 +289,10 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                       <Play className="h-10 w-10 text-muted-foreground" />
                     </div>
                   )}
+                  {/* Category badge on thumbnail */}
+                  <span className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                    {getCategoryIcon(video.category)} {video.category}
+                  </span>
                 </div>
 
                 {/* Info */}
@@ -169,6 +309,17 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                       <StaffBadge userId={video.user_id} size={12} />
                       <CreatorBadge userId={video.user_id} size={12} />
                       <span className="text-xs text-muted-foreground truncate">{video.profiles.username}</span>
+                      {isStaff && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 ml-auto shrink-0"
+                          onClick={(e) => handleVerifyCreator(video.user_id, e)}
+                          title="Verify Creator"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5 text-amber-500" />
+                        </Button>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
                       <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" /> {video.views_count}</span>
