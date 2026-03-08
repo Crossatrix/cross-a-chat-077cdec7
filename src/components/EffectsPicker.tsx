@@ -300,15 +300,28 @@ const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel, 
           </TabsContent>
         </Tabs>
         
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-border space-y-2">
+          {canSendSystemMessage && (
+            <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/30">
+              <Checkbox
+                id="system-message"
+                checked={sendAsSystem}
+                onCheckedChange={(checked) => setSendAsSystem(checked === true)}
+              />
+              <Label htmlFor="system-message" className="text-xs font-medium flex items-center gap-1 cursor-pointer">
+                <Megaphone className="h-3.5 w-3.5 text-amber-500" />
+                Send as System Message
+              </Label>
+            </div>
+          )}
           <Button 
             onClick={handleApply} 
             disabled={!text.trim() || !hasSelection}
             className="w-full"
             size="sm"
           >
-            <Check className="h-4 w-4 mr-1" />
-            Apply Effects
+            {sendAsSystem ? <Megaphone className="h-4 w-4 mr-1" /> : <Check className="h-4 w-4 mr-1" />}
+            {sendAsSystem ? "Send System Message" : "Apply Effects"}
           </Button>
         </div>
       </PopoverContent>
