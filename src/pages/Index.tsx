@@ -561,14 +561,21 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       videoUrl = publicUrl;
     }
 
-    const { error } = await supabase.from("messages").insert({
+    const messagePayload: any = {
       user_id: user.id,
       content,
       conversation_id: selectedConversationId,
       image_url: imageUrl,
       voice_url: voiceUrl,
       video_url: videoUrl,
-    });
+    };
+
+    if (isSystemMessage && isModerator) {
+      messagePayload.is_system = true;
+      messagePayload.system_type = 'announcement';
+    }
+
+    const { error } = await supabase.from("messages").insert(messagePayload);
 
     if (error) {
       if (import.meta.env.DEV) {
