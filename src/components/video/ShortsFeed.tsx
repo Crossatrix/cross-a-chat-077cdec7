@@ -513,6 +513,27 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Report Dialog */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Video</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="Describe why you're reporting this video..."
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleReportVideo} disabled={!reportReason.trim() || reporting}>
+              {reporting ? "Submitting..." : "Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
