@@ -168,12 +168,11 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
         {/* Profile header */}
         <div className="p-4 space-y-4">
           <div className="flex items-start gap-4">
-            <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
-              <AvatarImage src={profile.avatar_url || ""} />
-              <AvatarFallback className="bg-secondary text-foreground text-xl">
-                {profile.username?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <FeaturedAvatar
+              userId={creatorId}
+              avatarUrl={profile.avatar_url}
+              username={profile.username}
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <StaffBadge userId={creatorId} size={18} />

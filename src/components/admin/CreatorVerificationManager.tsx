@@ -42,17 +42,20 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
       .select("*, profiles(username, avatar_url)")
       .order("created_at", { ascending: false });
 
-    const { data: officials } = await supabase
-      .from("official_accounts")
-      .select("user_id");
+    const [{ data: officials }, { data: featured }] = await Promise.all([
+      supabase.from("official_accounts").select("user_id"),
+      supabase.from("featured_creators").select("user_id, tier"),
+    ]);
 
     const officialIds = new Set(officials?.map(o => o.user_id) || []);
+    const featuredMap = new Map(featured?.map(f => [f.user_id, f.tier as FeaturedTier]) || []);
 
     if (data) {
       setCreators(
         (data as unknown as CreatorEntry[]).map(c => ({
           ...c,
           isOfficial: officialIds.has(c.user_id),
+          featuredTier: featuredMap.get(c.user_id) ?? null,
         }))
       );
     }
