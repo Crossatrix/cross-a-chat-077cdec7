@@ -43,6 +43,8 @@ const Admin = () => {
   const currentVersion = useAppVersion();
   const [editVersion, setEditVersion] = useState("");
   const [savingVersion, setSavingVersion] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [togglingMaintenance, setTogglingMaintenance] = useState(false);
 
   useEffect(() => {
     if (currentVersion) setEditVersion(currentVersion);
