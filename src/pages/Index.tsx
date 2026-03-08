@@ -71,7 +71,7 @@ const Index = () => {
 const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts">("chats");
+  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "leaderboard">("chats");
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const navigate = useNavigate();
 
