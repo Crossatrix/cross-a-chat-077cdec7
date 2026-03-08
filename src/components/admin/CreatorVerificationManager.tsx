@@ -17,6 +17,7 @@ interface CreatorEntry {
   status: string;
   profiles: { username: string; avatar_url: string | null };
   isOfficial?: boolean;
+  featuredTier?: FeaturedTier | null;
 }
 
 interface CreatorVerificationManagerProps {
