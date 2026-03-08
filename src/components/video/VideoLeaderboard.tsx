@@ -24,12 +24,13 @@ interface LeaderboardVideo {
 interface VideoLeaderboardProps {
   onSelectVideo?: (videoId: string) => void;
   onCreatorClick?: (creatorId: string) => void;
+  fullPage?: boolean;
 }
 
-const VideoLeaderboard = ({ onSelectVideo, onCreatorClick }: VideoLeaderboardProps) => {
+const VideoLeaderboard = ({ onSelectVideo, onCreatorClick, fullPage }: VideoLeaderboardProps) => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardVideo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(fullPage || false);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -88,7 +89,7 @@ const VideoLeaderboard = ({ onSelectVideo, onCreatorClick }: VideoLeaderboardPro
   if (loading) return null;
   if (leaderboard.length === 0) return null;
 
-  const displayItems = expanded ? leaderboard : leaderboard.slice(0, 3);
+  const displayItems = (expanded || fullPage) ? leaderboard : leaderboard.slice(0, 3);
 
   return (
     <div className="mx-3 mb-3">

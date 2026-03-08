@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -29,6 +29,7 @@ import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
+import VideoLeaderboard from "@/components/video/VideoLeaderboard";
 import ForYouFeed from "@/components/video/ForYouFeed";
 import CreatorProfile from "@/components/video/CreatorProfile";
 
@@ -71,7 +72,7 @@ const Index = () => {
 const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts">("chats");
+  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "leaderboard">("chats");
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -1029,6 +1030,15 @@ return (
           <Zap className="h-5 w-5" />
           <span>Shorts</span>
         </button>
+        <button
+          onClick={() => { setActiveTab("leaderboard"); setSelectedConversationId(null); }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            activeTab === "leaderboard" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Trophy className="h-5 w-5" />
+          <span>Top 10</span>
+        </button>
       </div>
 
       {creatorProfileId ? (
@@ -1051,6 +1061,16 @@ return (
       ) : activeTab === "shorts" ? (
         <div className="flex-1 min-h-0">
           <ShortsFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
+        </div>
+      ) : activeTab === "leaderboard" ? (
+        <div className="flex-1 min-h-0 overflow-auto">
+          <VideoLeaderboard
+            onSelectVideo={(videoId) => {
+              setActiveTab("videos");
+            }}
+            onCreatorClick={(id) => setCreatorProfileId(id)}
+            fullPage
+          />
         </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">
