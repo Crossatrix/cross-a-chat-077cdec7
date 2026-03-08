@@ -231,6 +231,11 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   };
 
   const handleSelectVideo = (video: Video) => {
+    if (video.adults_only && !ageVerified) {
+      setPendingAdultVideo(video);
+      setAgeVerifyOpen(true);
+      return;
+    }
     setSelectedVideo(video);
     trackCategoryView(video.category);
   };
