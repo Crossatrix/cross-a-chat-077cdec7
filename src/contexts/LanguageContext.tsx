@@ -87,8 +87,8 @@ const translations: Translations = {
   "ai.chatCreated": { en: "AI chat created successfully", de: "AI-Chat erfolgreich erstellt" },
   "ai.createFailed": { en: "Failed to create AI chat", de: "AI-Chat konnte nicht erstellt werden" },
   "ai.enterChatName": { en: "Please enter a name for your AI chat", de: "Bitte Namen für AI-Chat eingeben" },
-  "ai.limitReached": { en: "You can only have up to 5 AI chat conversations", de: "Sie können maximal 5 AI-Chats haben" },
-  "ai.checkFailed": { en: "Failed to check AI chat limit", de: "Prüfung des AI-Chat-Limits fehlgeschlagen" },
+  "ai.limitReached": { en: "", de: "" },
+  "ai.checkFailed": { en: "", de: "" },
   
   // Group Chats
   "group.create": { en: "Create Group", de: "Gruppe erstellen" },
