@@ -477,7 +477,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     }
   };
 
-  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File, generateImage?: boolean) => {
+  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File, generateImage?: boolean, isSystemMessage?: boolean) => {
     if (!user || !selectedConversationId) return;
 
     setIsSendingMessage(true);
