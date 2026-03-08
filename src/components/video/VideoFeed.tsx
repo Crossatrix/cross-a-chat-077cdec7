@@ -100,8 +100,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     setLoading(false);
   };
 
-  const handleVerifyCreator = async (userId: string, status: "verified" | "verified_plus", e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleVerifyCreator = async (userId: string, status: "verified" | "verified_plus") => {
     const { data: existing } = await supabase
       .from("creator_verifications")
       .select("id, status")
@@ -109,7 +108,18 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       .maybeSingle();
 
     if (!existing) {
-      toast.error("User is not a creator yet");
+      // Auto-create creator entry if not exists
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: insertErr } = await supabase
+        .from("creator_verifications")
+        .insert({ user_id: userId, status, verified_by: user?.id });
+      if (insertErr) {
+        toast.error("Failed to verify: " + insertErr.message);
+      } else {
+        invalidateCreatorCache(userId);
+        toast.success(`Creator set to ${status === "verified_plus" ? "Verified+" : "Verified"}!`);
+        fetchVideos();
+      }
       return;
     }
 
