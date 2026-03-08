@@ -275,6 +275,8 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       const staffRoles = ['moderator_lite', 'moderator', 'elder_moderator', 'admin'];
       const hasStaffRole = (roles || []).some(r => staffRoles.includes(r.role));
       setIsStaff(hasStaffRole);
+      const modRoles = ['moderator', 'elder_moderator', 'admin'];
+      setIsModerator((roles || []).some(r => modRoles.includes(r.role)));
 
       // Fetch AI credits
       fetchAiCredits();
