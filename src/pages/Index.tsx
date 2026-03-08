@@ -1021,17 +1021,26 @@ return (
         </button>
       </div>
 
-      {activeTab === "videos" ? (
+      {creatorProfileId ? (
+        <div className="flex-1 min-h-0">
+          <CreatorProfile
+            creatorId={creatorProfileId}
+            currentUserId={user.id}
+            onBack={() => setCreatorProfileId(null)}
+            onSelectVideo={() => setCreatorProfileId(null)}
+          />
+        </div>
+      ) : activeTab === "videos" ? (
         <div className="flex-1 min-h-0">
           <VideoFeed currentUserId={user.id} />
         </div>
       ) : activeTab === "foryou" ? (
         <div className="flex-1 min-h-0">
-          <ForYouFeed currentUserId={user.id} />
+          <ForYouFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
         </div>
       ) : activeTab === "shorts" ? (
         <div className="flex-1 min-h-0">
-          <ShortsFeed currentUserId={user.id} />
+          <ShortsFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
         </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">
