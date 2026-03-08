@@ -94,6 +94,20 @@ const Maintenance = () => {
                 </div>
               ))}
             </div>
+            <div className="space-y-2">
+              <Progress value={(() => {
+                const totalMs = 24 * 60 * 60 * 1000;
+                const remaining = Math.max(0, new Date(maintenanceUntil).getTime() - Date.now());
+                return Math.min(100, ((totalMs - remaining) / totalMs) * 100);
+              })()} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {Math.round((() => {
+                  const totalMs = 24 * 60 * 60 * 1000;
+                  const remaining = Math.max(0, new Date(maintenanceUntil).getTime() - Date.now());
+                  return Math.min(100, ((totalMs - remaining) / totalMs) * 100);
+                })())}% complete
+              </p>
+            </div>
           </div>
         )}
 
