@@ -188,6 +188,46 @@ const Settings = () => {
     setNotInterestedItems(prev => prev.filter(i => i.id !== id));
   };
 
+  const loadBlockedCategories = async () => {
+    setLoadingBlockedCategories(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("blocked_categories" as any)
+        .select("category")
+        .eq("user_id", user.id);
+      setBlockedCategories((data || []).map((d: any) => d.category));
+    } catch (error) {
+      console.error("Error loading blocked categories:", error);
+    } finally {
+      setLoadingBlockedCategories(false);
+    }
+  };
+
+  const handleToggleBlockCategory = async (category: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    if (blockedCategories.includes(category)) {
+      const { error } = await supabase
+        .from("blocked_categories" as any)
+        .delete()
+        .eq("user_id", user.id)
+        .eq("category", category);
+      if (error) { toast.error("Failed to unblock category"); return; }
+      setBlockedCategories(prev => prev.filter(c => c !== category));
+      toast.success(`Unblocked ${category}`);
+    } else {
+      const { error } = await supabase
+        .from("blocked_categories" as any)
+        .insert({ user_id: user.id, category });
+      if (error) { toast.error("Failed to block category"); return; }
+      setBlockedCategories(prev => [...prev, category]);
+      toast.success(`Blocked ${category} from your feed`);
+    }
+  };
+
   const handleClearAllNotInterested = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
