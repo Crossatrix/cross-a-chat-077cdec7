@@ -153,6 +153,85 @@ const FilePreview = ({ file, onDelete, onAction, emojiCategories = [], onRefresh
     );
   }
 
+  // Video Report preview
+  if (file.data?.type === "video_report") {
+    const report = data;
+    return (
+      <div className="h-full bg-card border border-border rounded-lg p-4 overflow-auto">
+        <div className="font-mono text-sm whitespace-pre-wrap text-foreground space-y-4">
+          <div className="border-b border-border pb-2">
+            <p className="text-muted-foreground text-xs">VIDEO REPORT</p>
+            <h3 className="font-bold">{file.name}.txt</h3>
+          </div>
+          <div className="space-y-2">
+            <p><span className="text-muted-foreground">Reporter:</span> @{report.reporter_username}</p>
+            <p><span className="text-muted-foreground">Video:</span> {report.video_title}</p>
+            <p><span className="text-muted-foreground">Status:</span> <Badge variant={report.status === "pending" ? "default" : "secondary"}>{report.status}</Badge></p>
+            <p><span className="text-muted-foreground">Date:</span> {new Date(report.created_at).toLocaleString()}</p>
+          </div>
+          {report.video_url && (
+            <div className="border-t border-border pt-2">
+              <p className="text-muted-foreground mb-1">Video:</p>
+              <video src={report.video_url} controls className="w-full max-h-48 rounded bg-black" />
+            </div>
+          )}
+          <div className="border-t border-border pt-2">
+            <p className="text-muted-foreground mb-1">Reason:</p>
+            <p className="bg-secondary p-2 rounded">{report.reason}</p>
+          </div>
+          {report.ai_reviewed && (
+            <div className="border-t border-border pt-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Bot className="w-4 h-4" />
+                <span className="text-muted-foreground">AI Review:</span>
+                {report.ai_verdict === 'likely_violation' ? (
+                  <Badge variant="destructive">Likely Violation</Badge>
+                ) : report.ai_verdict === 'needs_review' ? (
+                  <Badge className="bg-yellow-500/20 text-yellow-300">Needs Review</Badge>
+                ) : (
+                  <Badge className="bg-green-500/20 text-green-300">No Violation</Badge>
+                )}
+              </div>
+              {report.ai_reason && <p className="text-sm">{report.ai_reason}</p>}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+            {!report.ai_reviewed && (
+              <Button variant="outline" size="sm" onClick={() => onAction?.("ai_video_review", file)}>
+                <Bot className="h-4 w-4 mr-2" />AI Review
+              </Button>
+            )}
+            {report.status === "pending" && (
+              <Button variant="secondary" size="sm" onClick={() => onAction?.("resolve_video_report", file)}>
+                <CheckCircle2 className="h-4 w-4 mr-2" />Resolve
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => onAction?.("dismiss_video_report", file)}>
+              <XCircle className="h-4 w-4 mr-2" />Dismiss
+            </Button>
+            {CAN.deleteReports(staffRole) && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm"><Trash2 className="h-4 w-4 mr-2" />Delete</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete video report?</AlertDialogTitle>
+                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(file)}>{t("common.delete")}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Report file preview
   if (file.data?.type === "report") {
     const report = data;
