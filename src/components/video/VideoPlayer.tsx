@@ -102,7 +102,14 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
     setIsFollowing(!!data);
   };
 
-  const handleLike = async (isLike: boolean) => {
+  const fetchFollowerCount = async () => {
+    const { count } = await supabase
+      .from("video_follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", video.user_id);
+    setFollowerCount(count ?? 0);
+  };
+
     const prevLike = userLike;
 
     if (prevLike === isLike) {
