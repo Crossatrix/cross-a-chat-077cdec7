@@ -44,11 +44,14 @@ const Settings = () => {
     video?: { title: string; thumbnail_url: string | null };
   }>>([]);
   const [loadingNotInterested, setLoadingNotInterested] = useState(false);
+  const [blockedCategories, setBlockedCategories] = useState<string[]>([]);
+  const [loadingBlockedCategories, setLoadingBlockedCategories] = useState(false);
 
   useEffect(() => {
     loadProfile();
     loadGroupBlockedUsers();
     loadNotInterested();
+    loadBlockedCategories();
   }, []);
 
   const loadProfile = async () => {
