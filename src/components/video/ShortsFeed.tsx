@@ -456,6 +456,39 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
             {short.user_id !== currentUserId && (
               <button
                 className="flex flex-col items-center gap-0.5"
+                onClick={async () => {
+                  const cat = short.category || "other";
+                  const { error } = await supabase.from("blocked_categories" as any).insert({
+                    user_id: currentUserId,
+                    category: cat,
+                  });
+                  if (error && error.code === "23505") {
+                    toast.info("Category already blocked");
+                    return;
+                  }
+                  if (error) {
+                    toast.error("Failed to block category");
+                    return;
+                  }
+                  toast(`Blocked ${getCategoryLabel(cat)}`, {
+                    action: {
+                      label: "Undo",
+                      onClick: async () => {
+                        await supabase.from("blocked_categories" as any).delete().eq("user_id", currentUserId).eq("category", cat);
+                        toast.success("Unblocked category");
+                      },
+                    },
+                  });
+                }}
+              >
+                <div className="p-2 rounded-full bg-black/40 text-white">
+                  <Ban className="h-5 w-5" />
+                </div>
+              </button>
+            )}
+            {short.user_id !== currentUserId && (
+              <button
+                className="flex flex-col items-center gap-0.5"
                 onClick={() => { setReportVideoId(short.id); setReportOpen(true); }}
               >
                 <div className="p-2 rounded-full bg-black/40 text-white">

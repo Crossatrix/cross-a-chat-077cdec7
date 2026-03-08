@@ -310,6 +310,38 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                     variant="outline"
                     size="sm"
                     className="gap-1"
+                    onClick={async () => {
+                      const cat = (video as any).category || "other";
+                      const { error } = await supabase.from("blocked_categories" as any).insert({
+                        user_id: currentUserId,
+                        category: cat,
+                      });
+                      if (error && error.code === "23505") {
+                        toast.info("Category already blocked");
+                        return;
+                      }
+                      if (error) {
+                        toast.error("Failed to block category");
+                        return;
+                      }
+                      toast(`Blocked ${getCategoryLabel(cat)}`, {
+                        action: {
+                          label: "Undo",
+                          onClick: async () => {
+                            await supabase.from("blocked_categories" as any).delete().eq("user_id", currentUserId).eq("category", cat);
+                            toast.success("Unblocked category");
+                          },
+                        },
+                      });
+                      onBack();
+                    }}
+                  >
+                    <Ban className="h-4 w-4" /> Block Category
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
                     onClick={() => setReportOpen(true)}
                   >
                     <Flag className="h-4 w-4" /> Report
