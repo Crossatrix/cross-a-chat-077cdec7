@@ -6,12 +6,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2, Flag, EyeOff, Ban } from "lucide-react";
+import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2, Flag, EyeOff, Ban, ShieldAlert } from "lucide-react";
 import { getCategoryLabel, getCategoryIcon } from "@/utils/videoCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
+import AgeVerificationDialog from "./AgeVerificationDialog";
 
 interface Short {
   id: string;
@@ -25,6 +26,7 @@ interface Short {
   comments_count: number;
   created_at: string;
   category: string;
+  adults_only?: boolean;
   profiles: { username: string; avatar_url: string | null };
 }
 
@@ -62,10 +64,22 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const viewedSet = useRef<Set<string>>(new Set());
+  const [ageVerified, setAgeVerified] = useState(false);
+  const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
 
   useEffect(() => {
     fetchShorts();
+    checkAgeVerification();
   }, []);
+
+  const checkAgeVerification = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("age_verified")
+      .eq("id", currentUserId)
+      .single();
+    if (data) setAgeVerified(!!(data as any).age_verified);
+  };
 
   const fetchShorts = async () => {
     setLoading(true);
@@ -163,19 +177,24 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   useEffect(() => {
     videoRefs.current.forEach((video, i) => {
       if (!video) return;
+      const short = shorts[i];
       if (i === currentIndex) {
-        video.play().catch(() => {});
-        if (!viewedSet.current.has(shorts[i]?.id)) {
-          viewedSet.current.add(shorts[i]?.id);
-          supabase.from("videos").update({ views_count: shorts[i].views_count + 1 }).eq("id", shorts[i].id);
-          // Track category view
-          trackCategoryView(shorts[i].category);
+        // Don't autoplay adult content for unverified users
+        if (short?.adults_only && !ageVerified) {
+          video.pause();
+        } else {
+          video.play().catch(() => {});
+        }
+        if (!viewedSet.current.has(short?.id)) {
+          viewedSet.current.add(short?.id);
+          supabase.from("videos").update({ views_count: short.views_count + 1 }).eq("id", short.id);
+          trackCategoryView(short.category);
         }
       } else {
         video.pause();
       }
     });
-  }, [currentIndex, shorts]);
+  }, [currentIndex, shorts, ageVerified]);
 
   const trackCategoryView = async (category: string) => {
     const { data: existing } = await supabase
@@ -378,9 +397,25 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           />
 
           {/* Category badge */}
-          <span className="absolute top-3 left-3 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+          <span className="absolute top-3 left-3 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full z-10">
             {getCategoryIcon(short.category)} {short.category}
           </span>
+
+          {/* Age gate overlay for adult content */}
+          {short.adults_only && !ageVerified && (
+            <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center gap-3">
+              <ShieldAlert className="h-16 w-16 text-destructive" />
+              <h3 className="text-white text-xl font-bold">18+ Content</h3>
+              <p className="text-white/70 text-sm text-center px-8">This short contains adult content. Verify your age to watch.</p>
+              <Button
+                variant="destructive"
+                className="mt-2"
+                onClick={() => setAgeVerifyOpen(true)}
+              >
+                Verify Age
+              </Button>
+            </div>
+          )}
 
           {/* Right side action buttons */}
           <div className="absolute right-3 bottom-24 flex flex-col items-center gap-4">
@@ -600,6 +635,15 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Age Verification Dialog */}
+      <AgeVerificationDialog
+        open={ageVerifyOpen}
+        onOpenChange={setAgeVerifyOpen}
+        onVerified={() => {
+          setAgeVerified(true);
+          setAgeVerifyOpen(false);
+        }}
+      />
     </div>
   );
 };
