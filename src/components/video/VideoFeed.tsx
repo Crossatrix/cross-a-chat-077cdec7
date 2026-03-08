@@ -55,8 +55,10 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", currentUserId);
+    const roles = (data || []).map(r => r.role);
     const staffRoles = ["moderator", "elder_moderator", "admin"];
-    setIsStaff((data || []).some(r => staffRoles.includes(r.role)));
+    setIsStaff(roles.some(r => staffRoles.includes(r)));
+    setIsAdmin(roles.includes("admin"));
   };
 
   const fetchCategoryPrefs = async () => {
