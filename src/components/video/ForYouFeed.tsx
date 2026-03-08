@@ -41,6 +41,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
   const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
+  const [followedPosts, setFollowedPosts] = useState<any[]>([]);
 
   useEffect(() => {
     fetchForYou();
