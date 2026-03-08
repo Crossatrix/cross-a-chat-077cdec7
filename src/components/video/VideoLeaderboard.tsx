@@ -24,9 +24,10 @@ interface LeaderboardVideo {
 interface VideoLeaderboardProps {
   onSelectVideo?: (videoId: string) => void;
   onCreatorClick?: (creatorId: string) => void;
+  fullPage?: boolean;
 }
 
-const VideoLeaderboard = ({ onSelectVideo, onCreatorClick }: VideoLeaderboardProps) => {
+const VideoLeaderboard = ({ onSelectVideo, onCreatorClick, fullPage }: VideoLeaderboardProps) => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
