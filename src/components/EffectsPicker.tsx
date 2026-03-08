@@ -159,6 +159,7 @@ const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel, 
         setText("");
         setSelectedAnimations([]);
         setSelectedColor(null);
+        setSendAsSystem(false);
         onEditCancel?.();
       }
     }}>
