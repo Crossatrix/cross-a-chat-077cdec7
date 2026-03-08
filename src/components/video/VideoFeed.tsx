@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import VideoUploadDialog from "./VideoUploadDialog";
 import VideoPlayer from "./VideoPlayer";
