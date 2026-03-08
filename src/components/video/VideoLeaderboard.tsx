@@ -73,7 +73,7 @@ const VideoLeaderboard = ({ onSelectVideo, onCreatorClick }: VideoLeaderboardPro
   };
 
   const getRankIcon = (index: number) => {
-    if (index === 0) return <Crown className="h-5 w-5 text-yellow-500" />;
+    if (index === 0) return <img src={crownImg} alt="Crown" className="h-5 w-5 object-contain" />;
     if (index === 1) return <Medal className="h-5 w-5 text-gray-400" />;
     if (index === 2) return <Award className="h-5 w-5 text-amber-700" />;
     return <span className="text-xs font-bold text-muted-foreground w-5 text-center">#{index + 1}</span>;
