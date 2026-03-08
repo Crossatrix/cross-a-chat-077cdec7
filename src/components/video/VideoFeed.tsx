@@ -409,6 +409,11 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                   <span className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">
                     {getCategoryIcon(video.category)} {video.category}
                   </span>
+                  {video.adults_only && (
+                    <span className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                      <ShieldAlert className="h-3 w-3" /> 18+
+                    </span>
+                  )}
                 </div>
 
                 {/* Info */}
