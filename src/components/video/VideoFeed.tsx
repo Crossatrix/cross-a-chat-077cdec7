@@ -319,15 +319,30 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                       <CreatorBadge userId={video.user_id} size={12} />
                       <span className="text-xs text-muted-foreground truncate">{video.profiles.username}</span>
                       {isStaff && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 ml-auto shrink-0"
-                          onClick={(e) => handleVerifyCreator(video.user_id, e)}
-                          title="Verify Creator"
-                        >
-                          <CheckCircle className="h-3.5 w-3.5 text-amber-500" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 ml-auto shrink-0"
+                              title="Verify Creator"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5 text-amber-500" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem onClick={(e) => handleVerifyCreator(video.user_id, "verified", e)}>
+                              <ShieldCheck className="h-4 w-4 mr-2 text-amber-500" />
+                              Verified Creator
+                            </DropdownMenuItem>
+                            {isAdmin && (
+                              <DropdownMenuItem onClick={(e) => handleVerifyCreator(video.user_id, "verified_plus", e)}>
+                                <Star className="h-4 w-4 mr-2 text-pink-500" />
+                                Verified Creator+
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
