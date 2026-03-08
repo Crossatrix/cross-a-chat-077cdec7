@@ -194,11 +194,13 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
         {/* Profile header */}
         <div className="p-4 space-y-4">
           <div className="flex items-start gap-4">
-            <FeaturedAvatar
-              userId={creatorId}
-              avatarUrl={profile.avatar_url}
-              username={profile.username}
-            />
+            <div className="shrink-0 p-6 -m-6 overflow-visible">
+              <FeaturedAvatar
+                userId={creatorId}
+                avatarUrl={profile.avatar_url}
+                username={profile.username}
+              />
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <StaffBadge userId={creatorId} size={18} />
