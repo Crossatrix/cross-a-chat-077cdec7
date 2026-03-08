@@ -55,6 +55,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [username, setUsername] = useState<string>("");
   const [isStaff, setIsStaff] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedUsername, setSelectedUsername] = useState<string>("");
