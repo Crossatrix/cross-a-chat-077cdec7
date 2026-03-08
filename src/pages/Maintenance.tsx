@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Wrench, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 const Maintenance = () => {
   const [maintenanceUntil, setMaintenanceUntil] = useState<string | null>(null);
