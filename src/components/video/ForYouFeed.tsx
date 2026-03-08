@@ -140,8 +140,12 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     const totalCatViews = Object.values(prefMap).reduce((a, b) => a + b, 0) || 1;
 
     // Score each video
-    const scored = allVideos.map(video => {
+    const scored = filteredVideos.map(video => {
       let score = 0;
+
+      // Not-interested penalties (creator and category)
+      score -= (notInterestedCreators[video.user_id] || 0) * 4;
+      score -= (notInterestedCategories[video.category] || 0) * 2;
 
       // Creator signals (strongest: followed or liked creator)
       if (followedCreators.has(video.user_id)) score += 5;
