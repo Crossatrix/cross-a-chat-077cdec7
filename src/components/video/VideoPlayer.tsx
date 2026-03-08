@@ -248,6 +248,7 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
                   <CreatorBadge userId={video.user_id} size={16} />
                   <span className="font-medium text-sm truncate">{video.profiles.username}</span>
                 </div>
+                <p className="text-xs text-muted-foreground">{followerCount} {followerCount === 1 ? 'follower' : 'followers'}</p>
               </div>
               {video.user_id !== currentUserId && (
                 <Button
