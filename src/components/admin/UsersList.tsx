@@ -147,6 +147,31 @@ const UsersList = () => {
     fetchUsers();
   };
 
+  const handleToggleOfficial = async (userId: string, isCurrentlyOfficial: boolean) => {
+    if (isCurrentlyOfficial) {
+      const { error } = await supabase
+        .from("official_accounts")
+        .delete()
+        .eq("user_id", userId);
+      if (error) {
+        toast.error("Failed to remove official badge");
+        return;
+      }
+      toast.success("Official badge removed");
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("official_accounts")
+        .insert({ user_id: userId, granted_by: user?.id });
+      if (error) {
+        toast.error("Failed to grant official badge");
+        return;
+      }
+      toast.success("Official badge granted");
+    }
+    fetchUsers();
+  };
+
   if (loading) {
     return <p className="text-muted-foreground">Loading users...</p>;
   }
