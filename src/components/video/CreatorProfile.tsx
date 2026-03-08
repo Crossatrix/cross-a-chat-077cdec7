@@ -84,6 +84,8 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
     setFollowerCount(followers ?? 0);
     setFollowingCount(following ?? 0);
     setIsFollowing(!!followStatus);
+    setIsAdmin(!!adminRoles);
+    setFeaturedTier((featuredData?.tier as FeaturedTier) ?? "none");
     setLoading(false);
   };
 
