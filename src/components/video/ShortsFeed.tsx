@@ -422,6 +422,24 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
             {short.user_id !== currentUserId && (
               <button
                 className="flex flex-col items-center gap-0.5"
+                onClick={async () => {
+                  await supabase.from("video_not_interested" as any).insert({
+                    user_id: currentUserId,
+                    video_id: short.id,
+                    creator_id: short.user_id,
+                    category: short.category || "other",
+                  });
+                  toast.success("We'll show less content like this");
+                }}
+              >
+                <div className="p-2 rounded-full bg-black/40 text-white">
+                  <EyeOff className="h-5 w-5" />
+                </div>
+              </button>
+            )}
+            {short.user_id !== currentUserId && (
+              <button
+                className="flex flex-col items-center gap-0.5"
                 onClick={() => { setReportVideoId(short.id); setReportOpen(true); }}
               >
                 <div className="p-2 rounded-full bg-black/40 text-white">
