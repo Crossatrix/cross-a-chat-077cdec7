@@ -209,17 +209,33 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
                 <Calendar className="h-3 w-3" />
                 <span>Joined {formatDate(profile.created_at)}</span>
               </div>
-              {creatorId !== currentUserId && (
-                <Button
-                  variant={isFollowing ? "secondary" : "default"}
-                  size="sm"
-                  className="gap-1 mt-2"
-                  onClick={handleFollow}
-                >
-                  {isFollowing ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                  {isFollowing ? "Unfollow" : "Follow"}
-                </Button>
-              )}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {creatorId !== currentUserId && (
+                  <Button
+                    variant={isFollowing ? "secondary" : "default"}
+                    size="sm"
+                    className="gap-1"
+                    onClick={handleFollow}
+                  >
+                    {isFollowing ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Select value={featuredTier} onValueChange={handleSetFeatured}>
+                    <SelectTrigger className="w-28 h-8 text-xs">
+                      <Flame className="h-3 w-3 mr-1" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Fire</SelectItem>
+                      <SelectItem value="epic">🔥 Epic</SelectItem>
+                      <SelectItem value="legendary">💜 Legendary</SelectItem>
+                      <SelectItem value="mythic">💎 Mythic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </div>
           </div>
 
