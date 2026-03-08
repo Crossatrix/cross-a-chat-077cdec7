@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StaffBadge from "@/components/StaffBadge";
+import { formatMessageText } from "@/utils/textFormatting";
 import CreatorBadge from "./CreatorBadge";
 
 interface Video {
@@ -197,7 +198,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
           </div>
 
           {profile.bio && (
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{profile.bio}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{formatMessageText(profile.bio)}</p>
           )}
 
           {/* Stats row */}
