@@ -345,6 +345,11 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                     </span>
                   )}
                 </div>
+                <MessageReactions
+                  messageId={message.id}
+                  currentUserId={currentUserDbId}
+                  conversationId={conversationId}
+                />
               </div>
               </div>
             </div>
