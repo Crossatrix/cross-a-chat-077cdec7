@@ -3,9 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
 
 interface VideoUploadDialogProps {
   userId: string;
@@ -16,6 +18,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("other");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -70,6 +73,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         description: description.trim() || null,
         video_url: videoUrlData.publicUrl,
         thumbnail_url: thumbnailUrl,
+        category,
       });
 
       if (insertError) throw insertError;
@@ -77,6 +81,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
       toast.success("Video uploaded!");
       setTitle("");
       setDescription("");
+      setCategory("other");
       setVideoFile(null);
       setThumbnailFile(null);
       setThumbnailPreview(null);
@@ -113,6 +118,18 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
           />
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {VIDEO_CATEGORIES.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.icon} {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div>
             <input
               ref={videoInputRef}

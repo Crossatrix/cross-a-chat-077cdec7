@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { ThumbsUp, ThumbsDown, MessageCircle, UserPlus, UserMinus } from "lucide-react";
+import { ThumbsUp, ThumbsDown, UserPlus, UserMinus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
+import { getCategoryIcon } from "@/utils/videoCategories";
 
 interface Short {
   id: string;
@@ -17,6 +16,7 @@ interface Short {
   likes_count: number;
   dislikes_count: number;
   created_at: string;
+  category: string;
   profiles: { username: string; avatar_url: string | null };
 }
 
@@ -41,8 +41,6 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
 
   const fetchShorts = async () => {
     setLoading(true);
-    // Fetch shorts: videos under 3 minutes (180 seconds) with duration set, or all short-titled for now
-    // We'll fetch videos with duration <= 180 OR duration IS NULL (and let client filter)
     const { data } = await supabase
       .from("videos")
       .select("*, profiles(username, avatar_url)")
@@ -50,29 +48,37 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
       .order("created_at", { ascending: false });
 
     if (data) {
-      // Prioritize verified creators
-      const { data: verifications } = await supabase
-        .from("creator_verifications")
-        .select("user_id, status");
+      // Fetch verifications and user prefs in parallel
+      const [{ data: verifications }, { data: categoryPrefs }] = await Promise.all([
+        supabase.from("creator_verifications").select("user_id, status"),
+        supabase.from("video_category_views").select("category, view_count").eq("user_id", currentUserId),
+      ]);
 
       const verifiedMap = new Map<string, string>();
       verifications?.forEach(v => verifiedMap.set(v.user_id, v.status));
+
+      const prefMap: Record<string, number> = {};
+      categoryPrefs?.forEach(p => { prefMap[p.category] = p.view_count; });
+      const totalViews = Object.values(prefMap).reduce((a, b) => a + b, 0) || 1;
 
       const sorted = [...(data as unknown as Short[])].sort((a, b) => {
         const aStatus = verifiedMap.get(a.user_id) || "";
         const bStatus = verifiedMap.get(b.user_id) || "";
         const priority = (s: string) => s === "verified_plus" ? 3 : s === "verified" ? 2 : 0;
-        return priority(bStatus) - priority(aStatus);
+        const verifyScore = priority(bStatus) - priority(aStatus);
+        if (verifyScore !== 0) return verifyScore;
+        // Boost preferred categories
+        const aPref = (prefMap[a.category] || 0) / totalViews;
+        const bPref = (prefMap[b.category] || 0) / totalViews;
+        return bPref - aPref;
       });
 
       setShorts(sorted);
       
-      // Init local counts
       const counts: Record<string, { likes: number; dislikes: number }> = {};
       sorted.forEach(s => { counts[s.id] = { likes: s.likes_count, dislikes: s.dislikes_count }; });
       setLocalCounts(counts);
 
-      // Fetch user's likes for all shorts
       if (sorted.length > 0) {
         const { data: likes } = await supabase
           .from("video_likes")
@@ -85,7 +91,6 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
         setUserLikes(likesMap);
       }
 
-      // Fetch follows
       const uniqueCreators = [...new Set(sorted.map(s => s.user_id))];
       if (uniqueCreators.length > 0) {
         const { data: follows } = await supabase
@@ -102,7 +107,6 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
     setLoading(false);
   };
 
-  // Handle scroll snap
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
@@ -115,22 +119,42 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
     }
   }, [currentIndex, shorts.length]);
 
-  // Play/pause videos based on current index
   useEffect(() => {
     videoRefs.current.forEach((video, i) => {
       if (!video) return;
       if (i === currentIndex) {
         video.play().catch(() => {});
-        // Count view
         if (!viewedSet.current.has(shorts[i]?.id)) {
           viewedSet.current.add(shorts[i]?.id);
           supabase.from("videos").update({ views_count: shorts[i].views_count + 1 }).eq("id", shorts[i].id);
+          // Track category view
+          trackCategoryView(shorts[i].category);
         }
       } else {
         video.pause();
       }
     });
   }, [currentIndex, shorts]);
+
+  const trackCategoryView = async (category: string) => {
+    const { data: existing } = await supabase
+      .from("video_category_views")
+      .select("id, view_count")
+      .eq("user_id", currentUserId)
+      .eq("category", category)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("video_category_views")
+        .update({ view_count: existing.view_count + 1, updated_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    } else {
+      await supabase
+        .from("video_category_views")
+        .insert({ user_id: currentUserId, category, view_count: 1 });
+    }
+  };
 
   const handleLike = async (shortId: string, isLike: boolean) => {
     const prev = userLikes[shortId] ?? null;
@@ -160,7 +184,6 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
       }));
     }
 
-    // Sync server counts
     const { count: newLikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", shortId).eq("is_like", true);
     const { count: newDislikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", shortId).eq("is_like", false);
     await supabase.from("videos").update({ likes_count: newLikes ?? 0, dislikes_count: newDislikes ?? 0 }).eq("id", shortId);
@@ -222,9 +245,13 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
             }}
           />
 
+          {/* Category badge */}
+          <span className="absolute top-3 left-3 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+            {getCategoryIcon(short.category)} {short.category}
+          </span>
+
           {/* Right side action buttons */}
           <div className="absolute right-3 bottom-24 flex flex-col items-center gap-4">
-            {/* Like */}
             <button
               className="flex flex-col items-center gap-0.5"
               onClick={() => handleLike(short.id, true)}
@@ -235,7 +262,6 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
               <span className="text-white text-xs font-medium drop-shadow">{localCounts[short.id]?.likes || 0}</span>
             </button>
 
-            {/* Dislike */}
             <button
               className="flex flex-col items-center gap-0.5"
               onClick={() => handleLike(short.id, false)}
@@ -246,7 +272,6 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
               <span className="text-white text-xs font-medium drop-shadow">{localCounts[short.id]?.dislikes || 0}</span>
             </button>
 
-            {/* Follow */}
             {short.user_id !== currentUserId && (
               <button
                 className="flex flex-col items-center gap-0.5"
