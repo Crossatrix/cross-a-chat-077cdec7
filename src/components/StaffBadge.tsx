@@ -30,10 +30,20 @@ interface StaffBadgeProps {
 }
 
 const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
-  const [role, setRole] = useState<StaffRole | null>(roleCache.get(userId) ?? null);
-  const [loaded, setLoaded] = useState(roleCache.has(userId));
+  const [role, setRole] = useState<BadgeRole | null>(
+    userId === NOTIFICATIONS_SYSTEM_USER_ID ? "official" : (roleCache.get(userId) ?? null)
+  );
+  const [loaded, setLoaded] = useState(
+    userId === NOTIFICATIONS_SYSTEM_USER_ID || roleCache.has(userId)
+  );
 
   useEffect(() => {
+    if (userId === NOTIFICATIONS_SYSTEM_USER_ID) {
+      setRole("official");
+      setLoaded(true);
+      return;
+    }
+
     if (roleCache.has(userId)) {
       setRole(roleCache.get(userId)!);
       setLoaded(true);
@@ -68,11 +78,11 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
   return (
     <img
       src={ROLE_ICONS[role]}
-      alt={role}
+      alt={role === "official" ? "Official" : role}
       width={size}
       height={size}
       className="inline-block rounded-full"
-      title={role.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+      title={role === "official" ? "Official Account" : role.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
     />
   );
 };
