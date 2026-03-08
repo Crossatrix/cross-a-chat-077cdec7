@@ -15,7 +15,7 @@ interface CustomEmoji {
 }
 
 interface MessageInputProps {
-  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean) => Promise<void> | void;
+  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean, isSystemMessage?: boolean) => Promise<void> | void;
   disabled?: boolean;
   isAIChat?: boolean;
   onModelChange?: (model: string) => void;
@@ -24,6 +24,7 @@ interface MessageInputProps {
   aiCredits?: number;
   onCreditsUpdate?: () => void;
   isSending?: boolean;
+  canSendSystemMessage?: boolean;
 }
 
 const messageSchema = z.string()
