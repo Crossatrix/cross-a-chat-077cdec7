@@ -26,9 +26,10 @@ interface Video {
 
 interface ForYouFeedProps {
   currentUserId: string;
+  onCreatorClick?: (creatorId: string) => void;
 }
 
-const ForYouFeed = ({ currentUserId }: ForYouFeedProps) => {
+const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
