@@ -44,6 +44,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
   const [recordingTime, setRecordingTime] = useState(0);
   const [generateImage, setGenerateImage] = useState(false);
   const [editingEffect, setEditingEffect] = useState<EffectTagInfo | null>(null);
+  const [pendingSystemMessage, setPendingSystemMessage] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
