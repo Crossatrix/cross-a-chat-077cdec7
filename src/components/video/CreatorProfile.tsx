@@ -198,7 +198,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
           </div>
 
           {profile.bio && (
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{profile.bio}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{formatMessageText(profile.bio)}</p>
           )}
 
           {/* Stats row */}
