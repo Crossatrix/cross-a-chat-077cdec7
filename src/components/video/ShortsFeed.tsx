@@ -36,9 +36,10 @@ interface Comment {
 
 interface ShortsFeedProps {
   currentUserId: string;
+  onCreatorClick?: (creatorId: string) => void;
 }
 
-const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
+const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const [shorts, setShorts] = useState<Short[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
