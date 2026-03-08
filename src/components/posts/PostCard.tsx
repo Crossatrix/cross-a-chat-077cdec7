@@ -264,6 +264,14 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
           onCreatorClick={onCreatorClick}
         />
       )}
+
+      {/* Edit Dialog */}
+      <EditPostDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        post={post}
+        onUpdated={() => onDeleted?.()}
+      />
     </div>
   );
 };
