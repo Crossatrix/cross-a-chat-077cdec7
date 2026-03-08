@@ -5,12 +5,18 @@ import adminIcon from "@/assets/roles/admin.jpeg";
 import elderModIcon from "@/assets/roles/elder_moderator.jpeg";
 import moderatorIcon from "@/assets/roles/moderator.jpeg";
 import modLiteIcon from "@/assets/roles/moderator_lite.jpeg";
+import officialIcon from "@/assets/roles/official_notifications.png";
 
-const ROLE_ICONS: Record<StaffRole, string> = {
+const NOTIFICATIONS_SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
+
+type BadgeRole = StaffRole | "official";
+
+const ROLE_ICONS: Record<BadgeRole, string> = {
   admin: adminIcon,
   elder_moderator: elderModIcon,
   moderator: moderatorIcon,
   moderator_lite: modLiteIcon,
+  official: officialIcon,
 };
 
 const ROLE_PRIORITY: StaffRole[] = ["admin", "elder_moderator", "moderator", "moderator_lite"];
@@ -24,10 +30,20 @@ interface StaffBadgeProps {
 }
 
 const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
-  const [role, setRole] = useState<StaffRole | null>(roleCache.get(userId) ?? null);
-  const [loaded, setLoaded] = useState(roleCache.has(userId));
+  const [role, setRole] = useState<BadgeRole | null>(
+    userId === NOTIFICATIONS_SYSTEM_USER_ID ? "official" : (roleCache.get(userId) ?? null)
+  );
+  const [loaded, setLoaded] = useState(
+    userId === NOTIFICATIONS_SYSTEM_USER_ID || roleCache.has(userId)
+  );
 
   useEffect(() => {
+    if (userId === NOTIFICATIONS_SYSTEM_USER_ID) {
+      setRole("official");
+      setLoaded(true);
+      return;
+    }
+
     if (roleCache.has(userId)) {
       setRole(roleCache.get(userId)!);
       setLoaded(true);
@@ -62,11 +78,11 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
   return (
     <img
       src={ROLE_ICONS[role]}
-      alt={role}
+      alt={role === "official" ? "Official" : role}
       width={size}
       height={size}
       className="inline-block rounded-full"
-      title={role.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+      title={role === "official" ? "Official Account" : role.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
     />
   );
 };
