@@ -17,6 +17,7 @@ interface Post {
   dislikes_count: number;
   comments_count: number;
   created_at: string;
+  updated_at: string;
   profiles: { username: string; avatar_url: string | null };
 }
 
