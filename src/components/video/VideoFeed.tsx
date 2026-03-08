@@ -358,15 +358,19 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenuItem onSelect={() => handleVerifyCreator(video.user_id, "verified")}>
-                              <ShieldCheck className="h-4 w-4 mr-2 text-amber-500" />
+                              <ShieldCheck className="h-4 w-4 mr-2 text-pink-500" />
                               Verified Creator
                             </DropdownMenuItem>
                             {isAdmin && (
                               <DropdownMenuItem onSelect={() => handleVerifyCreator(video.user_id, "verified_plus")}>
-                                <Star className="h-4 w-4 mr-2 text-pink-500" />
+                                <Star className="h-4 w-4 mr-2 text-amber-500" />
                                 Verified Creator+
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem onSelect={() => handleUnverifyCreator(video.user_id)}>
+                              <XCircle className="h-4 w-4 mr-2 text-destructive" />
+                              Unverify
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
