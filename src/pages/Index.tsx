@@ -30,6 +30,7 @@ import { requestNotificationPermission, registerServiceWorker, showNotification 
 import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
 import ForYouFeed from "@/components/video/ForYouFeed";
+import CreatorProfile from "@/components/video/CreatorProfile";
 
 interface Message {
   id: string;
