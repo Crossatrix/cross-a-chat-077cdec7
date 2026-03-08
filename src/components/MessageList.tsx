@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Edit2, Check, X } from "lucide-react";
 import UserActionsMenu from "./UserActionsMenu";
+import MessageReactions from "./MessageReactions";
 import TypingIndicator from "./TypingIndicator";
 import StaffBadge from "./StaffBadge";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
@@ -213,7 +214,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                 </div>
               )}
               <div
-                className={`flex gap-3 ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}
+                className={`flex gap-3 group ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}
               >
               <div className="flex items-start gap-1 md:gap-2">
                 <Avatar className="h-6 w-6 md:h-8 md:w-8 border-2 border-primary">
@@ -344,6 +345,11 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                     </span>
                   )}
                 </div>
+                <MessageReactions
+                  messageId={message.id}
+                  currentUserId={currentUserDbId}
+                  conversationId={conversationId}
+                />
               </div>
               </div>
             </div>
