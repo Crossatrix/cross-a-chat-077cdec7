@@ -22,10 +22,11 @@ interface Effect {
 }
 
 interface EffectsPickerProps {
-  onEffectSelect: (tag: string) => void;
+  onEffectSelect: (tag: string, asSystemMessage?: boolean) => void;
   disabled?: boolean;
   editingEffect?: EffectTagInfo | null;
   onEditCancel?: () => void;
+  canSendSystemMessage?: boolean;
 }
 
 const animations: Effect[] = [
