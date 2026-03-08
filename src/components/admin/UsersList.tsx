@@ -188,8 +188,14 @@ const UsersList = () => {
                   Joined {new Date(user.created_at).toLocaleDateString()}
                 </CardDescription>
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap items-center">
                 {user.isAdmin && <Badge variant="default">Admin</Badge>}
+                {user.isOfficial && (
+                  <Badge variant="outline" className="gap-1">
+                    <img src={officialIcon} alt="Official" className="h-3.5 w-3.5 rounded-full" />
+                    Official
+                  </Badge>
+                )}
                 {user.banned ? (
                   user.banExpiresAt ? (
                     <Badge variant="destructive">
