@@ -5,15 +5,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Award } from "lucide-react";
 import CreatorBadge, { invalidateCreatorCache } from "@/components/video/CreatorBadge";
 import { StaffRole, isAtLeast } from "@/utils/roleConfig";
+import officialIcon from "@/assets/roles/official_notifications.png";
 
 interface CreatorEntry {
   id: string;
   user_id: string;
   status: string;
   profiles: { username: string; avatar_url: string | null };
+  isOfficial?: boolean;
 }
 
 interface CreatorVerificationManagerProps {
@@ -37,12 +39,25 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
       .from("creator_verifications")
       .select("*, profiles(username, avatar_url)")
       .order("created_at", { ascending: false });
-    if (data) setCreators(data as unknown as CreatorEntry[]);
+
+    const { data: officials } = await supabase
+      .from("official_accounts")
+      .select("user_id");
+
+    const officialIds = new Set(officials?.map(o => o.user_id) || []);
+
+    if (data) {
+      setCreators(
+        (data as unknown as CreatorEntry[]).map(c => ({
+          ...c,
+          isOfficial: officialIds.has(c.user_id),
+        }))
+      );
+    }
     setLoading(false);
   };
 
   const handleStatusChange = async (creatorId: string, userId: string, newStatus: string) => {
-    // Only admins can set verified_plus
     if (newStatus === "verified_plus" && !canVerifyPlus) {
       toast.error("Only admins can grant Verified Creator+");
       return;
@@ -61,6 +76,31 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
       toast.success(`Status updated to ${newStatus.replace("_", " ")}`);
       fetchCreators();
     }
+  };
+
+  const handleToggleOfficial = async (userId: string, isCurrentlyOfficial: boolean) => {
+    if (isCurrentlyOfficial) {
+      const { error } = await supabase
+        .from("official_accounts")
+        .delete()
+        .eq("user_id", userId);
+      if (error) {
+        toast.error("Failed to remove official badge");
+        return;
+      }
+      toast.success("Official badge removed");
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("official_accounts")
+        .insert({ user_id: userId, granted_by: user?.id });
+      if (error) {
+        toast.error("Failed to grant official badge");
+        return;
+      }
+      toast.success("Official badge granted");
+    }
+    fetchCreators();
   };
 
   const statusLabel = (s: string) => {
@@ -100,6 +140,9 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
               </Avatar>
               <div className="flex items-center gap-1 flex-1 min-w-0">
                 <CreatorBadge userId={c.user_id} size={14} />
+                {c.isOfficial && (
+                  <img src={officialIcon} alt="Official" className="h-3.5 w-3.5 rounded-full" />
+                )}
                 <span className="text-sm font-medium truncate">{c.profiles.username}</span>
               </div>
               <Badge className={statusColor(c.status)}>{statusLabel(c.status)}</Badge>
@@ -117,6 +160,17 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
                     {canVerifyPlus && <SelectItem value="verified_plus">Verified+</SelectItem>}
                   </SelectContent>
                 </Select>
+              )}
+              {canVerifyPlus && (
+                <Button
+                  size="sm"
+                  variant={c.isOfficial ? "secondary" : "outline"}
+                  className="h-8 text-xs px-2"
+                  onClick={() => handleToggleOfficial(c.user_id, !!c.isOfficial)}
+                >
+                  <Award className="h-3.5 w-3.5 mr-1" />
+                  {c.isOfficial ? "Unofficial" : "Official"}
+                </Button>
               )}
             </div>
           ))}
