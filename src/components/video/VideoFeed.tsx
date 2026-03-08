@@ -30,6 +30,7 @@ interface Video {
   comments_count: number;
   created_at: string;
   category: string;
+  adults_only?: boolean;
   profiles: { username: string; avatar_url: string | null };
 }
 
