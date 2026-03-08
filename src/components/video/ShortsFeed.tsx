@@ -397,9 +397,25 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           />
 
           {/* Category badge */}
-          <span className="absolute top-3 left-3 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+          <span className="absolute top-3 left-3 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full z-10">
             {getCategoryIcon(short.category)} {short.category}
           </span>
+
+          {/* Age gate overlay for adult content */}
+          {short.adults_only && !ageVerified && (
+            <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center gap-3">
+              <ShieldAlert className="h-16 w-16 text-destructive" />
+              <h3 className="text-white text-xl font-bold">18+ Content</h3>
+              <p className="text-white/70 text-sm text-center px-8">This short contains adult content. Verify your age to watch.</p>
+              <Button
+                variant="destructive"
+                className="mt-2"
+                onClick={() => setAgeVerifyOpen(true)}
+              >
+                Verify Age
+              </Button>
+            </div>
+          )}
 
           {/* Right side action buttons */}
           <div className="absolute right-3 bottom-24 flex flex-col items-center gap-4">
