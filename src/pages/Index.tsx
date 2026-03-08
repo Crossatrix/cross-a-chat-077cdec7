@@ -29,6 +29,7 @@ import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
+import ForYouFeed from "@/components/video/ForYouFeed";
 
 interface Message {
   id: string;
