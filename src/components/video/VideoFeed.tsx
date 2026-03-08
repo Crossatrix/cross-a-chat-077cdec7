@@ -14,6 +14,7 @@ import CreatorProfile from "./CreatorProfile";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
 import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
+import VideoLeaderboard from "./VideoLeaderboard";
 
 interface Video {
   id: string;
