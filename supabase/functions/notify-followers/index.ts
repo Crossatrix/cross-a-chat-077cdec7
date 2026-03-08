@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     const { creatorId, videoTitle } = await req.json();
 
-    if (creatorId !== user.id) {
+    if (creatorId !== userId) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
