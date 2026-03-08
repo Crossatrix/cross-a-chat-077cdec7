@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, RefreshCw, Save, Bug } from "lucide-react";
+import { ArrowLeft, Upload, Plus, RefreshCw, Save, Bug, Wrench } from "lucide-react";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import ChangelogManager from "@/components/admin/ChangelogManager";
 import FileExplorer, { FileItem } from "@/components/admin/FileExplorer";
