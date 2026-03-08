@@ -162,9 +162,14 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
           <span className="text-[11px] text-muted-foreground">{formatDate(post.created_at)}</span>
         </div>
         {post.user_id === currentUserId && (
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleDelete}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <div className="flex items-center gap-0.5">
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleDelete}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         )}
       </div>
 
