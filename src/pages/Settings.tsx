@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban } from "lucide-react";
+import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
