@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import FeaturedAvatar from "@/components/video/FeaturedAvatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -321,10 +322,13 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
               {/* Profile Header */}
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={profile.avatar_url || undefined} alt={profile.username} />
-                    <AvatarFallback className="text-xl">{profile.username[0]?.toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                  <FeaturedAvatar
+                    userId={userId}
+                    avatarUrl={profile.avatar_url || null}
+                    username={profile.username}
+                    avatarClassName="h-16 w-16"
+                    fallbackClassName="text-xl bg-secondary text-foreground"
+                  />
                   {/* Online Status Indicator */}
                   <div 
                     className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-background ${

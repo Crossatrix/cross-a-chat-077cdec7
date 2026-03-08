@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
+import FeaturedAvatar from "./FeaturedAvatar";
 import { getCategoryLabel } from "@/utils/videoCategories";
 
 interface Video {
@@ -395,12 +396,15 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
 
             {/* Creator info */}
             <div className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
-              <Avatar className="h-10 w-10 cursor-pointer" onClick={() => onCreatorClick?.(video.user_id)}>
-                <AvatarImage src={video.profiles.avatar_url || ""} />
-                <AvatarFallback className="bg-secondary text-foreground">
-                  {video.profiles.username?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <FeaturedAvatar
+                userId={video.user_id}
+                avatarUrl={video.profiles.avatar_url}
+                username={video.profiles.username}
+                avatarClassName="h-10 w-10"
+                fallbackClassName="bg-secondary text-foreground"
+                className="cursor-pointer"
+                onClick={() => onCreatorClick?.(video.user_id)}
+              />
               <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onCreatorClick?.(video.user_id)}>
                 <div className="flex items-center gap-1">
                   <StaffBadge userId={video.user_id} size={16} />

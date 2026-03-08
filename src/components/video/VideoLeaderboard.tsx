@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
+import FeaturedAvatar from "./FeaturedAvatar";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface LeaderboardVideo {
@@ -143,15 +144,15 @@ const VideoLeaderboard = ({ onSelectVideo, onCreatorClick }: VideoLeaderboardPro
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold line-clamp-1 text-foreground">{item.video?.title}</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <Avatar
-                    className="h-4 w-4 cursor-pointer"
+                  <FeaturedAvatar
+                    userId={item.video!.user_id}
+                    avatarUrl={item.video?.profiles.avatar_url || null}
+                    username={item.video?.profiles.username || ""}
+                    avatarClassName="h-4 w-4"
+                    fallbackClassName="text-[8px] bg-secondary text-foreground"
+                    className="cursor-pointer"
                     onClick={(e) => { e.stopPropagation(); onCreatorClick?.(item.video!.user_id); }}
-                  >
-                    <AvatarImage src={item.video?.profiles.avatar_url || ""} />
-                    <AvatarFallback className="text-[8px] bg-secondary">
-                      {item.video?.profiles.username?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  />
                   <StaffBadge userId={item.video!.user_id} size={10} />
                   <CreatorBadge userId={item.video!.user_id} size={10} />
                   <span
