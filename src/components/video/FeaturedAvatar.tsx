@@ -71,8 +71,13 @@ const FeaturedAvatar = ({ userId, avatarUrl, username, className = "", avatarCla
       <img
         src={TIER_EFFECTS[tier]}
         alt={`${tier} effect`}
-        className="absolute inset-0 w-[140%] h-[140%] -translate-x-[14%] -translate-y-[14%] object-contain pointer-events-none z-0"
-        style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.15))" }}
+        className="absolute w-[180%] h-[180%] object-contain pointer-events-none z-0"
+        style={{
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          filter: "drop-shadow(0 0 8px rgba(255,255,255,0.2))",
+        }}
       />
       <Avatar className={`${avatarClassName} relative z-10`}>
         <AvatarImage src={avatarUrl || ""} />
