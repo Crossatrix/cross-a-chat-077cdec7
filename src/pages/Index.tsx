@@ -68,7 +68,7 @@ const Index = () => {
 const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "shorts">("chats");
+  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts">("chats");
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
