@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
+import FeaturedAvatar from "./FeaturedAvatar";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface LeaderboardVideo {
