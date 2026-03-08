@@ -30,7 +30,7 @@ interface VideoLeaderboardProps {
 const VideoLeaderboard = ({ onSelectVideo, onCreatorClick, fullPage }: VideoLeaderboardProps) => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardVideo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(fullPage || false);
 
   useEffect(() => {
     fetchLeaderboard();
