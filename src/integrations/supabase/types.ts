@@ -73,6 +73,27 @@ export type Database = {
           },
         ]
       }
+      blocked_categories: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       call_signals: {
         Row: {
           conversation_id: string

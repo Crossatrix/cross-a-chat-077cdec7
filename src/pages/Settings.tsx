@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban } from "lucide-react";
+import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -44,11 +45,14 @@ const Settings = () => {
     video?: { title: string; thumbnail_url: string | null };
   }>>([]);
   const [loadingNotInterested, setLoadingNotInterested] = useState(false);
+  const [blockedCategories, setBlockedCategories] = useState<string[]>([]);
+  const [loadingBlockedCategories, setLoadingBlockedCategories] = useState(false);
 
   useEffect(() => {
     loadProfile();
     loadGroupBlockedUsers();
     loadNotInterested();
+    loadBlockedCategories();
   }, []);
 
   const loadProfile = async () => {
@@ -183,6 +187,46 @@ const Settings = () => {
 
     toast.success("Removed from Not Interested");
     setNotInterestedItems(prev => prev.filter(i => i.id !== id));
+  };
+
+  const loadBlockedCategories = async () => {
+    setLoadingBlockedCategories(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("blocked_categories" as any)
+        .select("category")
+        .eq("user_id", user.id);
+      setBlockedCategories((data || []).map((d: any) => d.category));
+    } catch (error) {
+      console.error("Error loading blocked categories:", error);
+    } finally {
+      setLoadingBlockedCategories(false);
+    }
+  };
+
+  const handleToggleBlockCategory = async (category: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    if (blockedCategories.includes(category)) {
+      const { error } = await supabase
+        .from("blocked_categories" as any)
+        .delete()
+        .eq("user_id", user.id)
+        .eq("category", category);
+      if (error) { toast.error("Failed to unblock category"); return; }
+      setBlockedCategories(prev => prev.filter(c => c !== category));
+      toast.success(`Unblocked ${category}`);
+    } else {
+      const { error } = await supabase
+        .from("blocked_categories" as any)
+        .insert({ user_id: user.id, category });
+      if (error) { toast.error("Failed to block category"); return; }
+      setBlockedCategories(prev => [...prev, category]);
+      toast.success(`Blocked ${category} from your feed`);
+    }
   };
 
   const handleClearAllNotInterested = async () => {
@@ -572,6 +616,42 @@ const Settings = () => {
                     </div>
                   </ScrollArea>
                 </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Blocked Categories */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Ban className="h-5 w-5" />
+                Blocked Categories
+              </CardTitle>
+              <CardDescription>Hide entire categories from your video feeds. Blocked categories won't appear in Videos, Shorts, or For You.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingBlockedCategories ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {VIDEO_CATEGORIES.map((cat) => (
+                    <div
+                      key={cat.value}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{cat.icon}</span>
+                        <span className="text-sm font-medium">{cat.label}</span>
+                      </div>
+                      <Switch
+                        checked={blockedCategories.includes(cat.value)}
+                        onCheckedChange={() => handleToggleBlockCategory(cat.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>

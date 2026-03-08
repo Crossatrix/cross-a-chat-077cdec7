@@ -76,11 +76,14 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
       .order("created_at", { ascending: false });
 
     if (data) {
-      // Fetch verifications and user prefs in parallel
-      const [{ data: verifications }, { data: categoryPrefs }] = await Promise.all([
+      // Fetch verifications, user prefs, and blocked categories in parallel
+      const [{ data: verifications }, { data: categoryPrefs }, { data: blockedCatsData }] = await Promise.all([
         supabase.from("creator_verifications").select("user_id, status"),
         supabase.from("video_category_views").select("category, view_count").eq("user_id", currentUserId),
+        supabase.from("blocked_categories" as any).select("category").eq("user_id", currentUserId),
       ]);
+
+      const blockedCats = new Set((blockedCatsData || []).map((d: any) => d.category));
 
       const verifiedMap = new Map<string, string>();
       verifications?.forEach(v => verifiedMap.set(v.user_id, v.status));
@@ -89,7 +92,9 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
       categoryPrefs?.forEach(p => { prefMap[p.category] = p.view_count; });
       const totalViews = Object.values(prefMap).reduce((a, b) => a + b, 0) || 1;
 
-      const sorted = [...(data as unknown as Short[])].sort((a, b) => {
+      const filtered = (data as unknown as Short[]).filter(s => !blockedCats.has(s.category));
+
+      const sorted = [...filtered].sort((a, b) => {
         const aStatus = verifiedMap.get(a.user_id) || "";
         const bStatus = verifiedMap.get(b.user_id) || "";
         const priority = (s: string) => s === "verified_plus" ? 3 : s === "verified" ? 2 : 0;

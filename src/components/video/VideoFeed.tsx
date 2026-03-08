@@ -77,11 +77,19 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
 
   const fetchVideos = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("videos")
-      .select("*, profiles(username, avatar_url)")
-      .order("created_at", { ascending: false });
+    const [{ data }, { data: blockedCatsData }] = await Promise.all([
+      supabase
+        .from("videos")
+        .select("*, profiles(username, avatar_url)")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("blocked_categories" as any)
+        .select("category")
+        .eq("user_id", currentUserId),
+    ]);
     
+    const blockedCats = new Set((blockedCatsData || []).map((d: any) => d.category));
+
     if (data) {
       const { data: verifications } = await supabase
         .from("creator_verifications")
@@ -90,7 +98,9 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       const verifiedMap = new Map<string, string>();
       verifications?.forEach(v => verifiedMap.set(v.user_id, v.status));
 
-      const sorted = [...(data as unknown as Video[])].sort((a, b) => {
+      const filtered = (data as unknown as Video[]).filter(v => !blockedCats.has(v.category));
+
+      const sorted = [...filtered].sort((a, b) => {
         const aStatus = verifiedMap.get(a.user_id) || "";
         const bStatus = verifiedMap.get(b.user_id) || "";
         const priority = (s: string) => s === "verified_plus" ? 3 : s === "verified" ? 2 : 0;
