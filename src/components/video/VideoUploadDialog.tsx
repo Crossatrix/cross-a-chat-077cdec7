@@ -77,7 +77,8 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         video_url: videoUrlData.publicUrl,
         thumbnail_url: thumbnailUrl,
         category,
-      });
+        adults_only: adultsOnly,
+      } as any);
 
       if (insertError) throw insertError;
 
