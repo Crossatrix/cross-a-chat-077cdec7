@@ -42,6 +42,7 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
   const [pollVotes, setPollVotes] = useState<Record<number, number>>({});
   const [myPollVote, setMyPollVote] = useState<number | null>(null);
   const [totalPollVotes, setTotalPollVotes] = useState(0);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     fetchLikeStatus();
