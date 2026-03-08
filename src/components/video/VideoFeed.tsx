@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -144,6 +144,21 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     } else {
       invalidateCreatorCache(userId);
       toast.success(`Creator set to ${status === "verified_plus" ? "Verified+" : "Verified"}!`);
+      fetchVideos();
+    }
+  };
+
+  const handleUnverifyCreator = async (userId: string) => {
+    const { error } = await supabase
+      .from("creator_verifications")
+      .delete()
+      .eq("user_id", userId);
+
+    if (error) {
+      toast.error("Failed to unverify: " + error.message);
+    } else {
+      invalidateCreatorCache(userId);
+      toast.success("Creator verification removed!");
       fetchVideos();
     }
   };
@@ -343,15 +358,19 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenuItem onSelect={() => handleVerifyCreator(video.user_id, "verified")}>
-                              <ShieldCheck className="h-4 w-4 mr-2 text-amber-500" />
+                              <ShieldCheck className="h-4 w-4 mr-2 text-pink-500" />
                               Verified Creator
                             </DropdownMenuItem>
                             {isAdmin && (
                               <DropdownMenuItem onSelect={() => handleVerifyCreator(video.user_id, "verified_plus")}>
-                                <Star className="h-4 w-4 mr-2 text-pink-500" />
+                                <Star className="h-4 w-4 mr-2 text-amber-500" />
                                 Verified Creator+
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem onSelect={() => handleUnverifyCreator(video.user_id)}>
+                              <XCircle className="h-4 w-4 mr-2 text-destructive" />
+                              Unverify
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
