@@ -267,7 +267,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
           </div>
         </div>
 
-        {/* Videos tabs */}
+        {/* Content tabs */}
         <Tabs defaultValue="videos" className="w-full">
           <TabsList className="w-full rounded-none border-b border-border bg-transparent h-auto p-0">
             <TabsTrigger value="videos" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-2.5 text-sm">
@@ -276,12 +276,24 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
             <TabsTrigger value="shorts" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-2.5 text-sm">
               Shorts ({shorts.length})
             </TabsTrigger>
+            <TabsTrigger value="posts" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-2.5 text-sm">
+              <FileText className="h-3.5 w-3.5 mr-1" />
+              Posts
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="videos" className="mt-0">
             <VideoGrid items={videos} />
           </TabsContent>
           <TabsContent value="shorts" className="mt-0">
             <VideoGrid items={shorts} />
+          </TabsContent>
+          <TabsContent value="posts" className="mt-0">
+            <PostsFeed
+              currentUserId={currentUserId}
+              filterUserId={creatorId}
+              hideCreateButton={creatorId !== currentUserId}
+              onCreatorClick={undefined}
+            />
           </TabsContent>
         </Tabs>
       </div>
