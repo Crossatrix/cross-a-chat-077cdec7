@@ -89,7 +89,7 @@ const VideoLeaderboard = ({ onSelectVideo, onCreatorClick, fullPage }: VideoLead
   if (loading) return null;
   if (leaderboard.length === 0) return null;
 
-  const displayItems = expanded ? leaderboard : leaderboard.slice(0, 3);
+  const displayItems = (expanded || fullPage) ? leaderboard : leaderboard.slice(0, 3);
 
   return (
     <div className="mx-3 mb-3">
