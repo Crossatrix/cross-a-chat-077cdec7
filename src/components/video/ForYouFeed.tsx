@@ -96,8 +96,12 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     const allVideos = data as unknown as Video[];
 
     if (!hasSignals) {
-      // No signals — show trending
-      const trending = [...allVideos].sort((a, b) => b.views_count - a.views_count);
+      // No signals — show trending, penalize heavily disliked videos
+      const trending = [...allVideos].sort((a, b) => {
+        const scoreA = a.views_count - (a.dislikes_count > a.likes_count && (a.likes_count + a.dislikes_count) > 0 ? (a.dislikes_count / (a.likes_count + a.dislikes_count)) * a.views_count * 2 : 0);
+        const scoreB = b.views_count - (b.dislikes_count > b.likes_count && (b.likes_count + b.dislikes_count) > 0 ? (b.dislikes_count / (b.likes_count + b.dislikes_count)) * b.views_count * 2 : 0);
+        return scoreB - scoreA;
+      });
       setVideos(trending.slice(0, 50));
       setLoading(false);
       return;
