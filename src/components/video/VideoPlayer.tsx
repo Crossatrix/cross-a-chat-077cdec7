@@ -74,10 +74,33 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     return () => { supabase.removeChannel(channel); };
   }, [video.id]);
 
+  const getWeekStart = () => {
+    const now = new Date();
+    const day = now.getDay();
+    const offset = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + offset);
+    monday.setHours(0, 0, 0, 0);
+    return monday.toISOString().split("T")[0];
+  };
+
   const incrementView = async () => {
     if (viewCounted) return;
     setViewCounted(true);
     await supabase.from("videos").update({ views_count: video.views_count + 1 }).eq("id", video.id);
+    // Track weekly stats
+    const weekStart = getWeekStart();
+    const { data: existing } = await supabase
+      .from("video_weekly_stats")
+      .select("id, weekly_views")
+      .eq("video_id", video.id)
+      .eq("week_start", weekStart)
+      .maybeSingle();
+    if (existing) {
+      await supabase.from("video_weekly_stats").update({ weekly_views: existing.weekly_views + 1, updated_at: new Date().toISOString() }).eq("id", existing.id);
+    } else {
+      await supabase.from("video_weekly_stats").insert({ video_id: video.id, week_start: weekStart, weekly_views: 1 });
+    }
   };
 
   const fetchComments = async () => {
