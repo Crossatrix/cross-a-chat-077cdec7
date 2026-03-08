@@ -23,6 +23,7 @@ interface Post {
   dislikes_count: number;
   comments_count: number;
   created_at: string;
+  updated_at: string;
   profiles: { username: string; avatar_url: string | null };
 }
 
@@ -159,7 +160,12 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
               {post.profiles.username}
             </span>
           </div>
-          <span className="text-[11px] text-muted-foreground">{formatDate(post.created_at)}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] text-muted-foreground">{formatDate(post.created_at)}</span>
+            {post.updated_at && new Date(post.updated_at).getTime() - new Date(post.created_at).getTime() > 1000 && (
+              <span className="text-[11px] text-muted-foreground italic">(edited)</span>
+            )}
+          </div>
         </div>
         {post.user_id === currentUserId && (
           <div className="flex items-center gap-0.5">
