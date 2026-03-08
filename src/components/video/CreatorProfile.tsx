@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar, Flame } from "lucide-react";
+import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar, Flame, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StaffBadge from "@/components/StaffBadge";
 import { formatMessageText } from "@/utils/textFormatting";
@@ -11,6 +11,7 @@ import CreatorBadge from "./CreatorBadge";
 import FeaturedAvatar, { invalidateFeaturedCache, type FeaturedTier } from "./FeaturedAvatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import PostsFeed from "@/components/posts/PostsFeed";
 
 interface Video {
   id: string;
@@ -266,7 +267,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
           </div>
         </div>
 
-        {/* Videos tabs */}
+        {/* Content tabs */}
         <Tabs defaultValue="videos" className="w-full">
           <TabsList className="w-full rounded-none border-b border-border bg-transparent h-auto p-0">
             <TabsTrigger value="videos" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-2.5 text-sm">
@@ -275,12 +276,24 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
             <TabsTrigger value="shorts" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-2.5 text-sm">
               Shorts ({shorts.length})
             </TabsTrigger>
+            <TabsTrigger value="posts" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-2.5 text-sm">
+              <FileText className="h-3.5 w-3.5 mr-1" />
+              Posts
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="videos" className="mt-0">
             <VideoGrid items={videos} />
           </TabsContent>
           <TabsContent value="shorts" className="mt-0">
             <VideoGrid items={shorts} />
+          </TabsContent>
+          <TabsContent value="posts" className="mt-0">
+            <PostsFeed
+              currentUserId={currentUserId}
+              filterUserId={creatorId}
+              hideCreateButton={creatorId !== currentUserId}
+              onCreatorClick={undefined}
+            />
           </TabsContent>
         </Tabs>
       </div>

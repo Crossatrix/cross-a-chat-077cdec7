@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Sparkles, ShieldAlert } from "lucide-react";
+import { Play, Eye, ThumbsUp, Sparkles, ShieldAlert, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import VideoPlayer from "./VideoPlayer";
 import StaffBadge from "@/components/StaffBadge";
@@ -9,6 +9,7 @@ import CreatorBadge from "./CreatorBadge";
 import AgeVerificationDialog from "./AgeVerificationDialog";
 import FeaturedAvatar from "./FeaturedAvatar";
 import { getCategoryIcon, getCategoryLabel } from "@/utils/videoCategories";
+import PostCard from "@/components/posts/PostCard";
 
 interface Video {
   id: string;
@@ -40,10 +41,12 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
   const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
+  const [followedPosts, setFollowedPosts] = useState<any[]>([]);
 
   useEffect(() => {
     fetchForYou();
     checkAgeVerification();
+    fetchFollowedPosts();
   }, []);
 
   const checkAgeVerification = async () => {
@@ -53,6 +56,22 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
       .eq("id", currentUserId)
       .single();
     if (data) setAgeVerified(!!(data as any).age_verified);
+  };
+
+  const fetchFollowedPosts = async () => {
+    const { data: follows } = await supabase
+      .from('video_follows')
+      .select('following_id')
+      .eq('follower_id', currentUserId);
+    const followedIds = (follows || []).map(f => f.following_id);
+    if (followedIds.length === 0) return;
+    const { data } = await supabase
+      .from('posts')
+      .select('*, profiles(username, avatar_url)')
+      .in('user_id', followedIds)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    setFollowedPosts((data || []) as any[]);
   };
 
   const fetchForYou = async () => {
@@ -285,6 +304,24 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
+            {/* Posts from followed creators */}
+            {followedPosts.length > 0 && (
+              <div className="col-span-full space-y-3 mb-2">
+                <div className="flex items-center gap-2 px-1">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Posts from creators you follow</span>
+                </div>
+                {followedPosts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    currentUserId={currentUserId}
+                    onCreatorClick={onCreatorClick}
+                    onDeleted={fetchFollowedPosts}
+                  />
+                ))}
+              </div>
+            )}
             {videos.map((video) => (
               <div
                 key={video.id}
