@@ -177,19 +177,24 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   useEffect(() => {
     videoRefs.current.forEach((video, i) => {
       if (!video) return;
+      const short = shorts[i];
       if (i === currentIndex) {
-        video.play().catch(() => {});
-        if (!viewedSet.current.has(shorts[i]?.id)) {
-          viewedSet.current.add(shorts[i]?.id);
-          supabase.from("videos").update({ views_count: shorts[i].views_count + 1 }).eq("id", shorts[i].id);
-          // Track category view
-          trackCategoryView(shorts[i].category);
+        // Don't autoplay adult content for unverified users
+        if (short?.adults_only && !ageVerified) {
+          video.pause();
+        } else {
+          video.play().catch(() => {});
+        }
+        if (!viewedSet.current.has(short?.id)) {
+          viewedSet.current.add(short?.id);
+          supabase.from("videos").update({ views_count: short.views_count + 1 }).eq("id", short.id);
+          trackCategoryView(short.category);
         }
       } else {
         video.pause();
       }
     });
-  }, [currentIndex, shorts]);
+  }, [currentIndex, shorts, ageVerified]);
 
   const trackCategoryView = async (category: string) => {
     const { data: existing } = await supabase
