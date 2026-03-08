@@ -119,15 +119,18 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
 
       const uniqueCreators = [...new Set(sorted.map(s => s.user_id))];
       if (uniqueCreators.length > 0) {
-        const { data: follows } = await supabase
-          .from("video_follows")
-          .select("following_id")
-          .eq("follower_id", currentUserId)
-          .in("following_id", uniqueCreators);
+        const [{ data: follows }, { data: allFollows }] = await Promise.all([
+          supabase.from("video_follows").select("following_id").eq("follower_id", currentUserId).in("following_id", uniqueCreators),
+          supabase.from("video_follows").select("following_id").in("following_id", uniqueCreators),
+        ]);
         
         const fMap: Record<string, boolean> = {};
         follows?.forEach(f => { fMap[f.following_id] = true; });
         setFollowingMap(fMap);
+
+        const fcMap: Record<string, number> = {};
+        allFollows?.forEach(f => { fcMap[f.following_id] = (fcMap[f.following_id] || 0) + 1; });
+        setFollowerCounts(fcMap);
       }
     }
     setLoading(false);
