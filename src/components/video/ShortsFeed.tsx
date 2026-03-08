@@ -25,6 +25,14 @@ interface Short {
   profiles: { username: string; avatar_url: string | null };
 }
 
+interface Comment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profiles: { username: string; avatar_url: string | null };
+}
+
 interface ShortsFeedProps {
   currentUserId: string;
 }
