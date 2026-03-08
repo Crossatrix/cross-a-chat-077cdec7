@@ -38,6 +38,7 @@ interface VideoFeedProps {
 const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
