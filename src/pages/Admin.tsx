@@ -540,6 +540,25 @@ const Admin = () => {
           fetchAllData();
         } catch { toast.error(t("ai.reviewFailed")); }
         break;
+      case "ai_video_review":
+        toast.info("AI reviewing video report...");
+        try {
+          const { error } = await supabase.functions.invoke("video-moderator", { body: { reportId: data.id } });
+          if (error) throw error;
+          toast.success("AI review complete");
+          fetchAllData();
+        } catch { toast.error("AI review failed"); }
+        break;
+      case "resolve_video_report":
+        await supabase.from("video_reports" as any).update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", data.id);
+        toast.success("Video report resolved");
+        fetchAllData();
+        break;
+      case "dismiss_video_report":
+        await supabase.from("video_reports" as any).update({ status: "dismissed", resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", data.id);
+        toast.success("Video report dismissed");
+        fetchAllData();
+        break;
       case "resolve":
         await supabase.from("user_reports").update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", data.id);
         toast.success("Report resolved");
