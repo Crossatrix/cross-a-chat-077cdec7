@@ -16,6 +16,7 @@ import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
 import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
 import VideoLeaderboard from "./VideoLeaderboard";
 import AgeVerificationDialog from "./AgeVerificationDialog";
+import FeaturedAvatar from "./FeaturedAvatar";
 
 interface Video {
   id: string;

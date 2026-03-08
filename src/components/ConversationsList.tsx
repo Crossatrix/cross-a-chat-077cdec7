@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ChangelogDialog from "@/components/ChangelogDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import FeaturedAvatar from "@/components/video/FeaturedAvatar";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Trash2 } from "lucide-react";
 import StaffBadge from "@/components/StaffBadge";

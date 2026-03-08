@@ -7,6 +7,7 @@ import VideoPlayer from "./VideoPlayer";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import AgeVerificationDialog from "./AgeVerificationDialog";
+import FeaturedAvatar from "./FeaturedAvatar";
 import { getCategoryIcon, getCategoryLabel } from "@/utils/videoCategories";
 
 interface Video {

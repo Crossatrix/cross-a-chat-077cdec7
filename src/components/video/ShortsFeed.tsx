@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import AgeVerificationDialog from "./AgeVerificationDialog";
+import FeaturedAvatar from "./FeaturedAvatar";
 
 interface Short {
   id: string;
