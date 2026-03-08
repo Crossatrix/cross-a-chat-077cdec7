@@ -64,10 +64,22 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const viewedSet = useRef<Set<string>>(new Set());
+  const [ageVerified, setAgeVerified] = useState(false);
+  const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
 
   useEffect(() => {
     fetchShorts();
+    checkAgeVerification();
   }, []);
+
+  const checkAgeVerification = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("age_verified")
+      .eq("id", currentUserId)
+      .single();
+    if (data) setAgeVerified(!!(data as any).age_verified);
+  };
 
   const fetchShorts = async () => {
     setLoading(true);
