@@ -58,6 +58,22 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     if (data) setAgeVerified(!!(data as any).age_verified);
   };
 
+  const fetchFollowedPosts = async () => {
+    const { data: follows } = await supabase
+      .from('video_follows')
+      .select('following_id')
+      .eq('follower_id', currentUserId);
+    const followedIds = (follows || []).map(f => f.following_id);
+    if (followedIds.length === 0) return;
+    const { data } = await supabase
+      .from('posts')
+      .select('*, profiles(username, avatar_url)')
+      .in('user_id', followedIds)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    setFollowedPosts((data || []) as any[]);
+  };
+
   const fetchForYou = async () => {
     setLoading(true);
 
