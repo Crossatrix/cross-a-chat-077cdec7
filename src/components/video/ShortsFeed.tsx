@@ -535,12 +535,15 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           {/* Bottom info overlay */}
           <div className="absolute bottom-4 left-3 right-16 text-white drop-shadow-lg">
             <div className="flex items-center gap-2 mb-1">
-              <Avatar className="h-8 w-8 border-2 border-white cursor-pointer" onClick={() => onCreatorClick?.(short.user_id)}>
-                <AvatarImage src={short.profiles.avatar_url || ""} />
-                <AvatarFallback className="bg-secondary text-foreground text-xs">
-                  {short.profiles.username?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <FeaturedAvatar
+                userId={short.user_id}
+                avatarUrl={short.profiles.avatar_url}
+                username={short.profiles.username}
+                avatarClassName="h-8 w-8 border-2 border-white"
+                fallbackClassName="bg-secondary text-foreground text-xs"
+                className="cursor-pointer"
+                onClick={() => onCreatorClick?.(short.user_id)}
+              />
               <div className="cursor-pointer" onClick={() => onCreatorClick?.(short.user_id)}>
                 <div className="flex items-center gap-1">
                   <StaffBadge userId={short.user_id} size={14} />

@@ -425,12 +425,15 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
 
                 {/* Info */}
                 <div className="p-2.5 flex gap-2">
-                  <Avatar className="h-8 w-8 shrink-0 mt-0.5 cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}>
-                    <AvatarImage src={video.profiles.avatar_url || ""} />
-                    <AvatarFallback className="bg-secondary text-foreground text-xs">
-                      {video.profiles.username?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <FeaturedAvatar
+                    userId={video.user_id}
+                    avatarUrl={video.profiles.avatar_url}
+                    username={video.profiles.username}
+                    avatarClassName="h-8 w-8 shrink-0"
+                    fallbackClassName="bg-secondary text-foreground text-xs"
+                    className="shrink-0 mt-0.5 cursor-pointer"
+                    onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}
+                  />
                   <div className="min-w-0 flex-1">
                     <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{video.title}</h3>
                     <div className="flex items-center gap-1 mt-1">
