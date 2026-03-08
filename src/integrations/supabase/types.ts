@@ -1104,6 +1104,73 @@ export type Database = {
           },
         ]
       }
+      video_reports: {
+        Row: {
+          ai_reason: string | null
+          ai_reviewed: boolean | null
+          ai_reviewed_at: string | null
+          ai_verdict: string | null
+          created_at: string
+          id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          video_id: string
+        }
+        Insert: {
+          ai_reason?: string | null
+          ai_reviewed?: boolean | null
+          ai_reviewed_at?: string | null
+          ai_verdict?: string | null
+          created_at?: string
+          id?: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          video_id: string
+        }
+        Update: {
+          ai_reason?: string | null
+          ai_reviewed?: boolean | null
+          ai_reviewed_at?: string | null
+          ai_verdict?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_reports_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           category: string
