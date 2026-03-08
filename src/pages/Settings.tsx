@@ -48,6 +48,7 @@ const Settings = () => {
   useEffect(() => {
     loadProfile();
     loadGroupBlockedUsers();
+    loadNotInterested();
   }, []);
 
   const loadProfile = async () => {
