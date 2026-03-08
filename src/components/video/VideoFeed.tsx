@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Search, X, CheckCircle } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VideoUploadDialog from "./VideoUploadDialog";
@@ -41,6 +42,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [userCategoryPrefs, setUserCategoryPrefs] = useState<Record<string, number>>({});
   const [isStaff, setIsStaff] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     fetchVideos();
@@ -53,8 +55,10 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", currentUserId);
+    const roles = (data || []).map(r => r.role);
     const staffRoles = ["moderator", "elder_moderator", "admin"];
-    setIsStaff((data || []).some(r => staffRoles.includes(r.role)));
+    setIsStaff(roles.some(r => staffRoles.includes(r)));
+    setIsAdmin(roles.includes("admin"));
   };
 
   const fetchCategoryPrefs = async () => {
@@ -96,7 +100,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     setLoading(false);
   };
 
-  const handleVerifyCreator = async (userId: string, e: React.MouseEvent) => {
+  const handleVerifyCreator = async (userId: string, status: "verified" | "verified_plus", e: React.MouseEvent) => {
     e.stopPropagation();
     const { data: existing } = await supabase
       .from("creator_verifications")
@@ -109,22 +113,27 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       return;
     }
 
-    if (existing.status === "verified" || existing.status === "verified_plus") {
-      toast.info("Already verified");
+    if (status === "verified_plus" && !isAdmin) {
+      toast.error("Only admins can grant Verified Creator+");
+      return;
+    }
+
+    if (existing.status === status) {
+      toast.info(`Already ${status === "verified_plus" ? "Verified+" : "Verified"}`);
       return;
     }
 
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("creator_verifications")
-      .update({ status: "verified", verified_by: user?.id, updated_at: new Date().toISOString() })
+      .update({ status, verified_by: user?.id, updated_at: new Date().toISOString() })
       .eq("user_id", userId);
 
     if (error) {
       toast.error("Failed to verify: " + error.message);
     } else {
       invalidateCreatorCache(userId);
-      toast.success("Creator verified!");
+      toast.success(`Creator set to ${status === "verified_plus" ? "Verified+" : "Verified"}!`);
       fetchVideos();
     }
   };
@@ -310,15 +319,30 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                       <CreatorBadge userId={video.user_id} size={12} />
                       <span className="text-xs text-muted-foreground truncate">{video.profiles.username}</span>
                       {isStaff && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 ml-auto shrink-0"
-                          onClick={(e) => handleVerifyCreator(video.user_id, e)}
-                          title="Verify Creator"
-                        >
-                          <CheckCircle className="h-3.5 w-3.5 text-amber-500" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 ml-auto shrink-0"
+                              title="Verify Creator"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5 text-amber-500" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem onClick={(e) => handleVerifyCreator(video.user_id, "verified", e)}>
+                              <ShieldCheck className="h-4 w-4 mr-2 text-amber-500" />
+                              Verified Creator
+                            </DropdownMenuItem>
+                            {isAdmin && (
+                              <DropdownMenuItem onClick={(e) => handleVerifyCreator(video.user_id, "verified_plus", e)}>
+                                <Star className="h-4 w-4 mr-2 text-pink-500" />
+                                Verified Creator+
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
