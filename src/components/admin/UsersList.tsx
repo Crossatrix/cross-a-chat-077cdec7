@@ -20,6 +20,7 @@ interface User {
   banned?: boolean;
   banExpiresAt?: string | null;
   isAdmin?: boolean;
+  isOfficial?: boolean;
 }
 
 const UsersList = () => {
