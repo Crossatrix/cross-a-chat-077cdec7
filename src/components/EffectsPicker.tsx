@@ -146,10 +146,11 @@ const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel, 
     setText("");
     setSelectedAnimations([]);
     setSelectedColor(null);
+    setSendAsSystem(false);
     setOpen(false);
   };
 
-  const hasSelection = selectedAnimations.length > 0 || selectedColor;
+  const hasSelection = selectedAnimations.length > 0 || selectedColor || sendAsSystem;
 
   return (
     <Popover open={open} onOpenChange={(isOpen) => {
