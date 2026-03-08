@@ -34,19 +34,28 @@ const Maintenance = () => {
   useEffect(() => {
     if (!maintenanceUntil) return;
 
-    const update = () => {
+    const update = async () => {
       const diff = Math.max(0, new Date(maintenanceUntil).getTime() - Date.now());
       setTimeLeft({
         hours: Math.floor(diff / (1000 * 60 * 60)),
         minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
         seconds: Math.floor((diff % (1000 * 60)) / 1000),
       });
+
+      if (diff === 0) {
+        // Auto-disable maintenance mode
+        await supabase
+          .from("app_settings")
+          .update({ value: "false" })
+          .eq("key", "maintenance_mode");
+        navigate("/");
+      }
     };
 
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [maintenanceUntil]);
+  }, [maintenanceUntil, navigate]);
 
   if (checking) {
     return (

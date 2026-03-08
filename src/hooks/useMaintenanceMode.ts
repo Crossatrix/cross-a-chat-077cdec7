@@ -28,7 +28,11 @@ export const useMaintenanceMode = () => {
         if (untilData?.value) {
           const until = new Date(untilData.value);
           if (until <= new Date()) {
-            // Maintenance expired, disable it
+            // Maintenance expired, auto-disable it in DB
+            await supabase
+              .from("app_settings")
+              .update({ value: "false" })
+              .eq("key", "maintenance_mode");
             setIsMaintenanceMode(false);
             setLoading(false);
             return;
