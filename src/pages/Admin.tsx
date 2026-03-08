@@ -114,6 +114,7 @@ const Admin = () => {
     }
     if (CAN.seeReports(staffRole)) {
       promises.push(fetchReports());
+      promises.push(fetchVideoReports());
     }
     if (CAN.readFeedback(staffRole)) {
       promises.push(fetchFeedback());
@@ -136,6 +137,12 @@ const Admin = () => {
       fileStructure.push({
         id: "reports",
         name: "Reports",
+        type: "folder",
+        children: results[idx++],
+      });
+      fileStructure.push({
+        id: "video-reports",
+        name: "Video Reports",
         type: "folder",
         children: results[idx++],
       });
