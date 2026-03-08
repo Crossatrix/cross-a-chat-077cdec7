@@ -237,17 +237,17 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
 
             {/* Creator info */}
             <div className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-10 w-10 cursor-pointer" onClick={() => onCreatorClick?.(video.user_id)}>
                 <AvatarImage src={video.profiles.avatar_url || ""} />
                 <AvatarFallback className="bg-secondary text-foreground">
                   {video.profiles.username?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onCreatorClick?.(video.user_id)}>
                 <div className="flex items-center gap-1">
                   <StaffBadge userId={video.user_id} size={16} />
                   <CreatorBadge userId={video.user_id} size={16} />
-                  <span className="font-medium text-sm truncate">{video.profiles.username}</span>
+                  <span className="font-medium text-sm truncate hover:underline">{video.profiles.username}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">{followerCount} {followerCount === 1 ? 'follower' : 'followers'}</p>
               </div>
