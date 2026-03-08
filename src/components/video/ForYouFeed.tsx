@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Sparkles } from "lucide-react";
+import { Play, Eye, ThumbsUp, Sparkles, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import VideoPlayer from "./VideoPlayer";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
+import AgeVerificationDialog from "./AgeVerificationDialog";
 import { getCategoryIcon, getCategoryLabel } from "@/utils/videoCategories";
 
 interface Video {
