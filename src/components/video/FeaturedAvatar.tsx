@@ -26,9 +26,19 @@ interface FeaturedAvatarProps {
   username: string;
   className?: string;
   avatarClassName?: string;
+  fallbackClassName?: string;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
-const FeaturedAvatar = ({ userId, avatarUrl, username, className = "", avatarClassName = "h-16 w-16 sm:h-20 sm:w-20" }: FeaturedAvatarProps) => {
+const FeaturedAvatar = ({
+  userId,
+  avatarUrl,
+  username,
+  className = "",
+  avatarClassName = "h-16 w-16 sm:h-20 sm:w-20",
+  fallbackClassName = "bg-secondary text-foreground text-xl",
+  onClick,
+}: FeaturedAvatarProps) => {
   const [tier, setTier] = useState<FeaturedTier | null>(featuredCache.get(userId) ?? null);
   const [loaded, setLoaded] = useState(featuredCache.has(userId));
 
@@ -57,9 +67,9 @@ const FeaturedAvatar = ({ userId, avatarUrl, username, className = "", avatarCla
 
   if (!loaded || !tier) {
     return (
-      <Avatar className={avatarClassName}>
+      <Avatar className={avatarClassName} onClick={onClick}>
         <AvatarImage src={avatarUrl || ""} />
-        <AvatarFallback className="bg-secondary text-foreground text-xl">
+        <AvatarFallback className={fallbackClassName}>
           {username?.charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
@@ -67,7 +77,7 @@ const FeaturedAvatar = ({ userId, avatarUrl, username, className = "", avatarCla
   }
 
   return (
-    <div className={`relative inline-flex items-center justify-center overflow-visible ${className}`}>
+    <div className={`relative inline-flex items-center justify-center overflow-visible ${className}`} onClick={onClick}>
       <img
         src={TIER_EFFECTS[tier]}
         alt={`${tier} effect`}
@@ -80,7 +90,7 @@ const FeaturedAvatar = ({ userId, avatarUrl, username, className = "", avatarCla
       />
       <Avatar className={`${avatarClassName} relative z-10 scale-[0.88]`}>
         <AvatarImage src={avatarUrl || ""} />
-        <AvatarFallback className="bg-secondary text-foreground text-xl">
+        <AvatarFallback className={fallbackClassName}>
           {username?.charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
