@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar, Flame } from "lucide-react";
+import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar, Flame, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StaffBadge from "@/components/StaffBadge";
 import { formatMessageText } from "@/utils/textFormatting";
@@ -11,6 +11,7 @@ import CreatorBadge from "./CreatorBadge";
 import FeaturedAvatar, { invalidateFeaturedCache, type FeaturedTier } from "./FeaturedAvatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import PostsFeed from "@/components/posts/PostsFeed";
 
 interface Video {
   id: string;
