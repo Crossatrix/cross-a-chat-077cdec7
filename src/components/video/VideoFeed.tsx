@@ -341,7 +341,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                               <CheckCircle className="h-3.5 w-3.5 text-amber-500" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenuItem onSelect={() => handleVerifyCreator(video.user_id, "verified")}>
                               <ShieldCheck className="h-4 w-4 mr-2 text-amber-500" />
                               Verified Creator
