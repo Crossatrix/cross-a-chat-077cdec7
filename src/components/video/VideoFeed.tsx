@@ -458,6 +458,11 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                               <XCircle className="h-4 w-4 mr-2 text-destructive" />
                               Unverify
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onSelect={() => handleToggleAdultsOnly(video.id, !!video.adults_only)}>
+                              <ShieldAlert className="h-4 w-4 mr-2 text-destructive" />
+                              {video.adults_only ? "Remove 18+" : "Mark as 18+"}
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
