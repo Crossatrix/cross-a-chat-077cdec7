@@ -110,6 +110,7 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
     setFollowerCount(count ?? 0);
   };
 
+  const handleLike = async (isLike: boolean) => {
     const prevLike = userLike;
 
     if (prevLike === isLike) {
