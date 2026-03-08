@@ -48,6 +48,10 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [userCategoryPrefs, setUserCategoryPrefs] = useState<Record<string, number>>({});
   const [isStaff, setIsStaff] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [ageVerified, setAgeVerified] = useState(false);
+  const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
+  const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     fetchVideos();
