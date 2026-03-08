@@ -24,13 +24,12 @@ interface LeaderboardVideo {
 interface VideoLeaderboardProps {
   onSelectVideo?: (videoId: string) => void;
   onCreatorClick?: (creatorId: string) => void;
-  fullPage?: boolean;
 }
 
-const VideoLeaderboard = ({ onSelectVideo, onCreatorClick, fullPage }: VideoLeaderboardProps) => {
+const VideoLeaderboard = ({ onSelectVideo, onCreatorClick }: VideoLeaderboardProps) => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardVideo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(fullPage || false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -86,30 +85,10 @@ const VideoLeaderboard = ({ onSelectVideo, onCreatorClick, fullPage }: VideoLead
     return "bg-card border-border";
   };
 
-  if (loading && fullPage) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <Trophy className="h-10 w-10 text-muted-foreground mb-3 animate-pulse" />
-        <p className="text-muted-foreground text-sm">Loading leaderboard...</p>
-      </div>
-    );
-  }
   if (loading) return null;
+  if (leaderboard.length === 0) return null;
 
-  if (leaderboard.length === 0) {
-    if (!fullPage) return null;
-    return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <Trophy className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">No rankings yet this week</h3>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Videos will appear here once they get views, likes, or dislikes this week. Start watching and engaging!
-        </p>
-      </div>
-    );
-  }
-
-  const displayItems = (expanded || fullPage) ? leaderboard : leaderboard.slice(0, 3);
+  const displayItems = expanded ? leaderboard : leaderboard.slice(0, 3);
 
   return (
     <div className="mx-3 mb-3">
