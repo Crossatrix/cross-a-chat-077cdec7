@@ -114,6 +114,7 @@ const Admin = () => {
     }
     if (CAN.seeReports(staffRole)) {
       promises.push(fetchReports());
+      promises.push(fetchVideoReports());
     }
     if (CAN.readFeedback(staffRole)) {
       promises.push(fetchFeedback());
@@ -136,6 +137,12 @@ const Admin = () => {
       fileStructure.push({
         id: "reports",
         name: "Reports",
+        type: "folder",
+        children: results[idx++],
+      });
+      fileStructure.push({
+        id: "video-reports",
+        name: "Video Reports",
         type: "folder",
         children: results[idx++],
       });
@@ -253,6 +260,48 @@ const Admin = () => {
       extension: "txt",
       data: { ...report, type: "report" },
     }));
+  };
+
+  const fetchVideoReports = async (): Promise<FileItem[]> => {
+    const { data } = await supabase
+      .from("video_reports" as any)
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!data) return [];
+
+    // Fetch reporter profiles and video titles
+    const reporterIds = [...new Set((data as any[]).map((r: any) => r.reporter_id).filter(Boolean))];
+    const videoIds = [...new Set((data as any[]).map((r: any) => r.video_id).filter(Boolean))];
+
+    const [{ data: profiles }, { data: videos }] = await Promise.all([
+      reporterIds.length > 0 ? supabase.from("profiles").select("id, username").in("id", reporterIds) : { data: [] },
+      videoIds.length > 0 ? supabase.from("videos").select("id, title, video_url, user_id").in("id", videoIds) : { data: [] },
+    ]);
+
+    const profileMap = new Map<string, string>();
+    (profiles || []).forEach((p: any) => profileMap.set(p.id, p.username));
+
+    const videoMap = new Map<string, any>();
+    (videos || []).forEach((v: any) => videoMap.set(v.id, v));
+
+    return (data as any[]).map((report: any) => {
+      const video = videoMap.get(report.video_id);
+      return {
+        id: `video-report-${report.id}`,
+        name: `video_report_${video?.title?.slice(0, 20) || 'unknown'}_${new Date(report.created_at).toISOString().split('T')[0]}`,
+        type: "file" as const,
+        extension: "txt",
+        data: {
+          ...report,
+          type: "video_report",
+          reporter_username: profileMap.get(report.reporter_id) || "Unknown",
+          video_title: video?.title || "Deleted video",
+          video_url: video?.video_url || "",
+          video_creator_id: video?.user_id,
+        },
+      };
+    });
   };
 
   const fetchUsers = async (): Promise<FileItem[]> => {
@@ -463,6 +512,9 @@ const Admin = () => {
     } else if (data.type === "report") {
       await supabase.from("user_reports").delete().eq("id", data.id);
       toast.success("Report deleted");
+    } else if (data.type === "video_report") {
+      await supabase.from("video_reports" as any).delete().eq("id", data.id);
+      toast.success("Video report deleted");
     } else if (data.type === "feedback") {
       await supabase.from("feedback").delete().eq("id", data.id);
       toast.success("Feedback deleted");
@@ -487,6 +539,25 @@ const Admin = () => {
           toast.success(t("ai.reviewComplete"));
           fetchAllData();
         } catch { toast.error(t("ai.reviewFailed")); }
+        break;
+      case "ai_video_review":
+        toast.info("AI reviewing video report...");
+        try {
+          const { error } = await supabase.functions.invoke("video-moderator", { body: { reportId: data.id } });
+          if (error) throw error;
+          toast.success("AI review complete");
+          fetchAllData();
+        } catch { toast.error("AI review failed"); }
+        break;
+      case "resolve_video_report":
+        await supabase.from("video_reports" as any).update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", data.id);
+        toast.success("Video report resolved");
+        fetchAllData();
+        break;
+      case "dismiss_video_report":
+        await supabase.from("video_reports" as any).update({ status: "dismissed", resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", data.id);
+        toast.success("Video report dismissed");
+        fetchAllData();
         break;
       case "resolve":
         await supabase.from("user_reports").update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", data.id);

@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
@@ -53,6 +55,10 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const [newComment, setNewComment] = useState("");
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportVideoId, setReportVideoId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reporting, setReporting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const viewedSet = useRef<Set<string>>(new Set());
@@ -284,6 +290,43 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
     }
   };
 
+  const handleReportVideo = async () => {
+    if (!reportReason.trim() || !reportVideoId) return;
+    setReporting(true);
+    try {
+      const { error } = await supabase.from("video_reports" as any).insert({
+        video_id: reportVideoId,
+        reporter_id: currentUserId,
+        reason: reportReason.trim(),
+      });
+      if (error) throw error;
+
+      toast.info("Analyzing report with AI...");
+      const { data: reports } = await supabase
+        .from("video_reports" as any)
+        .select("id")
+        .eq("video_id", reportVideoId)
+        .eq("reporter_id", currentUserId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (reports && reports.length > 0) {
+        await supabase.functions.invoke("video-moderator", {
+          body: { reportId: (reports[0] as any).id },
+        });
+      }
+
+      toast.success("Video reported! Staff will review it.");
+      setReportOpen(false);
+      setReportReason("");
+      setReportVideoId(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to report video");
+    } finally {
+      setReporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -376,6 +419,16 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
                 </div>
               </button>
             )}
+            {short.user_id !== currentUserId && (
+              <button
+                className="flex flex-col items-center gap-0.5"
+                onClick={() => { setReportVideoId(short.id); setReportOpen(true); }}
+              >
+                <div className="p-2 rounded-full bg-black/40 text-white">
+                  <Flag className="h-5 w-5" />
+                </div>
+              </button>
+            )}
           </div>
 
           {/* Bottom info overlay */}
@@ -460,6 +513,27 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Report Dialog */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Video</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="Describe why you're reporting this video..."
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleReportVideo} disabled={!reportReason.trim() || reporting}>
+              {reporting ? "Submitting..." : "Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

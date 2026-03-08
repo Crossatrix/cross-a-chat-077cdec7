@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
@@ -48,6 +50,9 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [viewCounted, setViewCounted] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reporting, setReporting] = useState(false);
 
   useEffect(() => {
     fetchComments();
@@ -187,6 +192,44 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     return d.toLocaleDateString();
   };
 
+  const handleReport = async () => {
+    if (!reportReason.trim()) return;
+    setReporting(true);
+    try {
+      const { error } = await supabase.from("video_reports" as any).insert({
+        video_id: video.id,
+        reporter_id: currentUserId,
+        reason: reportReason.trim(),
+      });
+      if (error) throw error;
+
+      // Trigger AI moderation
+      toast.info("Analyzing report with AI...");
+      const { data: reports } = await supabase
+        .from("video_reports" as any)
+        .select("id")
+        .eq("video_id", video.id)
+        .eq("reporter_id", currentUserId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (reports && reports.length > 0) {
+        const { error: fnError } = await supabase.functions.invoke("video-moderator", {
+          body: { reportId: (reports[0] as any).id },
+        });
+        if (fnError) console.error("AI review error:", fnError);
+      }
+
+      toast.success("Video reported! Staff will review it.");
+      setReportOpen(false);
+      setReportReason("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to report video");
+    } finally {
+      setReporting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -233,6 +276,16 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
               >
                 <ThumbsDown className="h-4 w-4" /> {dislikesCount}
               </Button>
+              {video.user_id !== currentUserId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 ml-auto"
+                  onClick={() => setReportOpen(true)}
+                >
+                  <Flag className="h-4 w-4" /> Report
+                </Button>
+              )}
             </div>
 
             {/* Creator info */}
@@ -322,6 +375,27 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
           </div>
         </div>
       </ScrollArea>
+
+      {/* Report Dialog */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Video</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="Describe why you're reporting this video..."
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleReport} disabled={!reportReason.trim() || reporting}>
+              {reporting ? "Submitting..." : "Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
