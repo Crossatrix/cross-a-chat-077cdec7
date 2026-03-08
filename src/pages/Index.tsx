@@ -29,6 +29,7 @@ import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
+import VideoLeaderboard from "@/components/video/VideoLeaderboard";
 import ForYouFeed from "@/components/video/ForYouFeed";
 import CreatorProfile from "@/components/video/CreatorProfile";
 
