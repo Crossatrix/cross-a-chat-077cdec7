@@ -20,7 +20,7 @@ interface Short {
   views_count: number;
   likes_count: number;
   dislikes_count: number;
-  created_at: string;
+  comments_count: number;
   category: string;
   profiles: { username: string; avatar_url: string | null };
 }
