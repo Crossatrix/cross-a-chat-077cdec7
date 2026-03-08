@@ -330,23 +330,24 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                       <span className="text-xs text-muted-foreground truncate">{video.profiles.username}</span>
                       {isStaff && (
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5 ml-auto shrink-0"
                               title="Verify Creator"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <CheckCircle className="h-3.5 w-3.5 text-amber-500" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenuItem onClick={(e) => handleVerifyCreator(video.user_id, "verified", e)}>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => handleVerifyCreator(video.user_id, "verified")}>
                               <ShieldCheck className="h-4 w-4 mr-2 text-amber-500" />
                               Verified Creator
                             </DropdownMenuItem>
                             {isAdmin && (
-                              <DropdownMenuItem onClick={(e) => handleVerifyCreator(video.user_id, "verified_plus", e)}>
+                              <DropdownMenuItem onSelect={() => handleVerifyCreator(video.user_id, "verified_plus")}>
                                 <Star className="h-4 w-4 mr-2 text-pink-500" />
                                 Verified Creator+
                               </DropdownMenuItem>
