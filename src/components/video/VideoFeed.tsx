@@ -148,6 +148,21 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     }
   };
 
+  const handleUnverifyCreator = async (userId: string) => {
+    const { error } = await supabase
+      .from("creator_verifications")
+      .delete()
+      .eq("user_id", userId);
+
+    if (error) {
+      toast.error("Failed to unverify: " + error.message);
+    } else {
+      invalidateCreatorCache(userId);
+      toast.success("Creator verification removed!");
+      fetchVideos();
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     const now = new Date();
