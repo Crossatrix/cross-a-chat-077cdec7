@@ -129,13 +129,14 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
     }
 
     // Send with empty string if no text (media only)
-    onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined, generateImage);
+    onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined, generateImage, pendingSystemMessage);
     setMessage("");
     setSelectedImage(null);
     setSelectedVideo(null);
     setRecordedBlob(null);
     setRecordingTime(0);
     setGenerateImage(false);
+    setPendingSystemMessage(false);
   };
 
   return (
