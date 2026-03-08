@@ -43,7 +43,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     setLoading(true);
 
     // Fetch all signals in parallel: category prefs, follows, liked video creators
-    const [prefsRes, followsRes, likesRes, notInterestedRes] = await Promise.all([
+    const [prefsRes, followsRes, likesRes, notInterestedRes, blockedCatsRes] = await Promise.all([
       supabase
         .from("video_category_views")
         .select("category, view_count")
@@ -62,7 +62,13 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
         .from("video_not_interested" as any)
         .select("video_id, creator_id, category")
         .eq("user_id", currentUserId),
+      supabase
+        .from("blocked_categories" as any)
+        .select("category")
+        .eq("user_id", currentUserId),
     ]);
+
+    const blockedCats = new Set((blockedCatsRes.data || []).map((d: any) => d.category));
 
     const preferredCategories = (prefsRes.data || []).slice(0, 5).map(p => p.category);
     setTopCategories(preferredCategories);
