@@ -281,9 +281,16 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
           disabled={disabled || isRecording}
         />
         <EffectsPicker
-          onEffectSelect={(tag: string) => {
-            if (editingEffect) {
-              // Replace the old effect tag with the new one
+          onEffectSelect={(tag: string, asSystemMessage?: boolean) => {
+            if (asSystemMessage) {
+              setMessage(tag);
+              setPendingSystemMessage(true);
+              // Auto-submit the system message
+              setTimeout(() => {
+                const form = document.querySelector('form');
+                if (form) form.requestSubmit();
+              }, 50);
+            } else if (editingEffect) {
               setMessage(prev => prev.replace(editingEffect.fullMatch, tag));
               setEditingEffect(null);
             } else {
@@ -293,6 +300,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
           disabled={disabled || isRecording}
           editingEffect={editingEffect}
           onEditCancel={() => setEditingEffect(null)}
+          canSendSystemMessage={canSendSystemMessage}
         />
         <RichTextInput
           value={message}
