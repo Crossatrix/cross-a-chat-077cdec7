@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Wrench, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/hooks/use-toast";
 
 const Maintenance = () => {
   const [maintenanceUntil, setMaintenanceUntil] = useState<string | null>(null);
@@ -48,6 +49,10 @@ const Maintenance = () => {
           .from("app_settings")
           .update({ value: "false" })
           .eq("key", "maintenance_mode");
+        toast({
+          title: "🎉 We're back online!",
+          description: "Maintenance is complete. Enjoy the app!",
+        });
         navigate("/");
       }
     };
