@@ -283,7 +283,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
             <VideoGrid items={shorts} />
           </TabsContent>
         </Tabs>
-      </ScrollArea>
+      </div>
     </div>
   );
 };
