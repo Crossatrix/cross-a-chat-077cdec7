@@ -78,6 +78,15 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     return d.toLocaleDateString();
   };
 
+  const filteredVideos = useMemo(() => {
+    if (!searchQuery.trim()) return videos;
+    const q = searchQuery.toLowerCase();
+    return videos.filter(v =>
+      v.title.toLowerCase().includes(q) ||
+      v.profiles.username.toLowerCase().includes(q)
+    );
+  }, [videos, searchQuery]);
+
   if (selectedVideo) {
     return (
       <VideoPlayer
@@ -93,6 +102,23 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       <div className="flex items-center justify-between p-3 border-b border-border bg-card shrink-0">
         <h2 className="text-lg font-bold text-primary">Videos</h2>
         <VideoUploadDialog userId={currentUserId} onUploaded={fetchVideos} />
+      </div>
+
+      <div className="px-3 pt-2 pb-1 shrink-0">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by title or creator..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-8 h-9 text-sm"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2">
+              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            </button>
+          )}
+        </div>
       </div>
 
       <ScrollArea className="flex-1">
