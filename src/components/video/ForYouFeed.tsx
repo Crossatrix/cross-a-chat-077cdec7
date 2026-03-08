@@ -109,11 +109,16 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
 
     const allVideos = data as unknown as Video[];
 
+    // Filter out exact not-interested videos, then apply scoring
+    const filteredVideos = allVideos.filter(v => !notInterestedVideoIds.has(v.id));
+
     if (!hasSignals) {
-      // No signals — show trending, penalize heavily disliked videos
-      const trending = [...allVideos].sort((a, b) => {
-        const scoreA = a.views_count - (a.dislikes_count > a.likes_count && (a.likes_count + a.dislikes_count) > 0 ? (a.dislikes_count / (a.likes_count + a.dislikes_count)) * a.views_count * 2 : 0);
-        const scoreB = b.views_count - (b.dislikes_count > b.likes_count && (b.likes_count + b.dislikes_count) > 0 ? (b.dislikes_count / (b.likes_count + b.dislikes_count)) * b.views_count * 2 : 0);
+      // No signals — show trending, penalize heavily disliked videos and not-interested signals
+      const trending = [...filteredVideos].sort((a, b) => {
+        const niPenaltyA = (notInterestedCreators[a.user_id] || 0) * 3 + (notInterestedCategories[a.category] || 0) * 1.5;
+        const niPenaltyB = (notInterestedCreators[b.user_id] || 0) * 3 + (notInterestedCategories[b.category] || 0) * 1.5;
+        const scoreA = a.views_count - niPenaltyA * 100 - (a.dislikes_count > a.likes_count && (a.likes_count + a.dislikes_count) > 0 ? (a.dislikes_count / (a.likes_count + a.dislikes_count)) * a.views_count * 2 : 0);
+        const scoreB = b.views_count - niPenaltyB * 100 - (b.dislikes_count > b.likes_count && (b.likes_count + b.dislikes_count) > 0 ? (b.dislikes_count / (b.likes_count + b.dislikes_count)) * b.views_count * 2 : 0);
         return scoreB - scoreA;
       });
       setVideos(trending.slice(0, 50));
