@@ -498,6 +498,83 @@ const Settings = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Not Interested Videos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <EyeOff className="h-5 w-5" />
+                Not Interested ({notInterestedItems.length})
+              </CardTitle>
+              <CardDescription>Videos you've marked as not interesting. Removing them will restore their visibility in your feed.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingNotInterested ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : notInterestedItems.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4 text-sm">
+                  No videos marked as not interested
+                </p>
+              ) : (
+                <>
+                  <div className="flex justify-end mb-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearAllNotInterested}
+                      className="gap-1 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Clear All
+                    </Button>
+                  </div>
+                  <ScrollArea className="max-h-[400px]">
+                    <div className="space-y-2">
+                      {notInterestedItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card gap-3"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {item.video?.thumbnail_url ? (
+                              <img
+                                src={item.video.thumbnail_url}
+                                alt=""
+                                className="w-16 h-10 rounded object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="w-16 h-10 rounded bg-muted flex items-center justify-center shrink-0">
+                                <Play className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {item.video?.title || "Deleted video"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {item.category} · {new Date(item.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveNotInterested(item.id)}
+                            className="gap-1 text-muted-foreground hover:text-foreground shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-4">
