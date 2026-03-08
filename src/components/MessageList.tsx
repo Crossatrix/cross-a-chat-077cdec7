@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import FeaturedAvatar from "@/components/video/FeaturedAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Edit2, Check, X } from "lucide-react";
@@ -217,12 +218,13 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                 className={`flex gap-3 group ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}
               >
               <div className="flex items-start gap-1 md:gap-2">
-                <Avatar className="h-6 w-6 md:h-8 md:w-8 border-2 border-primary">
-                  <AvatarImage src={message.profiles?.avatar_url || ""} alt={message.profiles?.username} />
-                  <AvatarFallback className="bg-secondary text-foreground text-[10px] md:text-xs">
-                    {message.profiles?.username?.charAt(0).toUpperCase() || "?"}
-                  </AvatarFallback>
-                </Avatar>
+                <FeaturedAvatar
+                  userId={message.user_id}
+                  avatarUrl={message.profiles?.avatar_url || ""}
+                  username={message.profiles?.username || "?"}
+                  avatarClassName="h-6 w-6 md:h-8 md:w-8 border-2 border-primary"
+                  fallbackClassName="bg-secondary text-foreground text-[10px] md:text-xs"
+                />
                 {!isCurrentUser && currentUserDbId && conversationId && (
                   <UserActionsMenu
                     userId={message.user_id}

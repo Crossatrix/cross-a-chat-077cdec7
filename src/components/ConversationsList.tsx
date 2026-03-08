@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ChangelogDialog from "@/components/ChangelogDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import FeaturedAvatar from "@/components/video/FeaturedAvatar";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Trash2 } from "lucide-react";
 import StaffBadge from "@/components/StaffBadge";
@@ -385,12 +386,22 @@ const ConversationsList = ({
                     onClick={() => onSelectConversation(conv.id, displayName, conv.is_group)}
                   >
                     <div className="relative shrink-0">
-                      <Avatar className={`h-10 w-10 border-2 ${conv.isKicked ? 'border-destructive' : 'border-primary'}`}>
-                        <AvatarImage src={avatarSrc} alt={displayName} />
-                        <AvatarFallback className="bg-secondary text-foreground">
-                          {avatarFallback}
-                        </AvatarFallback>
-                      </Avatar>
+                      {!conv.is_group && !conv.is_ai_chat && conv.otherUser ? (
+                        <FeaturedAvatar
+                          userId={conv.otherUser.id}
+                          avatarUrl={avatarSrc}
+                          username={displayName}
+                          avatarClassName={`h-10 w-10 border-2 ${conv.isKicked ? 'border-destructive' : 'border-primary'}`}
+                          fallbackClassName="bg-secondary text-foreground"
+                        />
+                      ) : (
+                        <Avatar className={`h-10 w-10 border-2 ${conv.isKicked ? 'border-destructive' : 'border-primary'}`}>
+                          <AvatarImage src={avatarSrc} alt={displayName} />
+                          <AvatarFallback className="bg-secondary text-foreground">
+                            {avatarFallback}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                       {conv.isKicked && (
                         <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive border-2 border-card flex items-center justify-center">
                           <span className="text-[8px] text-destructive-foreground">✕</span>
