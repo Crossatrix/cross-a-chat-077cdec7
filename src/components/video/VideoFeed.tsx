@@ -70,6 +70,15 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     setIsAdmin(roles.includes("admin"));
   };
 
+  const checkAgeVerification = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("age_verified")
+      .eq("id", currentUserId)
+      .single();
+    if (data) setAgeVerified(!!(data as any).age_verified);
+  };
+
   const fetchCategoryPrefs = async () => {
     const { data } = await supabase
       .from("video_category_views")
