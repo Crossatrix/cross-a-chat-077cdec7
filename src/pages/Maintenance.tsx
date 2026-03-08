@@ -8,11 +8,11 @@ const Maintenance = () => {
   const [maintenanceUntil, setMaintenanceUntil] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
     const check = async () => {
-      // Get maintenance end time
       const { data: untilData } = await supabase
         .from("app_settings")
         .select("value")
@@ -20,7 +20,6 @@ const Maintenance = () => {
         .single();
       setMaintenanceUntil(untilData?.value || null);
 
-      // Check if current user is admin
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase.rpc("is_app_admin", { _user_id: user.id });
@@ -31,6 +30,23 @@ const Maintenance = () => {
     check();
   }, []);
 
+  useEffect(() => {
+    if (!maintenanceUntil) return;
+
+    const update = () => {
+      const diff = Math.max(0, new Date(maintenanceUntil).getTime() - Date.now());
+      setTimeLeft({
+        hours: Math.floor(diff / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((diff % (1000 * 60)) / 1000),
+      });
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [maintenanceUntil]);
+
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -39,10 +55,7 @@ const Maintenance = () => {
     );
   }
 
-  const timeLeft = maintenanceUntil
-    ? new Date(maintenanceUntil).getTime() - Date.now()
-    : null;
-  const hoursLeft = timeLeft ? Math.max(0, Math.ceil(timeLeft / (1000 * 60 * 60))) : null;
+  const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
@@ -58,17 +71,33 @@ const Maintenance = () => {
           We're currently performing maintenance to improve your experience. Please check back soon!
         </p>
 
-        {hoursLeft !== null && hoursLeft > 0 && (
-          <div className="bg-card border border-border rounded-xl p-4">
-            <p className="text-sm text-muted-foreground">Estimated time remaining</p>
-            <p className="text-2xl font-bold text-primary">
-              ~{hoursLeft} {hoursLeft === 1 ? "hour" : "hours"}
-            </p>
+        {maintenanceUntil && (
+          <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+            <p className="text-sm text-muted-foreground">Time remaining</p>
+            <div className="flex items-center justify-center gap-3">
+              {[
+                { value: pad(timeLeft.hours), label: "Hours" },
+                { value: pad(timeLeft.minutes), label: "Min" },
+                { value: pad(timeLeft.seconds), label: "Sec" },
+              ].map((unit, i) => (
+                <div key={unit.label} className="flex items-center gap-3">
+                  <div className="flex flex-col items-center">
+                    <span className="text-4xl font-mono font-bold text-primary tabular-nums">
+                      {unit.value}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
+                      {unit.label}
+                    </span>
+                  </div>
+                  {i < 2 && <span className="text-2xl font-bold text-muted-foreground/50 -mt-4">:</span>}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {isAdmin && (
-          <div className="space-y-2 pt-4">
+          <div className="pt-4">
             <Button onClick={() => navigate("/admin")} className="w-full gap-2">
               <Shield className="h-4 w-4" />
               Go to Admin Panel
