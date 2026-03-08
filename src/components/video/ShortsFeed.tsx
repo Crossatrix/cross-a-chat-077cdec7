@@ -348,6 +348,16 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
               <span className="text-white text-xs font-medium drop-shadow">{localCounts[short.id]?.dislikes || 0}</span>
             </button>
 
+            <button
+              className="flex flex-col items-center gap-0.5"
+              onClick={() => openComments(short.id, short.user_id)}
+            >
+              <div className="p-2 rounded-full bg-black/40 text-white">
+                <MessageCircle className="h-5 w-5" />
+              </div>
+              <span className="text-white text-xs font-medium drop-shadow">{commentCounts[short.id] || 0}</span>
+            </button>
+
             {short.user_id !== currentUserId && (
               <button
                 className="flex flex-col items-center gap-0.5"
