@@ -67,6 +67,16 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     const preferredCategories = (prefsRes.data || []).slice(0, 5).map(p => p.category);
     setTopCategories(preferredCategories);
 
+    // Build not-interested signals
+    const niData = (notInterestedRes.data || []) as any[];
+    const notInterestedVideoIds = new Set(niData.map((n: any) => n.video_id));
+    const notInterestedCreators: Record<string, number> = {};
+    const notInterestedCategories: Record<string, number> = {};
+    niData.forEach((n: any) => {
+      notInterestedCreators[n.creator_id] = (notInterestedCreators[n.creator_id] || 0) + 1;
+      notInterestedCategories[n.category] = (notInterestedCategories[n.category] || 0) + 1;
+    });
+
     const followedCreators = new Set((followsRes.data || []).map(f => f.following_id));
 
     // Get creators from liked videos
