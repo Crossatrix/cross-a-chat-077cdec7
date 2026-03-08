@@ -88,7 +88,7 @@ const ChangelogDialog = ({ open, onOpenChange }: ChangelogDialogProps) => {
         )}
 
         {!loading && (
-          <ScrollArea className="flex-1 pr-2">
+          <ScrollArea className="flex-1 pr-2 max-h-[60vh]">
             {entries.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No updates yet.</p>
             ) : (
