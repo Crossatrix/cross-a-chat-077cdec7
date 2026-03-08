@@ -67,11 +67,11 @@ const FeaturedAvatar = ({ userId, avatarUrl, username, className = "", avatarCla
   }
 
   return (
-    <div className={`relative inline-flex items-center justify-center ${className}`}>
+    <div className={`relative inline-flex items-center justify-center overflow-visible ${className}`}>
       <img
         src={TIER_EFFECTS[tier]}
         alt={`${tier} effect`}
-        className="absolute w-[180%] h-[180%] object-contain pointer-events-none z-0"
+        className="absolute w-[250%] h-[250%] object-contain pointer-events-none z-0"
         style={{
           top: "50%",
           left: "50%",
