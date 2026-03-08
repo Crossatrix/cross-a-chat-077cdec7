@@ -91,6 +91,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
       setTitle("");
       setDescription("");
       setCategory("other");
+      setAdultsOnly(false);
       setVideoFile(null);
       setThumbnailFile(null);
       setThumbnailPreview(null);
