@@ -21,6 +21,7 @@ interface Short {
   likes_count: number;
   dislikes_count: number;
   comments_count: number;
+  created_at: string;
   category: string;
   profiles: { username: string; avatar_url: string | null };
 }
