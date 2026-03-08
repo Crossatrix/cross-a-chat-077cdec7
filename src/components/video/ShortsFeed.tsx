@@ -392,6 +392,63 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
           </div>
         </div>
       ))}
+
+      {/* Comments Sheet */}
+      <Sheet open={commentsOpen} onOpenChange={setCommentsOpen}>
+        <SheetContent side="bottom" className="h-[60vh] flex flex-col">
+          <SheetHeader>
+            <SheetTitle>Comments ({comments.length})</SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="flex-1 my-2">
+            <div className="space-y-3 pr-2">
+              {comments.map((comment) => (
+                <div key={comment.id} className="flex gap-2">
+                  <Avatar className="h-7 w-7 shrink-0">
+                    <AvatarImage src={comment.profiles.avatar_url || ""} />
+                    <AvatarFallback className="bg-secondary text-foreground text-[10px]">
+                      {comment.profiles.username?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <StaffBadge userId={comment.user_id} size={12} />
+                      <CreatorBadge userId={comment.user_id} size={12} />
+                      <span className="text-xs font-medium">{comment.profiles.username}</span>
+                      <span className="text-[10px] text-muted-foreground">{formatDate(comment.created_at)}</span>
+                    </div>
+                    <p className="text-sm break-words">{comment.content}</p>
+                  </div>
+                  {(comment.user_id === currentUserId || commentsVideoOwnerId === currentUserId) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0"
+                      onClick={() => handleDeleteComment(comment.id)}
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {comments.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">No comments yet</p>
+              )}
+            </div>
+          </ScrollArea>
+          <div className="flex gap-2 pt-2 border-t border-border">
+            <Input
+              placeholder="Add a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleComment()}
+              className="flex-1"
+            />
+            <Button size="icon" onClick={handleComment} disabled={!newComment.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
