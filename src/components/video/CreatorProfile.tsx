@@ -3,12 +3,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar } from "lucide-react";
+import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StaffBadge from "@/components/StaffBadge";
 import { formatMessageText } from "@/utils/textFormatting";
 import CreatorBadge from "./CreatorBadge";
-import FeaturedAvatar from "./FeaturedAvatar";
+import FeaturedAvatar, { invalidateFeaturedCache, type FeaturedTier } from "./FeaturedAvatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface Video {
   id: string;
