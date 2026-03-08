@@ -59,10 +59,10 @@ const VideoLeaderboard = ({ onSelectVideo, onCreatorClick }: VideoLeaderboardPro
       const videoIds = data.map(d => d.video_id);
       const { data: videos } = await supabase
         .from("videos")
-        .select("id, title, thumbnail_url, user_id, profiles(username, avatar_url)")
+        .select("id, title, thumbnail_url, user_id, adults_only, profiles(username, avatar_url)")
         .in("id", videoIds);
 
-      const videoMap = new Map((videos || []).map((v: any) => [v.id, v]));
+      const videoMap = new Map((videos || []).filter((v: any) => !v.adults_only).map((v: any) => [v.id, v]));
       const enriched = data
         .map(d => ({ ...d, video: videoMap.get(d.video_id) as any }))
         .filter(d => d.video);
