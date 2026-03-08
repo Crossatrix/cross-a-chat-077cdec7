@@ -5,10 +5,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { RefreshCw, Award } from "lucide-react";
+import { RefreshCw, Award, Flame } from "lucide-react";
 import CreatorBadge, { invalidateCreatorCache } from "@/components/video/CreatorBadge";
 import { StaffRole, isAtLeast } from "@/utils/roleConfig";
 import officialIcon from "@/assets/roles/official_notifications.png";
+import { invalidateFeaturedCache, type FeaturedTier } from "@/components/video/FeaturedAvatar";
 
 interface CreatorEntry {
   id: string;
@@ -16,6 +17,7 @@ interface CreatorEntry {
   status: string;
   profiles: { username: string; avatar_url: string | null };
   isOfficial?: boolean;
+  featuredTier?: FeaturedTier | null;
 }
 
 interface CreatorVerificationManagerProps {
@@ -40,17 +42,20 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
       .select("*, profiles(username, avatar_url)")
       .order("created_at", { ascending: false });
 
-    const { data: officials } = await supabase
-      .from("official_accounts")
-      .select("user_id");
+    const [{ data: officials }, { data: featured }] = await Promise.all([
+      supabase.from("official_accounts").select("user_id"),
+      supabase.from("featured_creators").select("user_id, tier"),
+    ]);
 
     const officialIds = new Set(officials?.map(o => o.user_id) || []);
+    const featuredMap = new Map(featured?.map(f => [f.user_id, f.tier as FeaturedTier]) || []);
 
     if (data) {
       setCreators(
         (data as unknown as CreatorEntry[]).map(c => ({
           ...c,
           isOfficial: officialIds.has(c.user_id),
+          featuredTier: featuredMap.get(c.user_id) ?? null,
         }))
       );
     }
@@ -101,6 +106,31 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
       toast.success("Official badge granted");
     }
     fetchCreators();
+  };
+
+  const handleSetFeatured = async (userId: string, tier: string) => {
+    if (tier === "none") {
+      const { error } = await supabase
+        .from("featured_creators")
+        .delete()
+        .eq("user_id", userId);
+      if (error) {
+        toast.error("Failed to remove featured status");
+        return;
+      }
+      toast.success("Featured status removed");
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("featured_creators")
+        .upsert({ user_id: userId, tier, granted_by: user?.id, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) {
+        toast.error("Failed to set featured: " + error.message);
+        return;
+      }
+      toast.success(`Featured as ${tier}`);
+    }
+    invalidateFeaturedCache(userId);
   };
 
   const statusLabel = (s: string) => {
@@ -158,6 +188,23 @@ const CreatorVerificationManager = ({ staffRole }: CreatorVerificationManagerPro
                     <SelectItem value="creator">Creator</SelectItem>
                     <SelectItem value="verified">Verified</SelectItem>
                     {canVerifyPlus && <SelectItem value="verified_plus">Verified+</SelectItem>}
+                  </SelectContent>
+                </Select>
+              )}
+              {canVerifyPlus && (
+                <Select
+                  value={c.featuredTier || "none"}
+                  onValueChange={(val) => handleSetFeatured(c.user_id, val)}
+                >
+                  <SelectTrigger className="w-28 h-8 text-xs">
+                    <Flame className="h-3 w-3 mr-1" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Fire</SelectItem>
+                    <SelectItem value="epic">🔥 Epic</SelectItem>
+                    <SelectItem value="legendary">💜 Legendary</SelectItem>
+                    <SelectItem value="mythic">💎 Mythic</SelectItem>
                   </SelectContent>
                 </Select>
               )}
