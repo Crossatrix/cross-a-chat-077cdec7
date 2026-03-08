@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Play, Eye, ThumbsUp, Sparkles } from "lucide-react";
@@ -41,64 +41,106 @@ const ForYouFeed = ({ currentUserId }: ForYouFeedProps) => {
   const fetchForYou = async () => {
     setLoading(true);
 
-    // Fetch user's category preferences
-    const { data: prefs } = await supabase
-      .from("video_category_views")
-      .select("category, view_count")
-      .eq("user_id", currentUserId)
-      .order("view_count", { ascending: false });
+    // Fetch all signals in parallel: category prefs, follows, liked video creators
+    const [prefsRes, followsRes, likesRes] = await Promise.all([
+      supabase
+        .from("video_category_views")
+        .select("category, view_count")
+        .eq("user_id", currentUserId)
+        .order("view_count", { ascending: false }),
+      supabase
+        .from("video_follows")
+        .select("following_id")
+        .eq("follower_id", currentUserId),
+      supabase
+        .from("video_likes")
+        .select("video_id")
+        .eq("user_id", currentUserId)
+        .eq("is_like", true),
+    ]);
 
-    const preferredCategories = (prefs || []).slice(0, 5).map(p => p.category);
+    const preferredCategories = (prefsRes.data || []).slice(0, 5).map(p => p.category);
     setTopCategories(preferredCategories);
 
-    if (preferredCategories.length === 0) {
-      // No watch history — show trending (most viewed)
-      const { data } = await supabase
+    const followedCreators = new Set((followsRes.data || []).map(f => f.following_id));
+
+    // Get creators from liked videos
+    const likedVideoIds = (likesRes.data || []).map(l => l.video_id);
+    let likedCreators = new Set<string>();
+    if (likedVideoIds.length > 0) {
+      const { data: likedVids } = await supabase
         .from("videos")
-        .select("*, profiles(username, avatar_url)")
-        .order("views_count", { ascending: false })
-        .limit(50);
-      if (data) setVideos(data as unknown as Video[]);
+        .select("user_id")
+        .in("id", likedVideoIds.slice(0, 200));
+      likedVids?.forEach(v => likedCreators.add(v.user_id));
+    }
+
+    // Merge all preferred creator IDs
+    const preferredCreators = new Set([...followedCreators, ...likedCreators]);
+
+    const hasSignals = preferredCategories.length > 0 || preferredCreators.size > 0;
+
+    // Fetch all videos (we score client-side)
+    const { data } = await supabase
+      .from("videos")
+      .select("*, profiles(username, avatar_url)")
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (!data) {
       setLoading(false);
       return;
     }
 
-    // Fetch videos in preferred categories
-    const { data } = await supabase
-      .from("videos")
-      .select("*, profiles(username, avatar_url)")
-      .in("category", preferredCategories)
-      .order("created_at", { ascending: false })
-      .limit(100);
+    const allVideos = data as unknown as Video[];
 
-    if (data) {
-      // Fetch verifications to boost verified creators
-      const { data: verifications } = await supabase
-        .from("creator_verifications")
-        .select("user_id, status");
-
-      const verifiedMap = new Map<string, string>();
-      verifications?.forEach(v => verifiedMap.set(v.user_id, v.status));
-
-      const prefMap: Record<string, number> = {};
-      prefs?.forEach(p => { prefMap[p.category] = p.view_count; });
-      const totalViews = Object.values(prefMap).reduce((a, b) => a + b, 0) || 1;
-
-      const sorted = [...(data as unknown as Video[])].sort((a, b) => {
-        const aVerify = verifiedMap.get(a.user_id) || "";
-        const bVerify = verifiedMap.get(b.user_id) || "";
-        const vPriority = (s: string) => s === "verified_plus" ? 3 : s === "verified" ? 2 : 0;
-        const verifyDiff = vPriority(bVerify) - vPriority(aVerify);
-
-        const aPref = (prefMap[a.category] || 0) / totalViews;
-        const bPref = (prefMap[b.category] || 0) / totalViews;
-
-        // Combine: preference weight (70%) + verification (30%)
-        return (bPref - aPref) * 0.7 + verifyDiff * 0.3;
-      });
-
-      setVideos(sorted);
+    if (!hasSignals) {
+      // No signals — show trending
+      const trending = [...allVideos].sort((a, b) => b.views_count - a.views_count);
+      setVideos(trending.slice(0, 50));
+      setLoading(false);
+      return;
     }
+
+    // Fetch verifications
+    const { data: verifications } = await supabase
+      .from("creator_verifications")
+      .select("user_id, status");
+
+    const verifiedMap = new Map<string, string>();
+    verifications?.forEach(v => verifiedMap.set(v.user_id, v.status));
+
+    // Build category weight map
+    const prefMap: Record<string, number> = {};
+    prefsRes.data?.forEach(p => { prefMap[p.category] = p.view_count; });
+    const totalCatViews = Object.values(prefMap).reduce((a, b) => a + b, 0) || 1;
+
+    // Score each video
+    const scored = allVideos.map(video => {
+      let score = 0;
+
+      // Creator signals (strongest: followed or liked creator)
+      if (followedCreators.has(video.user_id)) score += 5;
+      if (likedCreators.has(video.user_id)) score += 3;
+
+      // Category preference
+      const catWeight = (prefMap[video.category] || 0) / totalCatViews;
+      score += catWeight * 4;
+
+      // Verification boost
+      const vStatus = verifiedMap.get(video.user_id) || "";
+      if (vStatus === "verified_plus") score += 1.5;
+      else if (vStatus === "verified") score += 0.75;
+
+      // Small recency boost
+      const ageHours = (Date.now() - new Date(video.created_at).getTime()) / 3600000;
+      score += Math.max(0, 1 - ageHours / 720); // decays over 30 days
+
+      return { video, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    setVideos(scored.slice(0, 50).map(s => s.video));
     setLoading(false);
   };
 
@@ -177,7 +219,7 @@ const ForYouFeed = ({ currentUserId }: ForYouFeedProps) => {
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
             <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No recommendations yet</h3>
-            <p className="text-sm text-muted-foreground">Watch some videos in the Videos tab and we'll personalize this feed for you!</p>
+            <p className="text-sm text-muted-foreground">Watch some videos, follow creators, and like videos to personalize this feed!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
