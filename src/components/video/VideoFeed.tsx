@@ -246,9 +246,26 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   }, [videos, searchQuery, selectedCategory, userCategoryPrefs]);
 
   const handleSelectVideo = (video: Video) => {
+    if (video.adults_only && !ageVerified) {
+      setPendingAdultVideo(video);
+      setAgeVerifyOpen(true);
+      return;
+    }
     setSelectedVideo(video);
-    // Track category view
     trackCategoryView(video.category);
+  };
+
+  const handleToggleAdultsOnly = async (videoId: string, currentValue: boolean) => {
+    const { error } = await supabase
+      .from("videos")
+      .update({ adults_only: !currentValue } as any)
+      .eq("id", videoId);
+    if (error) {
+      toast.error("Failed to update");
+    } else {
+      toast.success(!currentValue ? "Marked as Adults Only" : "Removed Adults Only");
+      fetchVideos();
+    }
   };
 
   const trackCategoryView = async (category: string) => {
