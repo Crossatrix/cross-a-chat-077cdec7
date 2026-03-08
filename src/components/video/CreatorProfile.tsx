@@ -61,12 +61,16 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
       { count: followers },
       { count: following },
       { data: followStatus },
+      { data: adminRoles },
+      { data: featuredData },
     ] = await Promise.all([
       supabase.from("profiles").select("username, avatar_url, bio, created_at").eq("id", creatorId).single(),
       supabase.from("videos").select("*, profiles(username, avatar_url)").eq("user_id", creatorId).order("created_at", { ascending: false }),
       supabase.from("video_follows").select("*", { count: "exact", head: true }).eq("following_id", creatorId),
       supabase.from("video_follows").select("*", { count: "exact", head: true }).eq("follower_id", creatorId),
       supabase.from("video_follows").select("id").eq("follower_id", currentUserId).eq("following_id", creatorId).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", currentUserId).eq("role", "admin").maybeSingle(),
+      supabase.from("featured_creators").select("tier").eq("user_id", creatorId).maybeSingle(),
     ]);
 
     if (profileData) setProfile(profileData);
