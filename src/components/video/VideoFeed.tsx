@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VideoUploadDialog from "./VideoUploadDialog";
 import VideoPlayer from "./VideoPlayer";
+import CreatorProfile from "./CreatorProfile";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
 import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
@@ -37,6 +38,7 @@ interface VideoFeedProps {
 const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -248,12 +250,30 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     }));
   };
 
+  if (selectedCreatorId) {
+    return (
+      <CreatorProfile
+        creatorId={selectedCreatorId}
+        currentUserId={currentUserId}
+        onBack={() => setSelectedCreatorId(null)}
+        onSelectVideo={(video) => {
+          setSelectedCreatorId(null);
+          setSelectedVideo(video);
+        }}
+      />
+    );
+  }
+
   if (selectedVideo) {
     return (
       <VideoPlayer
         video={selectedVideo}
         currentUserId={currentUserId}
         onBack={() => setSelectedVideo(null)}
+        onCreatorClick={(id) => {
+          setSelectedVideo(null);
+          setSelectedCreatorId(id);
+        }}
       />
     );
   }
@@ -343,7 +363,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
 
                 {/* Info */}
                 <div className="p-2.5 flex gap-2">
-                  <Avatar className="h-8 w-8 shrink-0 mt-0.5">
+                  <Avatar className="h-8 w-8 shrink-0 mt-0.5 cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}>
                     <AvatarImage src={video.profiles.avatar_url || ""} />
                     <AvatarFallback className="bg-secondary text-foreground text-xs">
                       {video.profiles.username?.charAt(0).toUpperCase()}
@@ -354,7 +374,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                     <div className="flex items-center gap-1 mt-1">
                       <StaffBadge userId={video.user_id} size={12} />
                       <CreatorBadge userId={video.user_id} size={12} />
-                      <span className="text-xs text-muted-foreground truncate">{video.profiles.username}</span>
+                      <span className="text-xs text-muted-foreground truncate cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}>{video.profiles.username}</span>
                       {isStaff && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

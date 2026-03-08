@@ -36,9 +36,10 @@ interface Comment {
 
 interface ShortsFeedProps {
   currentUserId: string;
+  onCreatorClick?: (creatorId: string) => void;
 }
 
-const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
+const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const [shorts, setShorts] = useState<Short[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -380,17 +381,17 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
           {/* Bottom info overlay */}
           <div className="absolute bottom-4 left-3 right-16 text-white drop-shadow-lg">
             <div className="flex items-center gap-2 mb-1">
-              <Avatar className="h-8 w-8 border-2 border-white">
+              <Avatar className="h-8 w-8 border-2 border-white cursor-pointer" onClick={() => onCreatorClick?.(short.user_id)}>
                 <AvatarImage src={short.profiles.avatar_url || ""} />
                 <AvatarFallback className="bg-secondary text-foreground text-xs">
                   {short.profiles.username?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div>
+              <div className="cursor-pointer" onClick={() => onCreatorClick?.(short.user_id)}>
                 <div className="flex items-center gap-1">
                   <StaffBadge userId={short.user_id} size={14} />
                   <CreatorBadge userId={short.user_id} size={14} />
-                  <span className="font-semibold text-sm">{short.profiles.username}</span>
+                  <span className="font-semibold text-sm hover:underline">{short.profiles.username}</span>
                 </div>
                 <span className="text-[10px] opacity-70">{followerCounts[short.user_id] || 0} followers</span>
               </div>

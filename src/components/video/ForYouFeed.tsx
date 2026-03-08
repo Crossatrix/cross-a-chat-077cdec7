@@ -26,9 +26,10 @@ interface Video {
 
 interface ForYouFeedProps {
   currentUserId: string;
+  onCreatorClick?: (creatorId: string) => void;
 }
 
-const ForYouFeed = ({ currentUserId }: ForYouFeedProps) => {
+const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
@@ -186,6 +187,7 @@ const ForYouFeed = ({ currentUserId }: ForYouFeedProps) => {
         video={selectedVideo}
         currentUserId={currentUserId}
         onBack={() => setSelectedVideo(null)}
+        onCreatorClick={onCreatorClick}
       />
     );
   }
@@ -243,7 +245,7 @@ const ForYouFeed = ({ currentUserId }: ForYouFeedProps) => {
                 </div>
 
                 <div className="p-2.5 flex gap-2">
-                  <Avatar className="h-8 w-8 shrink-0 mt-0.5">
+                  <Avatar className="h-8 w-8 shrink-0 mt-0.5 cursor-pointer" onClick={(e) => { e.stopPropagation(); onCreatorClick?.(video.user_id); }}>
                     <AvatarImage src={video.profiles.avatar_url || ""} />
                     <AvatarFallback className="bg-secondary text-foreground text-xs">
                       {video.profiles.username?.charAt(0).toUpperCase()}
@@ -254,7 +256,7 @@ const ForYouFeed = ({ currentUserId }: ForYouFeedProps) => {
                     <div className="flex items-center gap-1 mt-1">
                       <StaffBadge userId={video.user_id} size={12} />
                       <CreatorBadge userId={video.user_id} size={12} />
-                      <span className="text-xs text-muted-foreground truncate">{video.profiles.username}</span>
+                      <span className="text-xs text-muted-foreground truncate cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); onCreatorClick?.(video.user_id); }}>{video.profiles.username}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
                       <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" /> {video.views_count}</span>

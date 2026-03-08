@@ -30,6 +30,7 @@ import { requestNotificationPermission, registerServiceWorker, showNotification 
 import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
 import ForYouFeed from "@/components/video/ForYouFeed";
+import CreatorProfile from "@/components/video/CreatorProfile";
 
 interface Message {
   id: string;
@@ -70,6 +71,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
   const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts">("chats");
+  const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
@@ -1019,17 +1021,26 @@ return (
         </button>
       </div>
 
-      {activeTab === "videos" ? (
+      {creatorProfileId ? (
+        <div className="flex-1 min-h-0">
+          <CreatorProfile
+            creatorId={creatorProfileId}
+            currentUserId={user.id}
+            onBack={() => setCreatorProfileId(null)}
+            onSelectVideo={() => setCreatorProfileId(null)}
+          />
+        </div>
+      ) : activeTab === "videos" ? (
         <div className="flex-1 min-h-0">
           <VideoFeed currentUserId={user.id} />
         </div>
       ) : activeTab === "foryou" ? (
         <div className="flex-1 min-h-0">
-          <ForYouFeed currentUserId={user.id} />
+          <ForYouFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
         </div>
       ) : activeTab === "shorts" ? (
         <div className="flex-1 min-h-0">
-          <ShortsFeed currentUserId={user.id} />
+          <ShortsFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
         </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">
