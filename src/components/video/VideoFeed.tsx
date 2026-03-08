@@ -398,19 +398,26 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                     <img
                       src={video.thumbnail_url}
                       alt={video.title}
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover ${video.adults_only && !ageVerified ? 'blur-xl scale-105' : ''}`}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <Play className="h-10 w-10 text-muted-foreground" />
                     </div>
                   )}
+                  {video.adults_only && !ageVerified && (
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1">
+                      <ShieldAlert className="h-8 w-8 text-destructive" />
+                      <span className="text-white text-xs font-bold">18+ Content</span>
+                      <span className="text-white/70 text-[10px]">Verify age to view</span>
+                    </div>
+                  )}
                   {/* Category badge on thumbnail */}
-                  <span className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                  <span className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full z-10">
                     {getCategoryIcon(video.category)} {video.category}
                   </span>
-                  {video.adults_only && (
-                    <span className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                  {video.adults_only && ageVerified && (
+                    <span className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 z-10">
                       <ShieldAlert className="h-3 w-3" /> 18+
                     </span>
                   )}
