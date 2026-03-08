@@ -36,6 +36,14 @@ const Settings = () => {
     profile: { username: string; avatar_url: string | null };
   }>>([]);
   const [loadingGroupBlocks, setLoadingGroupBlocks] = useState(false);
+  const [notInterestedItems, setNotInterestedItems] = useState<Array<{
+    id: string;
+    video_id: string;
+    category: string;
+    created_at: string;
+    video?: { title: string; thumbnail_url: string | null };
+  }>>([]);
+  const [loadingNotInterested, setLoadingNotInterested] = useState(false);
 
   useEffect(() => {
     loadProfile();
