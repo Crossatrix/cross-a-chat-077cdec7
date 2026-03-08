@@ -286,6 +286,15 @@ const UsersList = () => {
                   Make Admin
                 </Button>
               )}
+
+              <Button
+                onClick={() => handleToggleOfficial(user.id, !!user.isOfficial)}
+                variant={user.isOfficial ? "secondary" : "outline"}
+                size="sm"
+              >
+                <Award className="h-4 w-4 mr-2" />
+                {user.isOfficial ? "Remove Official" : "Make Official"}
+              </Button>
             </div>
           </CardContent>
         </Card>
