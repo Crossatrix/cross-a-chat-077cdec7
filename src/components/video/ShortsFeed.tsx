@@ -419,6 +419,16 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
                 </div>
               </button>
             )}
+            {short.user_id !== currentUserId && (
+              <button
+                className="flex flex-col items-center gap-0.5"
+                onClick={() => { setReportVideoId(short.id); setReportOpen(true); }}
+              >
+                <div className="p-2 rounded-full bg-black/40 text-white">
+                  <Flag className="h-5 w-5" />
+                </div>
+              </button>
+            )}
           </div>
 
           {/* Bottom info overlay */}
