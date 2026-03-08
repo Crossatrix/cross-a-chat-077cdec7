@@ -250,12 +250,30 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     }));
   };
 
+  if (selectedCreatorId) {
+    return (
+      <CreatorProfile
+        creatorId={selectedCreatorId}
+        currentUserId={currentUserId}
+        onBack={() => setSelectedCreatorId(null)}
+        onSelectVideo={(video) => {
+          setSelectedCreatorId(null);
+          setSelectedVideo(video);
+        }}
+      />
+    );
+  }
+
   if (selectedVideo) {
     return (
       <VideoPlayer
         video={selectedVideo}
         currentUserId={currentUserId}
         onBack={() => setSelectedVideo(null)}
+        onCreatorClick={(id) => {
+          setSelectedVideo(null);
+          setSelectedCreatorId(id);
+        }}
       />
     );
   }
