@@ -619,6 +619,42 @@ const Settings = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Blocked Categories */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Ban className="h-5 w-5" />
+                Blocked Categories
+              </CardTitle>
+              <CardDescription>Hide entire categories from your video feeds. Blocked categories won't appear in Videos, Shorts, or For You.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingBlockedCategories ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {VIDEO_CATEGORIES.map((cat) => (
+                    <div
+                      key={cat.value}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{cat.icon}</span>
+                        <span className="text-sm font-medium">{cat.label}</span>
+                      </div>
+                      <Switch
+                        checked={blockedCategories.includes(cat.value)}
+                        onCheckedChange={() => handleToggleBlockCategory(cat.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-4">
