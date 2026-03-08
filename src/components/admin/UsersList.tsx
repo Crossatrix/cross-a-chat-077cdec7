@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Ban, Shield } from "lucide-react";
+import { Ban, Shield, Award } from "lucide-react";
+import officialIcon from "@/assets/roles/official_notifications.png";
 import { z } from "zod";
 
 const banReasonSchema = z.string().trim().min(10, "Please provide more details (min 10 characters)").max(1000, "Reason too long (max 1000 characters)");
@@ -19,6 +20,7 @@ interface User {
   banned?: boolean;
   banExpiresAt?: string | null;
   isAdmin?: boolean;
+  isOfficial?: boolean;
 }
 
 const UsersList = () => {
@@ -54,14 +56,20 @@ const UsersList = () => {
       .select("user_id, role")
       .eq("role", "admin");
 
+    const { data: officials } = await supabase
+      .from("official_accounts")
+      .select("user_id");
+
     const banMap = new Map(bans?.map(b => [b.user_id, b.expires_at]) || []);
     const adminIds = new Set(roles?.map(r => r.user_id) || []);
+    const officialIds = new Set(officials?.map(o => o.user_id) || []);
     
     const usersWithStatus = profiles?.map(p => ({
       ...p,
       banned: banMap.has(p.id),
       banExpiresAt: banMap.get(p.id),
-      isAdmin: adminIds.has(p.id)
+      isAdmin: adminIds.has(p.id),
+      isOfficial: officialIds.has(p.id),
     })) || [];
 
     setUsers(usersWithStatus);
@@ -139,6 +147,31 @@ const UsersList = () => {
     fetchUsers();
   };
 
+  const handleToggleOfficial = async (userId: string, isCurrentlyOfficial: boolean) => {
+    if (isCurrentlyOfficial) {
+      const { error } = await supabase
+        .from("official_accounts")
+        .delete()
+        .eq("user_id", userId);
+      if (error) {
+        toast.error("Failed to remove official badge");
+        return;
+      }
+      toast.success("Official badge removed");
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("official_accounts")
+        .insert({ user_id: userId, granted_by: user?.id });
+      if (error) {
+        toast.error("Failed to grant official badge");
+        return;
+      }
+      toast.success("Official badge granted");
+    }
+    fetchUsers();
+  };
+
   if (loading) {
     return <p className="text-muted-foreground">Loading users...</p>;
   }
@@ -155,8 +188,14 @@ const UsersList = () => {
                   Joined {new Date(user.created_at).toLocaleDateString()}
                 </CardDescription>
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap items-center">
                 {user.isAdmin && <Badge variant="default">Admin</Badge>}
+                {user.isOfficial && (
+                  <Badge variant="outline" className="gap-1">
+                    <img src={officialIcon} alt="Official" className="h-3.5 w-3.5 rounded-full" />
+                    Official
+                  </Badge>
+                )}
                 {user.banned ? (
                   user.banExpiresAt ? (
                     <Badge variant="destructive">
@@ -247,6 +286,15 @@ const UsersList = () => {
                   Make Admin
                 </Button>
               )}
+
+              <Button
+                onClick={() => handleToggleOfficial(user.id, !!user.isOfficial)}
+                variant={user.isOfficial ? "secondary" : "outline"}
+                size="sm"
+              >
+                <Award className="h-4 w-4 mr-2" />
+                {user.isOfficial ? "Remove Official" : "Make Official"}
+              </Button>
             </div>
           </CardContent>
         </Card>
