@@ -512,6 +512,9 @@ const Admin = () => {
     } else if (data.type === "report") {
       await supabase.from("user_reports").delete().eq("id", data.id);
       toast.success("Report deleted");
+    } else if (data.type === "video_report") {
+      await supabase.from("video_reports" as any).delete().eq("id", data.id);
+      toast.success("Video report deleted");
     } else if (data.type === "feedback") {
       await supabase.from("feedback").delete().eq("id", data.id);
       toast.success("Feedback deleted");
