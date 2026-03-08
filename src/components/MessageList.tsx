@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Edit2, Check, X } from "lucide-react";
 import UserActionsMenu from "./UserActionsMenu";
+import MessageReactions from "./MessageReactions";
 import TypingIndicator from "./TypingIndicator";
 import StaffBadge from "./StaffBadge";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
