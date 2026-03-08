@@ -276,6 +276,16 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
               >
                 <ThumbsDown className="h-4 w-4" /> {dislikesCount}
               </Button>
+              {video.user_id !== currentUserId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 ml-auto"
+                  onClick={() => setReportOpen(true)}
+                >
+                  <Flag className="h-4 w-4" /> Report
+                </Button>
+              )}
             </div>
 
             {/* Creator info */}
