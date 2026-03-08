@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, ThumbsDown, MessageCircle, Trash2, BarChart3 } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageCircle, Trash2, Pencil, BarChart3 } from "lucide-react";
+import EditPostDialog from "./EditPostDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
