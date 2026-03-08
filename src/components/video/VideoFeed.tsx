@@ -335,6 +335,13 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       </div>
 
       <ScrollArea className="flex-1">
+        <VideoLeaderboard
+          onSelectVideo={(videoId) => {
+            const v = videos.find(v => v.id === videoId);
+            if (v) handleSelectVideo(v);
+          }}
+          onCreatorClick={(id) => setSelectedCreatorId(id)}
+        />
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-muted-foreground">Loading videos...</p>
