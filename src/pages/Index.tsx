@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -29,6 +29,7 @@ import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
 import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
 import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
+import ForYouFeed from "@/components/video/ForYouFeed";
 
 interface Message {
   id: string;
@@ -68,7 +69,7 @@ const Index = () => {
 const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "shorts">("chats");
+  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts">("chats");
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
@@ -999,6 +1000,15 @@ return (
           <span>Videos</span>
         </button>
         <button
+          onClick={() => { setActiveTab("foryou"); setSelectedConversationId(null); }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            activeTab === "foryou" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Sparkles className="h-5 w-5" />
+          <span>For You</span>
+        </button>
+        <button
           onClick={() => { setActiveTab("shorts"); setSelectedConversationId(null); }}
           className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
             activeTab === "shorts" ? "text-primary" : "text-muted-foreground hover:text-foreground"
@@ -1012,6 +1022,10 @@ return (
       {activeTab === "videos" ? (
         <div className="flex-1 min-h-0">
           <VideoFeed currentUserId={user.id} />
+        </div>
+      ) : activeTab === "foryou" ? (
+        <div className="flex-1 min-h-0">
+          <ForYouFeed currentUserId={user.id} />
         </div>
       ) : activeTab === "shorts" ? (
         <div className="flex-1 min-h-0">
