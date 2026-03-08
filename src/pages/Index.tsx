@@ -55,6 +55,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [username, setUsername] = useState<string>("");
   const [isStaff, setIsStaff] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedUsername, setSelectedUsername] = useState<string>("");
@@ -275,6 +276,8 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       const staffRoles = ['moderator_lite', 'moderator', 'elder_moderator', 'admin'];
       const hasStaffRole = (roles || []).some(r => staffRoles.includes(r.role));
       setIsStaff(hasStaffRole);
+      const modRoles = ['moderator', 'elder_moderator', 'admin'];
+      setIsModerator((roles || []).some(r => modRoles.includes(r.role)));
 
       // Fetch AI credits
       fetchAiCredits();
@@ -474,7 +477,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     }
   };
 
-  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File, generateImage?: boolean) => {
+  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File, generateImage?: boolean, isSystemMessage?: boolean) => {
     if (!user || !selectedConversationId) return;
 
     setIsSendingMessage(true);
@@ -558,14 +561,21 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       videoUrl = publicUrl;
     }
 
-    const { error } = await supabase.from("messages").insert({
+    const messagePayload: any = {
       user_id: user.id,
       content,
       conversation_id: selectedConversationId,
       image_url: imageUrl,
       voice_url: voiceUrl,
       video_url: videoUrl,
-    });
+    };
+
+    if (isSystemMessage && isModerator) {
+      messagePayload.is_system = true;
+      messagePayload.system_type = 'announcement';
+    }
+
+    const { error } = await supabase.from("messages").insert(messagePayload);
 
     if (error) {
       if (import.meta.env.DEV) {
@@ -1251,6 +1261,7 @@ return (
                 aiCredits={aiCredits}
                 onCreditsUpdate={fetchAiCredits}
                 isSending={isSendingMessage}
+                canSendSystemMessage={isModerator}
                 onTyping={() => {
                   if (!selectedConversationId || !user?.id) return;
                   

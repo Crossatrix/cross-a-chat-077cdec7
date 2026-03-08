@@ -15,7 +15,7 @@ interface CustomEmoji {
 }
 
 interface MessageInputProps {
-  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean) => Promise<void> | void;
+  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean, isSystemMessage?: boolean) => Promise<void> | void;
   disabled?: boolean;
   isAIChat?: boolean;
   onModelChange?: (model: string) => void;
@@ -24,6 +24,7 @@ interface MessageInputProps {
   aiCredits?: number;
   onCreditsUpdate?: () => void;
   isSending?: boolean;
+  canSendSystemMessage?: boolean;
 }
 
 const messageSchema = z.string()
@@ -34,7 +35,7 @@ const messageSchema = z.string()
     "Message contains invalid content"
   );
 
-const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping, aiCredits, onCreditsUpdate, isSending = false }: MessageInputProps) => {
+const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping, aiCredits, onCreditsUpdate, isSending = false, canSendSystemMessage = false }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
@@ -43,6 +44,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
   const [recordingTime, setRecordingTime] = useState(0);
   const [generateImage, setGenerateImage] = useState(false);
   const [editingEffect, setEditingEffect] = useState<EffectTagInfo | null>(null);
+  const [pendingSystemMessage, setPendingSystemMessage] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -127,13 +129,14 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
     }
 
     // Send with empty string if no text (media only)
-    onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined, generateImage);
+    onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined, generateImage, pendingSystemMessage);
     setMessage("");
     setSelectedImage(null);
     setSelectedVideo(null);
     setRecordedBlob(null);
     setRecordingTime(0);
     setGenerateImage(false);
+    setPendingSystemMessage(false);
   };
 
   return (
@@ -278,9 +281,16 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
           disabled={disabled || isRecording}
         />
         <EffectsPicker
-          onEffectSelect={(tag: string) => {
-            if (editingEffect) {
-              // Replace the old effect tag with the new one
+          onEffectSelect={(tag: string, asSystemMessage?: boolean) => {
+            if (asSystemMessage) {
+              setMessage(tag);
+              setPendingSystemMessage(true);
+              // Auto-submit the system message
+              setTimeout(() => {
+                const form = document.querySelector('form');
+                if (form) form.requestSubmit();
+              }, 50);
+            } else if (editingEffect) {
               setMessage(prev => prev.replace(editingEffect.fullMatch, tag));
               setEditingEffect(null);
             } else {
@@ -290,6 +300,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
           disabled={disabled || isRecording}
           editingEffect={editingEffect}
           onEditCancel={() => setEditingEffect(null)}
+          canSendSystemMessage={canSendSystemMessage}
         />
         <RichTextInput
           value={message}

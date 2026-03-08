@@ -7,7 +7,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, Palette, Wand2, X, Check } from "lucide-react";
+import { Sparkles, Palette, Wand2, X, Check, Megaphone } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,10 +22,11 @@ interface Effect {
 }
 
 interface EffectsPickerProps {
-  onEffectSelect: (tag: string) => void;
+  onEffectSelect: (tag: string, asSystemMessage?: boolean) => void;
   disabled?: boolean;
   editingEffect?: EffectTagInfo | null;
   onEditCancel?: () => void;
+  canSendSystemMessage?: boolean;
 }
 
 const animations: Effect[] = [
@@ -80,12 +83,13 @@ const colors: { name: string; hex: string }[] = [
   { name: "Peach", hex: "#FFDAB9" },
 ];
 
-const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel }: EffectsPickerProps) => {
+const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel, canSendSystemMessage }: EffectsPickerProps) => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [selectedAnimations, setSelectedAnimations] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [customColor, setCustomColor] = useState("#FF0000");
+  const [sendAsSystem, setSendAsSystem] = useState(false);
 
   // When editingEffect is set, open the picker pre-filled
   useEffect(() => {
@@ -116,16 +120,23 @@ const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel }
     if (!text.trim()) return;
     
     const inputText = text.trim();
+    let tag = "";
     
     if (selectedAnimations.length > 0 && selectedColor) {
-      // Combined: /#/combo; wave,bounce #FF0000 Hello/#/
       const anims = selectedAnimations.join(',');
-      onEffectSelect(`/#/combo; ${anims} ${selectedColor} ${inputText}/#/`);
+      tag = `/#/combo; ${anims} ${selectedColor} ${inputText}/#/`;
     } else if (selectedAnimations.length > 0) {
       const anims = selectedAnimations.join(',');
-      onEffectSelect(`/#/combo; ${anims} ${inputText}/#/`);
+      tag = `/#/combo; ${anims} ${inputText}/#/`;
     } else if (selectedColor) {
-      onEffectSelect(`/#/text; ${selectedColor} ${inputText}/#/`);
+      tag = `/#/text; ${selectedColor} ${inputText}/#/`;
+    } else if (sendAsSystem) {
+      // Plain text system message
+      tag = inputText;
+    }
+    
+    if (tag) {
+      onEffectSelect(tag, sendAsSystem);
     }
     
     resetAndClose();
@@ -135,10 +146,11 @@ const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel }
     setText("");
     setSelectedAnimations([]);
     setSelectedColor(null);
+    setSendAsSystem(false);
     setOpen(false);
   };
 
-  const hasSelection = selectedAnimations.length > 0 || selectedColor;
+  const hasSelection = selectedAnimations.length > 0 || selectedColor || sendAsSystem;
 
   return (
     <Popover open={open} onOpenChange={(isOpen) => {
@@ -147,6 +159,7 @@ const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel }
         setText("");
         setSelectedAnimations([]);
         setSelectedColor(null);
+        setSendAsSystem(false);
         onEditCancel?.();
       }
     }}>
@@ -287,15 +300,28 @@ const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel }
           </TabsContent>
         </Tabs>
         
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-border space-y-2">
+          {canSendSystemMessage && (
+            <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/30">
+              <Checkbox
+                id="system-message"
+                checked={sendAsSystem}
+                onCheckedChange={(checked) => setSendAsSystem(checked === true)}
+              />
+              <Label htmlFor="system-message" className="text-xs font-medium flex items-center gap-1 cursor-pointer">
+                <Megaphone className="h-3.5 w-3.5 text-amber-500" />
+                Send as System Message
+              </Label>
+            </div>
+          )}
           <Button 
             onClick={handleApply} 
             disabled={!text.trim() || !hasSelection}
             className="w-full"
             size="sm"
           >
-            <Check className="h-4 w-4 mr-1" />
-            Apply Effects
+            {sendAsSystem ? <Megaphone className="h-4 w-4 mr-1" /> : <Check className="h-4 w-4 mr-1" />}
+            {sendAsSystem ? "Send System Message" : "Apply Effects"}
           </Button>
         </div>
       </PopoverContent>
