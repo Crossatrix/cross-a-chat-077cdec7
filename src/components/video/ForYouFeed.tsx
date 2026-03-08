@@ -341,6 +341,20 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
           </div>
         )}
       </ScrollArea>
+      <AgeVerificationDialog
+        open={ageVerifyOpen}
+        onOpenChange={setAgeVerifyOpen}
+        currentUserId={currentUserId}
+        onVerified={() => {
+          setAgeVerified(true);
+          setAgeVerifyOpen(false);
+          if (pendingAdultVideo) {
+            setSelectedVideo(pendingAdultVideo);
+            trackCategoryView(pendingAdultVideo.category);
+            setPendingAdultVideo(null);
+          }
+        }}
+      />
     </div>
   );
 };
