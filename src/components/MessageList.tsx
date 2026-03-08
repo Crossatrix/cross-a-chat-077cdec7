@@ -214,7 +214,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                 </div>
               )}
               <div
-                className={`flex gap-3 ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}
+                className={`flex gap-3 group ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}
               >
               <div className="flex items-start gap-1 md:gap-2">
                 <Avatar className="h-6 w-6 md:h-8 md:w-8 border-2 border-primary">
