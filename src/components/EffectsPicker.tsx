@@ -83,12 +83,13 @@ const colors: { name: string; hex: string }[] = [
   { name: "Peach", hex: "#FFDAB9" },
 ];
 
-const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel }: EffectsPickerProps) => {
+const EffectsPicker = ({ onEffectSelect, disabled, editingEffect, onEditCancel, canSendSystemMessage }: EffectsPickerProps) => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [selectedAnimations, setSelectedAnimations] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [customColor, setCustomColor] = useState("#FF0000");
+  const [sendAsSystem, setSendAsSystem] = useState(false);
 
   // When editingEffect is set, open the picker pre-filled
   useEffect(() => {
