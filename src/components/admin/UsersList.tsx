@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Ban, Shield } from "lucide-react";
+import { Ban, Shield, Award } from "lucide-react";
+import officialIcon from "@/assets/roles/official_notifications.png";
 import { z } from "zod";
 
 const banReasonSchema = z.string().trim().min(10, "Please provide more details (min 10 characters)").max(1000, "Reason too long (max 1000 characters)");
