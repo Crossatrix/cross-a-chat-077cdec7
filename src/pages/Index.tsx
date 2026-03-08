@@ -1061,6 +1061,16 @@ return (
         <div className="flex-1 min-h-0">
           <ShortsFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
         </div>
+      ) : activeTab === "leaderboard" ? (
+        <div className="flex-1 min-h-0 overflow-auto">
+          <VideoLeaderboard
+            onSelectVideo={(videoId) => {
+              setActiveTab("videos");
+            }}
+            onCreatorClick={(id) => setCreatorProfileId(id)}
+            fullPage
+          />
+        </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">
       <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen w-full md:w-auto`}>
