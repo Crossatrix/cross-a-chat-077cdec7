@@ -3,12 +3,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar } from "lucide-react";
+import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StaffBadge from "@/components/StaffBadge";
 import { formatMessageText } from "@/utils/textFormatting";
 import CreatorBadge from "./CreatorBadge";
-import FeaturedAvatar from "./FeaturedAvatar";
+import FeaturedAvatar, { invalidateFeaturedCache, type FeaturedTier } from "./FeaturedAvatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface Video {
   id: string;
@@ -44,6 +46,8 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
   const [totalViews, setTotalViews] = useState(0);
   const [totalLikes, setTotalLikes] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [featuredTier, setFeaturedTier] = useState<FeaturedTier | "none">("none");
 
   useEffect(() => {
     fetchAll();
@@ -57,12 +61,16 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
       { count: followers },
       { count: following },
       { data: followStatus },
+      { data: adminRoles },
+      { data: featuredData },
     ] = await Promise.all([
       supabase.from("profiles").select("username, avatar_url, bio, created_at").eq("id", creatorId).single(),
       supabase.from("videos").select("*, profiles(username, avatar_url)").eq("user_id", creatorId).order("created_at", { ascending: false }),
       supabase.from("video_follows").select("*", { count: "exact", head: true }).eq("following_id", creatorId),
       supabase.from("video_follows").select("*", { count: "exact", head: true }).eq("follower_id", creatorId),
       supabase.from("video_follows").select("id").eq("follower_id", currentUserId).eq("following_id", creatorId).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", currentUserId).eq("role", "admin").maybeSingle(),
+      supabase.from("featured_creators").select("tier").eq("user_id", creatorId).maybeSingle(),
     ]);
 
     if (profileData) setProfile(profileData);
@@ -76,6 +84,8 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
     setFollowerCount(followers ?? 0);
     setFollowingCount(following ?? 0);
     setIsFollowing(!!followStatus);
+    setIsAdmin(!!adminRoles);
+    setFeaturedTier((featuredData?.tier as FeaturedTier) ?? "none");
     setLoading(false);
   };
 
@@ -89,6 +99,22 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
       setIsFollowing(true);
       setFollowerCount(c => c + 1);
     }
+  };
+
+  const handleSetFeatured = async (tier: string) => {
+    if (tier === "none") {
+      const { error } = await supabase.from("featured_creators").delete().eq("user_id", creatorId);
+      if (error) { toast.error("Failed to remove featured status"); return; }
+      toast.success("Featured status removed");
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from("featured_creators")
+        .upsert({ user_id: creatorId, tier, granted_by: user?.id, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) { toast.error("Failed to set featured: " + error.message); return; }
+      toast.success(`Featured as ${tier}`);
+    }
+    setFeaturedTier(tier as FeaturedTier | "none");
+    invalidateFeaturedCache(creatorId);
   };
 
   const formatDate = (dateStr: string) => {
@@ -183,17 +209,33 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
                 <Calendar className="h-3 w-3" />
                 <span>Joined {formatDate(profile.created_at)}</span>
               </div>
-              {creatorId !== currentUserId && (
-                <Button
-                  variant={isFollowing ? "secondary" : "default"}
-                  size="sm"
-                  className="gap-1 mt-2"
-                  onClick={handleFollow}
-                >
-                  {isFollowing ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                  {isFollowing ? "Unfollow" : "Follow"}
-                </Button>
-              )}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {creatorId !== currentUserId && (
+                  <Button
+                    variant={isFollowing ? "secondary" : "default"}
+                    size="sm"
+                    className="gap-1"
+                    onClick={handleFollow}
+                  >
+                    {isFollowing ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Select value={featuredTier} onValueChange={handleSetFeatured}>
+                    <SelectTrigger className="w-28 h-8 text-xs">
+                      <Flame className="h-3 w-3 mr-1" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Fire</SelectItem>
+                      <SelectItem value="epic">🔥 Epic</SelectItem>
+                      <SelectItem value="legendary">💜 Legendary</SelectItem>
+                      <SelectItem value="mythic">💎 Mythic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </div>
           </div>
 
