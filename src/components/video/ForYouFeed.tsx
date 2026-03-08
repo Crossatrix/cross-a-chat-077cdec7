@@ -137,6 +137,12 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
       const ageHours = (Date.now() - new Date(video.created_at).getTime()) / 3600000;
       score += Math.max(0, 1 - ageHours / 720); // decays over 30 days
 
+      // Penalize videos with more dislikes than likes
+      if (video.dislikes_count > video.likes_count && (video.likes_count + video.dislikes_count) > 0) {
+        const ratio = video.dislikes_count / (video.likes_count + video.dislikes_count);
+        score -= ratio * 5;
+      }
+
       return { video, score };
     });
 
