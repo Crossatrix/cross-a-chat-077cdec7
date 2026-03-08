@@ -1261,6 +1261,7 @@ return (
                 aiCredits={aiCredits}
                 onCreditsUpdate={fetchAiCredits}
                 isSending={isSendingMessage}
+                canSendSystemMessage={isModerator}
                 onTyping={() => {
                   if (!selectedConversationId || !user?.id) return;
                   
