@@ -290,7 +290,43 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
     }
   };
 
-  if (loading) {
+  const handleReportVideo = async () => {
+    if (!reportReason.trim() || !reportVideoId) return;
+    setReporting(true);
+    try {
+      const { error } = await supabase.from("video_reports" as any).insert({
+        video_id: reportVideoId,
+        reporter_id: currentUserId,
+        reason: reportReason.trim(),
+      });
+      if (error) throw error;
+
+      toast.info("Analyzing report with AI...");
+      const { data: reports } = await supabase
+        .from("video_reports" as any)
+        .select("id")
+        .eq("video_id", reportVideoId)
+        .eq("reporter_id", currentUserId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (reports && reports.length > 0) {
+        await supabase.functions.invoke("video-moderator", {
+          body: { reportId: (reports[0] as any).id },
+        });
+      }
+
+      toast.success("Video reported! Staff will review it.");
+      setReportOpen(false);
+      setReportReason("");
+      setReportVideoId(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to report video");
+    } finally {
+      setReporting(false);
+    }
+  };
+
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">Loading shorts...</p>
