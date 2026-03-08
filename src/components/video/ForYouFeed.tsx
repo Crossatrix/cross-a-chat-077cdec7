@@ -304,6 +304,24 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
+            {/* Posts from followed creators */}
+            {followedPosts.length > 0 && (
+              <div className="col-span-full space-y-3 mb-2">
+                <div className="flex items-center gap-2 px-1">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Posts from creators you follow</span>
+                </div>
+                {followedPosts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    currentUserId={currentUserId}
+                    onCreatorClick={onCreatorClick}
+                    onDeleted={fetchFollowedPosts}
+                  />
+                ))}
+              </div>
+            )}
             {videos.map((video) => (
               <div
                 key={video.id}
