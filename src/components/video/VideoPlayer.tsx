@@ -288,7 +288,7 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
                       </div>
                       <p className="text-sm break-words">{comment.content}</p>
                     </div>
-                    {comment.user_id === currentUserId && (
+                    {(comment.user_id === currentUserId || video.user_id === currentUserId) && (
                       <Button
                         variant="ghost"
                         size="icon"

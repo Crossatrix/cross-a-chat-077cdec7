@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThumbsUp, ThumbsDown, UserPlus, UserMinus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import { getCategoryIcon } from "@/utils/videoCategories";
@@ -15,8 +20,17 @@ interface Short {
   views_count: number;
   likes_count: number;
   dislikes_count: number;
+  comments_count: number;
   created_at: string;
   category: string;
+  profiles: { username: string; avatar_url: string | null };
+}
+
+interface Comment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
   profiles: { username: string; avatar_url: string | null };
 }
 
@@ -31,6 +45,12 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
   const [userLikes, setUserLikes] = useState<Record<string, boolean | null>>({});
   const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
   const [localCounts, setLocalCounts] = useState<Record<string, { likes: number; dislikes: number }>>({});
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
+  const [commentsVideoOwnerId, setCommentsVideoOwnerId] = useState<string | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const viewedSet = useRef<Set<string>>(new Set());
@@ -78,6 +98,11 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
       const counts: Record<string, { likes: number; dislikes: number }> = {};
       sorted.forEach(s => { counts[s.id] = { likes: s.likes_count, dislikes: s.dislikes_count }; });
       setLocalCounts(counts);
+
+      // Fetch comment counts
+      const cCounts: Record<string, number> = {};
+      sorted.forEach(s => { cCounts[s.id] = s.comments_count || 0; });
+      setCommentCounts(cCounts);
 
       if (sorted.length > 0) {
         const { data: likes } = await supabase
@@ -190,6 +215,58 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
     setLocalCounts(p => ({ ...p, [shortId]: { likes: newLikes ?? 0, dislikes: newDislikes ?? 0 } }));
   };
 
+  const openComments = (videoId: string, videoOwnerId: string) => {
+    setCommentsVideoId(videoId);
+    setCommentsVideoOwnerId(videoOwnerId);
+    setCommentsOpen(true);
+    fetchComments(videoId);
+  };
+
+  const fetchComments = async (videoId: string) => {
+    const { data } = await supabase
+      .from("video_comments")
+      .select("*, profiles(username, avatar_url)")
+      .eq("video_id", videoId)
+      .order("created_at", { ascending: true });
+    if (data) setComments(data as unknown as Comment[]);
+  };
+
+  const handleComment = async () => {
+    if (!newComment.trim() || !commentsVideoId) return;
+    const { error } = await supabase.from("video_comments").insert({
+      video_id: commentsVideoId,
+      user_id: currentUserId,
+      content: newComment.trim(),
+    });
+    if (error) {
+      toast.error("Failed to post comment");
+    } else {
+      setNewComment("");
+      fetchComments(commentsVideoId);
+      setCommentCounts(p => ({ ...p, [commentsVideoId]: (p[commentsVideoId] || 0) + 1 }));
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!commentsVideoId) return;
+    await supabase.from("video_comments").delete().eq("id", commentId);
+    fetchComments(commentsVideoId);
+    setCommentCounts(p => ({ ...p, [commentsVideoId]: Math.max(0, (p[commentsVideoId] || 0) - 1) }));
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    return d.toLocaleDateString();
+  };
+
   const handleFollow = async (creatorId: string) => {
     if (followingMap[creatorId]) {
       await supabase.from("video_follows").delete().eq("follower_id", currentUserId).eq("following_id", creatorId);
@@ -272,6 +349,16 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
               <span className="text-white text-xs font-medium drop-shadow">{localCounts[short.id]?.dislikes || 0}</span>
             </button>
 
+            <button
+              className="flex flex-col items-center gap-0.5"
+              onClick={() => openComments(short.id, short.user_id)}
+            >
+              <div className="p-2 rounded-full bg-black/40 text-white">
+                <MessageCircle className="h-5 w-5" />
+              </div>
+              <span className="text-white text-xs font-medium drop-shadow">{commentCounts[short.id] || 0}</span>
+            </button>
+
             {short.user_id !== currentUserId && (
               <button
                 className="flex flex-col items-center gap-0.5"
@@ -306,6 +393,63 @@ const ShortsFeed = ({ currentUserId }: ShortsFeedProps) => {
           </div>
         </div>
       ))}
+
+      {/* Comments Sheet */}
+      <Sheet open={commentsOpen} onOpenChange={setCommentsOpen}>
+        <SheetContent side="bottom" className="h-[60vh] flex flex-col">
+          <SheetHeader>
+            <SheetTitle>Comments ({comments.length})</SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="flex-1 my-2">
+            <div className="space-y-3 pr-2">
+              {comments.map((comment) => (
+                <div key={comment.id} className="flex gap-2">
+                  <Avatar className="h-7 w-7 shrink-0">
+                    <AvatarImage src={comment.profiles.avatar_url || ""} />
+                    <AvatarFallback className="bg-secondary text-foreground text-[10px]">
+                      {comment.profiles.username?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <StaffBadge userId={comment.user_id} size={12} />
+                      <CreatorBadge userId={comment.user_id} size={12} />
+                      <span className="text-xs font-medium">{comment.profiles.username}</span>
+                      <span className="text-[10px] text-muted-foreground">{formatDate(comment.created_at)}</span>
+                    </div>
+                    <p className="text-sm break-words">{comment.content}</p>
+                  </div>
+                  {(comment.user_id === currentUserId || commentsVideoOwnerId === currentUserId) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0"
+                      onClick={() => handleDeleteComment(comment.id)}
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {comments.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">No comments yet</p>
+              )}
+            </div>
+          </ScrollArea>
+          <div className="flex gap-2 pt-2 border-t border-border">
+            <Input
+              placeholder="Add a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleComment()}
+              className="flex-1"
+            />
+            <Button size="icon" onClick={handleComment} disabled={!newComment.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
