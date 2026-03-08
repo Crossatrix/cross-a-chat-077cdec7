@@ -46,6 +46,8 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
   const [totalViews, setTotalViews] = useState(0);
   const [totalLikes, setTotalLikes] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [featuredTier, setFeaturedTier] = useState<FeaturedTier | "none">("none");
 
   useEffect(() => {
     fetchAll();
