@@ -31,6 +31,7 @@ import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
 import ForYouFeed from "@/components/video/ForYouFeed";
 import CreatorProfile from "@/components/video/CreatorProfile";
+import PostsFeed from "@/components/posts/PostsFeed";
 
 interface Message {
   id: string;
