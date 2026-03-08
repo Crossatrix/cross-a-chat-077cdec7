@@ -52,6 +52,7 @@ const VideoPlayer = ({ video, currentUserId, onBack }: VideoPlayerProps) => {
     fetchComments();
     fetchUserLike();
     fetchFollowStatus();
+    fetchFollowerCount();
     incrementView();
   }, [video.id]);
 
