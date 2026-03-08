@@ -755,6 +755,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age_verified: boolean
           allow_group_invites_from_strangers: boolean
           avatar_url: string | null
           bio: string | null
@@ -768,6 +769,7 @@ export type Database = {
           username: string
         }
         Insert: {
+          age_verified?: boolean
           allow_group_invites_from_strangers?: boolean
           avatar_url?: string | null
           bio?: string | null
@@ -781,6 +783,7 @@ export type Database = {
           username: string
         }
         Update: {
+          age_verified?: boolean
           allow_group_invites_from_strangers?: boolean
           avatar_url?: string | null
           bio?: string | null
@@ -1387,6 +1390,7 @@ export type Database = {
       }
       videos: {
         Row: {
+          adults_only: boolean
           category: string
           comments_count: number
           created_at: string
@@ -1403,6 +1407,7 @@ export type Database = {
           views_count: number
         }
         Insert: {
+          adults_only?: boolean
           category?: string
           comments_count?: number
           created_at?: string
@@ -1419,6 +1424,7 @@ export type Database = {
           views_count?: number
         }
         Update: {
+          adults_only?: boolean
           category?: string
           comments_count?: number
           created_at?: string

@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, Image } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Upload, X, Image, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
@@ -19,6 +21,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("other");
+  const [adultsOnly, setAdultsOnly] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -74,7 +77,8 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         video_url: videoUrlData.publicUrl,
         thumbnail_url: thumbnailUrl,
         category,
-      });
+        adults_only: adultsOnly,
+      } as any);
 
       if (insertError) throw insertError;
 
@@ -87,6 +91,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
       setTitle("");
       setDescription("");
       setCategory("other");
+      setAdultsOnly(false);
       setVideoFile(null);
       setThumbnailFile(null);
       setThumbnailPreview(null);
@@ -135,6 +140,13 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-destructive" />
+              <Label htmlFor="adults-only" className="text-sm font-medium cursor-pointer">Adults Only (18+)</Label>
+            </div>
+            <Switch id="adults-only" checked={adultsOnly} onCheckedChange={setAdultsOnly} />
+          </div>
           <div>
             <input
               ref={videoInputRef}

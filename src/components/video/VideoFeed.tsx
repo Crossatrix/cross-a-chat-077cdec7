@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle, ShieldAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VideoUploadDialog from "./VideoUploadDialog";
@@ -15,6 +15,7 @@ import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
 import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
 import VideoLeaderboard from "./VideoLeaderboard";
+import AgeVerificationDialog from "./AgeVerificationDialog";
 
 interface Video {
   id: string;
@@ -29,6 +30,7 @@ interface Video {
   comments_count: number;
   created_at: string;
   category: string;
+  adults_only?: boolean;
   profiles: { username: string; avatar_url: string | null };
 }
 
@@ -46,11 +48,15 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [userCategoryPrefs, setUserCategoryPrefs] = useState<Record<string, number>>({});
   const [isStaff, setIsStaff] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [ageVerified, setAgeVerified] = useState(false);
+  const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
+  const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
 
   useEffect(() => {
     fetchVideos();
     fetchCategoryPrefs();
     checkStaffStatus();
+    checkAgeVerification();
   }, []);
 
   const checkStaffStatus = async () => {
@@ -62,6 +68,15 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     const staffRoles = ["moderator", "elder_moderator", "admin"];
     setIsStaff(roles.some(r => staffRoles.includes(r)));
     setIsAdmin(roles.includes("admin"));
+  };
+
+  const checkAgeVerification = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("age_verified")
+      .eq("id", currentUserId)
+      .single();
+    if (data) setAgeVerified(!!(data as any).age_verified);
   };
 
   const fetchCategoryPrefs = async () => {
@@ -231,9 +246,26 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   }, [videos, searchQuery, selectedCategory, userCategoryPrefs]);
 
   const handleSelectVideo = (video: Video) => {
+    if (video.adults_only && !ageVerified) {
+      setPendingAdultVideo(video);
+      setAgeVerifyOpen(true);
+      return;
+    }
     setSelectedVideo(video);
-    // Track category view
     trackCategoryView(video.category);
+  };
+
+  const handleToggleAdultsOnly = async (videoId: string, currentValue: boolean) => {
+    const { error } = await supabase
+      .from("videos")
+      .update({ adults_only: !currentValue } as any)
+      .eq("id", videoId);
+    if (error) {
+      toast.error("Failed to update");
+    } else {
+      toast.success(!currentValue ? "Marked as Adults Only" : "Removed Adults Only");
+      fetchVideos();
+    }
   };
 
   const trackCategoryView = async (category: string) => {
@@ -377,6 +409,11 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                   <span className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">
                     {getCategoryIcon(video.category)} {video.category}
                   </span>
+                  {video.adults_only && (
+                    <span className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                      <ShieldAlert className="h-3 w-3" /> 18+
+                    </span>
+                  )}
                 </div>
 
                 {/* Info */}
@@ -421,6 +458,11 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
                               <XCircle className="h-4 w-4 mr-2 text-destructive" />
                               Unverify
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onSelect={() => handleToggleAdultsOnly(video.id, !!video.adults_only)}>
+                              <ShieldAlert className="h-4 w-4 mr-2 text-destructive" />
+                              {video.adults_only ? "Remove 18+" : "Mark as 18+"}
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
@@ -437,6 +479,21 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
           </div>
         )}
       </ScrollArea>
+      <AgeVerificationDialog
+        open={ageVerifyOpen}
+        onOpenChange={(open) => {
+          setAgeVerifyOpen(open);
+          if (!open) setPendingAdultVideo(null);
+        }}
+        onVerified={() => {
+          setAgeVerified(true);
+          if (pendingAdultVideo) {
+            setSelectedVideo(pendingAdultVideo);
+            trackCategoryView(pendingAdultVideo.category);
+            setPendingAdultVideo(null);
+          }
+        }}
+      />
     </div>
   );
 };
