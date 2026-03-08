@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Upload, Shield, UsersRound, X } from "lucide-react";
+import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -36,10 +36,19 @@ const Settings = () => {
     profile: { username: string; avatar_url: string | null };
   }>>([]);
   const [loadingGroupBlocks, setLoadingGroupBlocks] = useState(false);
+  const [notInterestedItems, setNotInterestedItems] = useState<Array<{
+    id: string;
+    video_id: string;
+    category: string;
+    created_at: string;
+    video?: { title: string; thumbnail_url: string | null };
+  }>>([]);
+  const [loadingNotInterested, setLoadingNotInterested] = useState(false);
 
   useEffect(() => {
     loadProfile();
     loadGroupBlockedUsers();
+    loadNotInterested();
   }, []);
 
   const loadProfile = async () => {
@@ -119,6 +128,79 @@ const Settings = () => {
     } finally {
       setLoadingGroupBlocks(false);
     }
+  };
+
+  const loadNotInterested = async () => {
+    setLoadingNotInterested(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("video_not_interested" as any)
+        .select("id, video_id, category, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading not interested:", error);
+        return;
+      }
+
+      const items = (data || []) as any[];
+      if (items.length > 0) {
+        const videoIds = items.map((i: any) => i.video_id);
+        const { data: videos } = await supabase
+          .from("videos")
+          .select("id, title, thumbnail_url")
+          .in("id", videoIds);
+
+        const enriched = items.map((item: any) => ({
+          ...item,
+          video: videos?.find((v: any) => v.id === item.video_id) || undefined,
+        }));
+        setNotInterestedItems(enriched);
+      } else {
+        setNotInterestedItems([]);
+      }
+    } catch (error) {
+      console.error("Error loading not interested:", error);
+    } finally {
+      setLoadingNotInterested(false);
+    }
+  };
+
+  const handleRemoveNotInterested = async (id: string) => {
+    const { error } = await supabase
+      .from("video_not_interested" as any)
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to remove");
+      return;
+    }
+
+    toast.success("Removed from Not Interested");
+    setNotInterestedItems(prev => prev.filter(i => i.id !== id));
+  };
+
+  const handleClearAllNotInterested = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("video_not_interested" as any)
+      .delete()
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error("Failed to clear");
+      return;
+    }
+
+    toast.success("Cleared all Not Interested preferences");
+    setNotInterestedItems([]);
   };
 
   const handleUnblockFromGroups = async (blockId: string, username: string) => {
@@ -413,6 +495,83 @@ const Settings = () => {
                     ))}
                   </div>
                 </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Not Interested Videos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <EyeOff className="h-5 w-5" />
+                Not Interested ({notInterestedItems.length})
+              </CardTitle>
+              <CardDescription>Videos you've marked as not interesting. Removing them will restore their visibility in your feed.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingNotInterested ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : notInterestedItems.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4 text-sm">
+                  No videos marked as not interested
+                </p>
+              ) : (
+                <>
+                  <div className="flex justify-end mb-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearAllNotInterested}
+                      className="gap-1 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Clear All
+                    </Button>
+                  </div>
+                  <ScrollArea className="max-h-[400px]">
+                    <div className="space-y-2">
+                      {notInterestedItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card gap-3"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {item.video?.thumbnail_url ? (
+                              <img
+                                src={item.video.thumbnail_url}
+                                alt=""
+                                className="w-16 h-10 rounded object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="w-16 h-10 rounded bg-muted flex items-center justify-center shrink-0">
+                                <Play className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {item.video?.title || "Deleted video"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {item.category} · {new Date(item.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveNotInterested(item.id)}
+                            className="gap-1 text-muted-foreground hover:text-foreground shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </>
               )}
             </CardContent>
           </Card>
