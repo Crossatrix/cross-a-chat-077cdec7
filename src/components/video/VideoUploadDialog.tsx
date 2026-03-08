@@ -140,6 +140,13 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-destructive" />
+              <Label htmlFor="adults-only" className="text-sm font-medium cursor-pointer">Adults Only (18+)</Label>
+            </div>
+            <Switch id="adults-only" checked={adultsOnly} onCheckedChange={setAdultsOnly} />
+          </div>
           <div>
             <input
               ref={videoInputRef}
