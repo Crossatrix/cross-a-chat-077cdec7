@@ -60,6 +60,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     fetchCategoryPrefs();
     checkStaffStatus();
     checkAgeVerification();
+    fetchStruckCount();
   }, []);
 
   const checkStaffStatus = async () => {
