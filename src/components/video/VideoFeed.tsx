@@ -95,11 +95,10 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const fetchVideos = async () => {
     setLoading(true);
     const [{ data }, { data: blockedCatsData }] = await Promise.all([
-      supabase
+      (supabase
         .from("videos")
         .select("*, profiles(username, avatar_url)")
-        .eq("moderation_status" as any, "approved")
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false }) as any).eq("moderation_status", "approved"),
       supabase
         .from("blocked_categories" as any)
         .select("category")
