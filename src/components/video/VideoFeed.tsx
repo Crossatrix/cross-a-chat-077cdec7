@@ -337,7 +337,15 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-3 border-b border-border bg-card shrink-0">
         <h2 className="text-lg font-bold text-primary">Videos</h2>
-        <VideoUploadDialog userId={currentUserId} onUploaded={fetchVideos} />
+        <div className="flex items-center gap-2">
+          {struckCount > 0 && (
+            <Button size="sm" variant="destructive" className="gap-1.5 relative" onClick={() => setStruckOpen(true)}>
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span className="text-xs">{struckCount}</span>
+            </Button>
+          )}
+          <VideoUploadDialog userId={currentUserId} onUploaded={() => { fetchVideos(); fetchStruckCount(); }} />
+        </div>
       </div>
 
       <div className="px-3 pt-2 pb-1 shrink-0 space-y-2">
