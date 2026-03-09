@@ -78,10 +78,16 @@ const MessageReactions = ({ messageId, currentUserId, conversationId }: MessageR
 
   const handleToggle = async (emoji: string, isCustom: boolean) => {
     if (!currentUserId) return;
-    const existing = reactions.find((r) => r.user_id === currentUserId && r.emoji === emoji);
-    if (existing) {
-      await supabase.from("message_reactions").delete().eq("id", existing.id);
+    const existingSame = reactions.find((r) => r.user_id === currentUserId && r.emoji === emoji);
+    if (existingSame) {
+      // Unreact: same emoji clicked again
+      await supabase.from("message_reactions").delete().eq("id", existingSame.id);
     } else {
+      // Remove any existing reaction by this user first (only one allowed)
+      const existingAny = reactions.find((r) => r.user_id === currentUserId);
+      if (existingAny) {
+        await supabase.from("message_reactions").delete().eq("id", existingAny.id);
+      }
       await supabase.from("message_reactions").insert({
         message_id: messageId,
         user_id: currentUserId,
