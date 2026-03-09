@@ -36,12 +36,12 @@ const StruckVideosDialog = ({ open, onOpenChange, userId, onRefresh }: StruckVid
 
   const fetchStruckVideos = async () => {
     setLoading(true);
-    const { data } = await (supabase
+    const query = supabase
       .from("videos")
       .select("id, title, description, video_url, thumbnail_url, category, created_at")
       .eq("user_id", userId)
-      .eq("moderation_status" as any, "struck")
-      .order("created_at", { ascending: false }) as any);
+      .order("created_at", { ascending: false });
+    const { data } = await (query as any).eq("moderation_status", "struck");
 
     // Also fetch appeal_status and moderation_reason via a second query since types may not include them
     if (data && data.length > 0) {
