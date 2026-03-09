@@ -622,6 +622,29 @@ const Admin = () => {
         toast.success("Video report dismissed");
         fetchAllData();
         break;
+      case "approve_appeal":
+        // Approve the struck video - set it to approved
+        await (supabase
+          .from("videos")
+          .update({ moderation_status: 'approved', appeal_status: 'approved', moderation_reason: null } as any)
+          .eq("id", data.id) as any);
+        // Notify followers
+        supabase.functions.invoke("notify-followers", {
+          body: { creatorId: data.user_id, videoTitle: data.title },
+        }).catch((err: any) => console.error("Failed to notify followers:", err));
+        toast.success("Appeal approved! Video is now published.");
+        setSelectedFile(null);
+        fetchAllData();
+        break;
+      case "reject_appeal":
+        await (supabase
+          .from("videos")
+          .update({ appeal_status: 'rejected' } as any)
+          .eq("id", data.id) as any);
+        toast.success("Appeal rejected.");
+        setSelectedFile(null);
+        fetchAllData();
+        break;
       case "resolve":
         await supabase.from("user_reports").update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", data.id);
         toast.success("Report resolved");
