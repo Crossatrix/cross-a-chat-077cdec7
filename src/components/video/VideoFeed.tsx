@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle, ShieldAlert } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle, ShieldAlert, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
 import VideoLeaderboard from "./VideoLeaderboard";
 import AgeVerificationDialog from "./AgeVerificationDialog";
 import FeaturedAvatar from "./FeaturedAvatar";
+import StruckVideosDialog from "./StruckVideosDialog";
 
 interface Video {
   id: string;
@@ -52,12 +53,14 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
   const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
-
+  const [struckOpen, setStruckOpen] = useState(false);
+  const [struckCount, setStruckCount] = useState(0);
   useEffect(() => {
     fetchVideos();
     fetchCategoryPrefs();
     checkStaffStatus();
     checkAgeVerification();
+    fetchStruckCount();
   }, []);
 
   const checkStaffStatus = async () => {
@@ -80,6 +83,14 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     if (data) setAgeVerified(!!(data as any).age_verified);
   };
 
+  const fetchStruckCount = async () => {
+    const { count } = await (supabase
+      .from("videos")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", currentUserId) as any).eq("moderation_status", "struck");
+    setStruckCount(count || 0);
+  };
+
   const fetchCategoryPrefs = async () => {
     const { data } = await supabase
       .from("video_category_views")
@@ -95,10 +106,10 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const fetchVideos = async () => {
     setLoading(true);
     const [{ data }, { data: blockedCatsData }] = await Promise.all([
-      supabase
+      (supabase
         .from("videos")
         .select("*, profiles(username, avatar_url)")
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false }) as any).eq("moderation_status", "approved"),
       supabase
         .from("blocked_categories" as any)
         .select("category")
@@ -326,7 +337,15 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-3 border-b border-border bg-card shrink-0">
         <h2 className="text-lg font-bold text-primary">Videos</h2>
-        <VideoUploadDialog userId={currentUserId} onUploaded={fetchVideos} />
+        <div className="flex items-center gap-2">
+          {struckCount > 0 && (
+            <Button size="sm" variant="destructive" className="gap-1.5 relative" onClick={() => setStruckOpen(true)}>
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span className="text-xs">{struckCount}</span>
+            </Button>
+          )}
+          <VideoUploadDialog userId={currentUserId} onUploaded={() => { fetchVideos(); fetchStruckCount(); }} />
+        </div>
       </div>
 
       <div className="px-3 pt-2 pb-1 shrink-0 space-y-2">
@@ -504,6 +523,12 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
             setPendingAdultVideo(null);
           }
         }}
+      />
+      <StruckVideosDialog
+        open={struckOpen}
+        onOpenChange={setStruckOpen}
+        userId={currentUserId}
+        onRefresh={() => { fetchVideos(); fetchStruckCount(); }}
       />
     </div>
   );

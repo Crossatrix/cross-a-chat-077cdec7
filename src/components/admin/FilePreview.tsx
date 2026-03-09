@@ -153,6 +153,50 @@ const FilePreview = ({ file, onDelete, onAction, emojiCategories = [], onRefresh
     );
   }
 
+  // Struck Appeal preview
+  if (file.data?.type === "struck_appeal") {
+    const video = data;
+    return (
+      <div className="h-full bg-card border border-border rounded-lg p-4 overflow-auto">
+        <div className="font-mono text-sm whitespace-pre-wrap text-foreground space-y-4">
+          <div className="border-b border-border pb-2">
+            <p className="text-muted-foreground text-xs">STRUCK VIDEO APPEAL</p>
+            <h3 className="font-bold">{video.title}</h3>
+          </div>
+          <div className="space-y-2">
+            <p><span className="text-muted-foreground">Creator:</span> @{video.creator_username}</p>
+            <p><span className="text-muted-foreground">Category:</span> {video.category}</p>
+            <p><span className="text-muted-foreground">Uploaded:</span> {new Date(video.created_at).toLocaleString()}</p>
+          </div>
+          {video.video_url && (
+            <div className="border-t border-border pt-2">
+              <p className="text-muted-foreground mb-1">Video:</p>
+              <video src={video.video_url} controls className="w-full max-h-64 rounded bg-black" />
+            </div>
+          )}
+          <div className="border-t border-border pt-2">
+            <p className="text-muted-foreground mb-1">AI Moderation Reason:</p>
+            <p className="bg-destructive/10 text-destructive p-2 rounded text-xs">{video.moderation_reason}</p>
+          </div>
+          {video.description && (
+            <div className="border-t border-border pt-2">
+              <p className="text-muted-foreground mb-1">Description:</p>
+              <p className="bg-secondary p-2 rounded">{video.description}</p>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+            <Button variant="default" size="sm" onClick={() => onAction?.("approve_appeal", file)}>
+              <CheckCircle2 className="h-4 w-4 mr-2" />Approve & Publish
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => onAction?.("reject_appeal", file)}>
+              <XCircle className="h-4 w-4 mr-2" />Reject Appeal
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Video Report preview
   if (file.data?.type === "video_report") {
     const report = data;

@@ -84,11 +84,11 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
 
   const fetchShorts = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("videos")
       .select("*, profiles(username, avatar_url)")
       .or("duration.lte.180,duration.is.null")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as any).eq("moderation_status", "approved");
 
     if (data) {
       // Fetch verifications, user prefs, and blocked categories in parallel
