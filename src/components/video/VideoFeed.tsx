@@ -53,7 +53,8 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
   const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
-
+  const [struckOpen, setStruckOpen] = useState(false);
+  const [struckCount, setStruckCount] = useState(0);
   useEffect(() => {
     fetchVideos();
     fetchCategoryPrefs();
