@@ -98,6 +98,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       supabase
         .from("videos")
         .select("*, profiles(username, avatar_url)")
+        .eq("moderation_status" as any, "approved")
         .order("created_at", { ascending: false }),
       supabase
         .from("blocked_categories" as any)

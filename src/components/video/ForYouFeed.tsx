@@ -140,6 +140,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     const { data } = await supabase
       .from("videos")
       .select("*, profiles(username, avatar_url)")
+      .eq("moderation_status" as any, "approved")
       .order("created_at", { ascending: false })
       .limit(200);
 
