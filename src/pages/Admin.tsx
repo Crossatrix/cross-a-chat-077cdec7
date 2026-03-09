@@ -325,6 +325,48 @@ const Admin = () => {
     });
   };
 
+  const fetchStruckAppeals = async (): Promise<FileItem[]> => {
+    const { data } = await (supabase
+      .from("videos")
+      .select("id, title, description, video_url, thumbnail_url, category, user_id, created_at")
+      .order("created_at", { ascending: false }) as any)
+      .eq("moderation_status", "struck")
+      .eq("appeal_status", "pending");
+
+    if (!data || data.length === 0) return [];
+
+    const creatorIds = [...new Set((data as any[]).map((v: any) => v.user_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("id", creatorIds);
+
+    const profileMap = new Map<string, string>();
+    (profiles || []).forEach((p: any) => profileMap.set(p.id, p.username));
+
+    const ids = (data as any[]).map((v: any) => v.id);
+    const { data: reasonData } = await (supabase
+      .from("videos")
+      .select("id, moderation_reason")
+      .in("id", ids) as any);
+
+    const reasonMap = new Map<string, string>();
+    (reasonData || []).forEach((v: any) => reasonMap.set(v.id, v.moderation_reason));
+
+    return (data as any[]).map((video: any) => ({
+      id: `appeal-${video.id}`,
+      name: `appeal_${profileMap.get(video.user_id) || 'unknown'}_${video.title?.slice(0, 20)}`,
+      type: "file" as const,
+      extension: "txt",
+      data: {
+        ...video,
+        type: "struck_appeal",
+        creator_username: profileMap.get(video.user_id) || "Unknown",
+        moderation_reason: reasonMap.get(video.id) || "No reason provided",
+      },
+    }));
+  };
+
   const fetchUsers = async (): Promise<FileItem[]> => {
     const { data: profiles } = await supabase
       .from("profiles")
