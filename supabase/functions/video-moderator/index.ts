@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const MAX_VIDEO_SIZE_MB = 15;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -30,7 +32,7 @@ serve(async (req) => {
 
     console.log(`[Video Moderator] Processing report ${reportId}`);
 
-    // Fetch the report with video details
+    // Fetch the report
     const { data: report, error: reportError } = await supabase
       .from('video_reports')
       .select('*')
@@ -59,7 +61,7 @@ serve(async (req) => {
       .eq('id', video.user_id)
       .single();
 
-    // Fetch comments on the video for additional context
+    // Fetch comments
     const { data: comments } = await supabase
       .from('video_comments')
       .select('content, user_id')
@@ -69,25 +71,78 @@ serve(async (req) => {
 
     const commentText = comments?.map(c => c.content).join('\n') || 'No comments';
 
-    // Call Lovable AI for analysis
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'openai/gpt-5-nano',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an AI video content moderator. You review reported videos based on their metadata, description, and comments. You cannot watch the video itself, but you analyze all available text context.
+    // Download the video file for AI analysis
+    let videoBase64: string | null = null;
+    let videoIncluded = false;
 
-Evaluate the report and determine if the video likely violates community guidelines based on:
-1. Video title and description
-2. Video category
-3. Comments on the video
-4. The reporter's stated reason
+    try {
+      console.log(`[Video Moderator] Downloading video from: ${video.video_url}`);
+      
+      const videoResponse = await fetch(video.video_url);
+      if (videoResponse.ok) {
+        const videoBuffer = await videoResponse.arrayBuffer();
+        const videoSizeMB = videoBuffer.byteLength / (1024 * 1024);
+        console.log(`[Video Moderator] Video size: ${videoSizeMB.toFixed(2)} MB`);
+
+        if (videoSizeMB <= MAX_VIDEO_SIZE_MB) {
+          // Convert to base64
+          const uint8Array = new Uint8Array(videoBuffer);
+          let binary = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+          }
+          videoBase64 = btoa(binary);
+          videoIncluded = true;
+          console.log(`[Video Moderator] Video encoded for AI analysis`);
+        } else {
+          console.log(`[Video Moderator] Video too large (${videoSizeMB.toFixed(2)} MB), skipping visual analysis`);
+        }
+      } else {
+        console.log(`[Video Moderator] Failed to download video: ${videoResponse.status}`);
+      }
+    } catch (downloadErr) {
+      console.error(`[Video Moderator] Error downloading video:`, downloadErr);
+    }
+
+    // Build message content
+    const textContent = `REPORT REASON: "${report.reason}"
+
+VIDEO DETAILS:
+- Title: "${video.title}"
+- Description: "${video.description || 'No description'}"
+- Category: "${video.category}"
+- Creator: "${creator?.username || 'Unknown'}"
+
+RECENT COMMENTS ON VIDEO:
+${commentText}
+
+${videoIncluded ? 'The video file has been attached for your visual analysis. Please review both the video content AND the metadata.' : 'The video file was too large to attach. Please analyze based on metadata only and use "needs_review" if the report suggests visual content issues.'}
+
+Analyze this report and provide your assessment.`;
+
+    const userContent: any[] = [];
+
+    if (videoBase64) {
+      userContent.push({
+        type: "image_url",
+        image_url: {
+          url: `data:video/mp4;base64,${videoBase64}`,
+        },
+      });
+    }
+
+    userContent.push({
+      type: "text",
+      text: textContent,
+    });
+
+    const systemPrompt = `You are an AI video content moderator. You review reported videos. ${videoIncluded ? 'You have been given the actual video file to watch and analyze visually along with metadata.' : 'You cannot watch the video itself, but you analyze all available text context.'}
+
+Evaluate the report and determine if the video violates community guidelines based on:
+${videoIncluded ? '1. The actual video content (visual and audio)\n2. ' : '1. '}Video title and description
+${videoIncluded ? '3' : '2'}. Video category
+${videoIncluded ? '4' : '3'}. Comments on the video
+${videoIncluded ? '5' : '4'}. The reporter's stated reason
 
 VIOLATIONS include:
 - Inappropriate/explicit content
@@ -104,23 +159,20 @@ SEVERITY: [low OR medium OR high OR severe]
 REASON: [Detailed explanation of your analysis]
 RECOMMENDATION: [What action admins should consider taking]
 
-Note: Since you cannot watch the video, if the title/description/comments seem normal but the report suggests visual content issues, use "needs_review" verdict to flag for human review.`
-          },
-          {
-            role: 'user',
-            content: `REPORT REASON: "${report.reason}"
+${!videoIncluded ? 'Note: Since you cannot watch the video, if the title/description/comments seem normal but the report suggests visual content issues, use "needs_review" verdict to flag for human review.' : ''}`;
 
-VIDEO DETAILS:
-- Title: "${video.title}"
-- Description: "${video.description || 'No description'}"
-- Category: "${video.category}"
-- Creator: "${creator?.username || 'Unknown'}"
-
-RECENT COMMENTS ON VIDEO:
-${commentText}
-
-Analyze this report and provide your assessment.`
-          }
+    // Use gemini-2.5-flash for multimodal (video) support
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent },
         ],
       }),
     });
@@ -143,11 +195,10 @@ Analyze this report and provide your assessment.`
     const aiData = await aiResponse.json();
     const aiAnalysis = aiData.choices[0]?.message?.content || '';
 
-    console.log(`[Video Moderator] AI Analysis:\n${aiAnalysis}`);
+    console.log(`[Video Moderator] AI Analysis (video ${videoIncluded ? 'included' : 'not included'}):\n${aiAnalysis}`);
 
     // Parse AI response
     const verdictMatch = aiAnalysis.match(/VERDICT:\s*(likely_violation|no_violation|needs_review)/i);
-    const severityMatch = aiAnalysis.match(/SEVERITY:\s*(low|medium|high|severe)/i);
     const reasonMatch = aiAnalysis.match(/REASON:\s*(.+?)(?:\nRECOMMENDATION|\n|$)/is);
     const recommendationMatch = aiAnalysis.match(/RECOMMENDATION:\s*(.+?)$/is);
 
@@ -176,6 +227,7 @@ Analyze this report and provide your assessment.`
         verdict,
         reason,
         recommendation,
+        videoAnalyzed: videoIncluded,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
