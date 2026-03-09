@@ -83,6 +83,14 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     if (data) setAgeVerified(!!(data as any).age_verified);
   };
 
+  const fetchStruckCount = async () => {
+    const { count } = await (supabase
+      .from("videos")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", currentUserId) as any).eq("moderation_status", "struck");
+    setStruckCount(count || 0);
+  };
+
   const fetchCategoryPrefs = async () => {
     const { data } = await supabase
       .from("video_category_views")
