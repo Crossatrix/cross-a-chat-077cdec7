@@ -524,6 +524,12 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
           }
         }}
       />
+      <StruckVideosDialog
+        open={struckOpen}
+        onOpenChange={setStruckOpen}
+        userId={currentUserId}
+        onRefresh={() => { fetchVideos(); fetchStruckCount(); }}
+      />
     </div>
   );
 };
