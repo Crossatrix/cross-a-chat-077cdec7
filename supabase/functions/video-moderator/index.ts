@@ -82,19 +82,18 @@ serve(async (req) => {
         const videoSizeMB = videoBuffer.byteLength / (1024 * 1024);
         console.log(`[Video Moderator] Video size: ${videoSizeMB.toFixed(2)} MB`);
 
-        if (videoSizeMB <= MAX_VIDEO_SIZE_MB) {
-          // Convert to base64
-          const uint8Array = new Uint8Array(videoBuffer);
-          let binary = '';
-          for (let i = 0; i < uint8Array.length; i++) {
-            binary += String.fromCharCode(uint8Array[i]);
+        const uint8Array = new Uint8Array(videoBuffer);
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+          const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
+          for (let j = 0; j < chunk.length; j++) {
+            binary += String.fromCharCode(chunk[j]);
           }
-          videoBase64 = btoa(binary);
-          videoIncluded = true;
-          console.log(`[Video Moderator] Video encoded for AI analysis`);
-        } else {
-          console.log(`[Video Moderator] Video too large (${videoSizeMB.toFixed(2)} MB), skipping visual analysis`);
         }
+        videoBase64 = btoa(binary);
+        videoIncluded = true;
+        console.log(`[Video Moderator] Video encoded for AI analysis`);
       } else {
         console.log(`[Video Moderator] Failed to download video: ${videoResponse.status}`);
       }
