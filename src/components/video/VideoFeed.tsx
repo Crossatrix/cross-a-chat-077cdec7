@@ -56,12 +56,16 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
   const [struckOpen, setStruckOpen] = useState(false);
   const [struckCount, setStruckCount] = useState(0);
+  const [pendingVideos, setPendingVideos] = useState<Video[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
+
   useEffect(() => {
     fetchVideos();
     fetchCategoryPrefs();
     checkStaffStatus();
     checkAgeVerification();
     fetchStruckCount();
+    fetchPendingVideos();
   }, []);
 
   const checkStaffStatus = async () => {
