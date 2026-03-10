@@ -428,7 +428,51 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
-            {filteredVideos.map((video) => (
+            {/* Pending videos shown to the uploader */}
+            {pendingVideos.map((video) => (
+              <div
+                key={video.id}
+                className="rounded-xl overflow-hidden border border-amber-500/30 bg-card relative opacity-80"
+              >
+                <div className="relative aspect-video bg-muted">
+                  {video.thumbnail_url ? (
+                    <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover blur-[2px]" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Play className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1.5">
+                    <Loader2 className="h-8 w-8 text-amber-400 animate-spin" />
+                    <span className="text-white text-xs font-semibold">Analyzing content...</span>
+                    <span className="text-white/60 text-[10px]">This may take a moment</span>
+                  </div>
+                  <span className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full z-10">
+                    {getCategoryIcon(video.category)} {video.category}
+                  </span>
+                </div>
+                <div className="p-2.5 flex gap-2">
+                  <FeaturedAvatar
+                    userId={video.user_id}
+                    avatarUrl={video.profiles.avatar_url}
+                    username={video.profiles.username}
+                    avatarClassName="h-8 w-8 shrink-0"
+                    fallbackClassName="bg-secondary text-foreground text-xs"
+                    className="shrink-0 mt-0.5"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{video.title}</h3>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500/50 text-amber-500">
+                        <Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" /> Pending review
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Approved videos */}
               <div
                 key={video.id}
                 className="rounded-xl overflow-hidden border border-border bg-card cursor-pointer hover:border-primary/50 transition-colors"
