@@ -595,7 +595,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
         open={struckOpen}
         onOpenChange={setStruckOpen}
         userId={currentUserId}
-        onRefresh={() => { fetchVideos(); fetchStruckCount(); }}
+        onRefresh={() => { fetchVideos(); fetchStruckCount(); fetchPendingVideos(); }}
       />
     </div>
   );
