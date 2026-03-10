@@ -473,6 +473,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
             ))}
 
             {/* Approved videos */}
+            {filteredVideos.map((video) => (
               <div
                 key={video.id}
                 className="rounded-xl overflow-hidden border border-border bg-card cursor-pointer hover:border-primary/50 transition-colors"
