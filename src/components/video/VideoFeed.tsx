@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle, ShieldAlert, AlertTriangle } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle, ShieldAlert, AlertTriangle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ interface Video {
   created_at: string;
   category: string;
   adults_only?: boolean;
+  moderation_status?: string;
   profiles: { username: string; avatar_url: string | null };
 }
 
@@ -55,12 +56,16 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
   const [struckOpen, setStruckOpen] = useState(false);
   const [struckCount, setStruckCount] = useState(0);
+  const [pendingVideos, setPendingVideos] = useState<Video[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
+
   useEffect(() => {
     fetchVideos();
     fetchCategoryPrefs();
     checkStaffStatus();
     checkAgeVerification();
     fetchStruckCount();
+    fetchPendingVideos();
   }, []);
 
   const checkStaffStatus = async () => {
@@ -89,6 +94,17 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       .select("id", { count: "exact", head: true })
       .eq("user_id", currentUserId) as any).eq("moderation_status", "struck");
     setStruckCount(count || 0);
+  };
+
+  const fetchPendingVideos = async () => {
+    const { data } = await (supabase
+      .from("videos")
+      .select("*, profiles(username, avatar_url)")
+      .eq("user_id", currentUserId)
+      .order("created_at", { ascending: false }) as any).eq("moderation_status", "pending");
+    const pending = (data || []) as unknown as Video[];
+    setPendingVideos(pending.map(v => ({ ...v, moderation_status: 'pending' })));
+    setPendingCount(pending.length);
   };
 
   const fetchCategoryPrefs = async () => {
@@ -338,13 +354,19 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       <div className="flex items-center justify-between p-3 border-b border-border bg-card shrink-0">
         <h2 className="text-lg font-bold text-primary">Videos</h2>
         <div className="flex items-center gap-2">
+          {pendingCount > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs border-amber-500/50 text-amber-500">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {pendingCount} analyzing
+            </Badge>
+          )}
           {struckCount > 0 && (
             <Button size="sm" variant="destructive" className="gap-1.5 relative" onClick={() => setStruckOpen(true)}>
               <AlertTriangle className="h-3.5 w-3.5" />
               <span className="text-xs">{struckCount}</span>
             </Button>
           )}
-          <VideoUploadDialog userId={currentUserId} onUploaded={() => { fetchVideos(); fetchStruckCount(); }} />
+          <VideoUploadDialog userId={currentUserId} onUploaded={() => { fetchVideos(); fetchStruckCount(); fetchPendingVideos(); }} />
         </div>
       </div>
 
@@ -406,6 +428,51 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
+            {/* Pending videos shown to the uploader */}
+            {pendingVideos.map((video) => (
+              <div
+                key={video.id}
+                className="rounded-xl overflow-hidden border border-amber-500/30 bg-card relative opacity-80"
+              >
+                <div className="relative aspect-video bg-muted">
+                  {video.thumbnail_url ? (
+                    <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover blur-[2px]" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Play className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1.5">
+                    <Loader2 className="h-8 w-8 text-amber-400 animate-spin" />
+                    <span className="text-white text-xs font-semibold">Analyzing content...</span>
+                    <span className="text-white/60 text-[10px]">This may take a moment</span>
+                  </div>
+                  <span className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full z-10">
+                    {getCategoryIcon(video.category)} {video.category}
+                  </span>
+                </div>
+                <div className="p-2.5 flex gap-2">
+                  <FeaturedAvatar
+                    userId={video.user_id}
+                    avatarUrl={video.profiles.avatar_url}
+                    username={video.profiles.username}
+                    avatarClassName="h-8 w-8 shrink-0"
+                    fallbackClassName="bg-secondary text-foreground text-xs"
+                    className="shrink-0 mt-0.5"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{video.title}</h3>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500/50 text-amber-500">
+                        <Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" /> Pending review
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Approved videos */}
             {filteredVideos.map((video) => (
               <div
                 key={video.id}
@@ -528,7 +595,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
         open={struckOpen}
         onOpenChange={setStruckOpen}
         userId={currentUserId}
-        onRefresh={() => { fetchVideos(); fetchStruckCount(); }}
+        onRefresh={() => { fetchVideos(); fetchStruckCount(); fetchPendingVideos(); }}
       />
     </div>
   );
