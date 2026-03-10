@@ -33,6 +33,7 @@ interface Video {
   created_at: string;
   category: string;
   adults_only?: boolean;
+  moderation_status?: string;
   profiles: { username: string; avatar_url: string | null };
 }
 
