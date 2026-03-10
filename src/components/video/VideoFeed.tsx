@@ -354,13 +354,19 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       <div className="flex items-center justify-between p-3 border-b border-border bg-card shrink-0">
         <h2 className="text-lg font-bold text-primary">Videos</h2>
         <div className="flex items-center gap-2">
+          {pendingCount > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs border-amber-500/50 text-amber-500">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {pendingCount} analyzing
+            </Badge>
+          )}
           {struckCount > 0 && (
             <Button size="sm" variant="destructive" className="gap-1.5 relative" onClick={() => setStruckOpen(true)}>
               <AlertTriangle className="h-3.5 w-3.5" />
               <span className="text-xs">{struckCount}</span>
             </Button>
           )}
-          <VideoUploadDialog userId={currentUserId} onUploaded={() => { fetchVideos(); fetchStruckCount(); }} />
+          <VideoUploadDialog userId={currentUserId} onUploaded={() => { fetchVideos(); fetchStruckCount(); fetchPendingVideos(); }} />
         </div>
       </div>
 
