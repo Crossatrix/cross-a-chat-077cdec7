@@ -622,7 +622,7 @@ const Admin = () => {
         toast.success("Video report dismissed");
         fetchAllData();
         break;
-      case "approve_appeal":
+      case "approve_appeal": {
         // Approve the struck video - set it to approved
         await (supabase
           .from("videos")
@@ -632,19 +632,47 @@ const Admin = () => {
         supabase.functions.invoke("notify-followers", {
           body: { creatorId: data.user_id, videoTitle: data.title },
         }).catch((err: any) => console.error("Failed to notify followers:", err));
+        // Notify creator about approved appeal
+        const notifAccountId = "00000000-0000-0000-0000-000000000001";
+        try {
+          const { data: convData } = await supabase.rpc("find_or_create_conversation", { other_user_id: data.user_id });
+          if (convData) {
+            await supabase.from("messages").insert({
+              conversation_id: convData,
+              user_id: notifAccountId,
+              content: `✅ Great news! Your appeal for "${data.title}" has been approved. Your video is now published and visible to everyone.`,
+              is_system: false,
+            } as any);
+          }
+        } catch (err) { console.error("Failed to notify creator:", err); }
         toast.success("Appeal approved! Video is now published.");
         setSelectedFile(null);
         fetchAllData();
         break;
-      case "reject_appeal":
+      }
+      case "reject_appeal": {
         await (supabase
           .from("videos")
           .update({ appeal_status: 'rejected' } as any)
           .eq("id", data.id) as any);
+        // Notify creator about rejected appeal
+        const rejectNotifId = "00000000-0000-0000-0000-000000000001";
+        try {
+          const { data: convData2 } = await supabase.rpc("find_or_create_conversation", { other_user_id: data.user_id });
+          if (convData2) {
+            await supabase.from("messages").insert({
+              conversation_id: convData2,
+              user_id: rejectNotifId,
+              content: `❌ Your appeal for "${data.title}" has been rejected. The video will remain struck. If you believe this is a mistake, please contact staff.`,
+              is_system: false,
+            } as any);
+          }
+        } catch (err) { console.error("Failed to notify creator:", err); }
         toast.success("Appeal rejected.");
         setSelectedFile(null);
         fetchAllData();
         break;
+      }
       case "resolve":
         await supabase.from("user_reports").update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", data.id);
         toast.success("Report resolved");
