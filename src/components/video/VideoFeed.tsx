@@ -96,6 +96,17 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     setStruckCount(count || 0);
   };
 
+  const fetchPendingVideos = async () => {
+    const { data } = await (supabase
+      .from("videos")
+      .select("*, profiles(username, avatar_url)")
+      .eq("user_id", currentUserId)
+      .order("created_at", { ascending: false }) as any).eq("moderation_status", "pending");
+    const pending = (data || []) as unknown as Video[];
+    setPendingVideos(pending.map(v => ({ ...v, moderation_status: 'pending' })));
+    setPendingCount(pending.length);
+  };
+
   const fetchCategoryPrefs = async () => {
     const { data } = await supabase
       .from("video_category_views")
