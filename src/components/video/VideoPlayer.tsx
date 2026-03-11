@@ -57,6 +57,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
+  const [isElderModOrAbove, setIsElderModOrAbove] = useState(false);
 
   useEffect(() => {
     fetchComments();
