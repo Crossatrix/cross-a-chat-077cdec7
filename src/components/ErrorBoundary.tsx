@@ -61,7 +61,7 @@ async function triggerMaintenanceMode() {
 }
 
 class ErrorBoundary extends Component<Props, State> {
-  private countdownInterval: NodeJS.Timeout | null = null;
+  private countdownInterval: ReturnType<typeof setInterval> | null = null;
   private globalErrorHandler: ((event: ErrorEvent) => void) | null = null;
   private unhandledRejectionHandler: ((event: PromiseRejectionEvent) => void) | null = null;
 

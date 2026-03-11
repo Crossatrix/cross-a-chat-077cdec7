@@ -67,7 +67,7 @@ const Index = () => {
   const [isInCall, setIsInCall] = useState(false);
   const [selectedAIModel, setSelectedAIModel] = useState("openai/gpt-5-mini");
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
-  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [showClearChatDialog, setShowClearChatDialog] = useState(false);
 const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
