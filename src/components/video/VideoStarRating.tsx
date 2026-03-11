@@ -23,6 +23,7 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
   const [userRating, setUserRating] = useState<number | null>(null);
   const [ratingCount, setRatingCount] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [staffDialogOpen, setStaffDialogOpen] = useState(false);
   const [selectedStars, setSelectedStars] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +32,6 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
   }, [videoId]);
 
   const fetchRatings = async () => {
-    // Fetch staff rating from video
     const { data: videoData } = await supabase
       .from("videos")
       .select("staff_rating, staff_rated_by")
@@ -43,7 +43,6 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
       setStaffRatedBy(videoData.staff_rated_by);
     }
 
-    // Fetch community ratings
     const { data: ratings } = await supabase
       .from("video_ratings" as any)
       .select("rating, user_id")
@@ -63,37 +62,43 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
   };
 
   const handleOpenRateDialog = () => {
-    if (userRating !== null && !isElderModOrAbove) return; // Already rated
+    if (userRating !== null) return;
     setSelectedStars(0);
     setDialogOpen(true);
   };
 
-  const handleSubmitRating = async () => {
+  const handleOpenStaffDialog = () => {
+    setSelectedStars(0);
+    setStaffDialogOpen(true);
+  };
+
+  const handleSubmitCommunityRating = async () => {
     if (selectedStars < 1 || selectedStars > 5) return;
     setLoading(true);
-
-    if (isElderModOrAbove) {
-      // Staff sets permanent rating
-      await supabase
-        .from("videos")
-        .update({ staff_rating: selectedStars, staff_rated_by: currentUserId })
-        .eq("id", videoId);
-      setStaffRating(selectedStars);
-      setStaffRatedBy(currentUserId);
-      toast.success(`Staff rating set to ${selectedStars} stars`);
-    } else {
-      // Community rating
-      await supabase
-        .from("video_ratings" as any)
-        .upsert(
-          { video_id: videoId, user_id: currentUserId, rating: selectedStars },
-          { onConflict: "video_id,user_id" }
-        );
-      setUserRating(selectedStars);
-      toast.success(`Rated ${selectedStars} stars`);
-    }
-
+    await supabase
+      .from("video_ratings" as any)
+      .upsert(
+        { video_id: videoId, user_id: currentUserId, rating: selectedStars },
+        { onConflict: "video_id,user_id" }
+      );
+    setUserRating(selectedStars);
+    toast.success(`Rated ${selectedStars} stars`);
     setDialogOpen(false);
+    setLoading(false);
+    fetchRatings();
+  };
+
+  const handleSubmitStaffRating = async () => {
+    if (selectedStars < 1 || selectedStars > 5) return;
+    setLoading(true);
+    await supabase
+      .from("videos")
+      .update({ staff_rating: selectedStars, staff_rated_by: currentUserId })
+      .eq("id", videoId);
+    setStaffRating(selectedStars);
+    setStaffRatedBy(currentUserId);
+    toast.success(`Staff rating set to ${selectedStars} stars`);
+    setStaffDialogOpen(false);
     setLoading(false);
     fetchRatings();
   };
@@ -106,7 +111,7 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
       .eq("id", videoId);
     setStaffRating(null);
     setStaffRatedBy(null);
-    setDialogOpen(false);
+    setStaffDialogOpen(false);
     setLoading(false);
     toast.success("Staff rating removed");
     fetchRatings();
@@ -115,16 +120,7 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
   const displayRating = staffRating ?? avgRating;
   const isStaffRated = staffRating !== null;
   const hasUserRated = userRating !== null;
-
-  // Determine which button icon to show
-  const getButtonIcon = () => {
-    if (isElderModOrAbove) {
-      return isStaffRated && staffRatedBy === currentUserId ? starSendIcon : starSendIcon;
-    }
-    return hasUserRated ? starRequestSentIcon : starRequestIcon;
-  };
-
-  const isButtonDisabled = !isElderModOrAbove && (hasUserRated || isStaffRated);
+  const isCommunityButtonDisabled = hasUserRated || isStaffRated;
 
   return (
     <div className="flex items-center gap-1.5">
@@ -133,7 +129,7 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
         {[1, 2, 3, 4, 5].map((star) => (
           <img
             key={star}
-            src={star <= displayRating ? (isStaffRated ? starYellowIcon : starYellowIcon) : starGreyIcon}
+            src={star <= displayRating ? starYellowIcon : starGreyIcon}
             alt={`${star} star`}
             className="h-4 w-4"
             style={!isStaffRated && star <= displayRating ? { filter: "hue-rotate(0deg) saturate(0.4) brightness(1.2)" } : undefined}
@@ -148,24 +144,38 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
         <span className="text-[10px] text-primary font-semibold">★</span>
       )}
 
-      {/* Rate button */}
+      {/* Community rate button (for everyone including admins) */}
       <button
         onClick={handleOpenRateDialog}
-        disabled={isButtonDisabled}
-        className={`shrink-0 transition-opacity ${isButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:opacity-80 cursor-pointer"}`}
+        disabled={isCommunityButtonDisabled}
+        className={`shrink-0 transition-opacity ${isCommunityButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:opacity-80 cursor-pointer"}`}
       >
         <img
-          src={getButtonIcon()}
+          src={hasUserRated ? starRequestSentIcon : starRequestIcon}
           alt="Rate"
           className="h-5 w-5"
         />
       </button>
 
-      {/* Rating Dialog */}
+      {/* Staff lock button (only for elder mods / admins) */}
+      {isElderModOrAbove && (
+        <button
+          onClick={handleOpenStaffDialog}
+          className="shrink-0 transition-opacity hover:opacity-80 cursor-pointer"
+        >
+          <img
+            src={starSendIcon}
+            alt="Staff Rate"
+            className="h-5 w-5"
+          />
+        </button>
+      )}
+
+      {/* Community Rating Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle>{isElderModOrAbove ? "Set Staff Rating" : "Rate Video"}</DialogTitle>
+            <DialogTitle>Rate Video</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center gap-2 py-4">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -186,10 +196,42 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
             <Button variant="outline" onClick={() => setDialogOpen(false)} className="flex-1">
               Cancel
             </Button>
-            <Button onClick={handleSubmitRating} disabled={selectedStars < 1 || loading} className="flex-1">
+            <Button onClick={handleSubmitCommunityRating} disabled={selectedStars < 1 || loading} className="flex-1">
               {loading ? "..." : "Submit"}
             </Button>
-            {isElderModOrAbove && isStaffRated && (
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Staff Rating Dialog */}
+      <Dialog open={staffDialogOpen} onOpenChange={setStaffDialogOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Set Staff Rating</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center gap-2 py-4">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                onClick={() => setSelectedStars(star)}
+                className="transition-transform hover:scale-110"
+              >
+                <img
+                  src={star <= selectedStars ? starYellowIcon : starGreyIcon}
+                  alt={`${star} star`}
+                  className="h-8 w-8"
+                />
+              </button>
+            ))}
+          </div>
+          <DialogFooter className="flex-row gap-2">
+            <Button variant="outline" onClick={() => setStaffDialogOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitStaffRating} disabled={selectedStars < 1 || loading} className="flex-1">
+              {loading ? "..." : "Lock Rating"}
+            </Button>
+            {isStaffRated && (
               <Button variant="destructive" onClick={handleUnrate} disabled={loading} className="flex-1">
                 Unrate
               </Button>
