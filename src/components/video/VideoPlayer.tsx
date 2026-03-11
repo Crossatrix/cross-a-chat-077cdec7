@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import FeaturedAvatar from "./FeaturedAvatar";
+import VideoStarRating from "./VideoStarRating";
 import { getCategoryLabel } from "@/utils/videoCategories";
+import { getStaffRole, isAtLeast } from "@/utils/roleConfig";
 
 interface Video {
   id: string;
@@ -55,6 +57,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
+  const [isElderModOrAbove, setIsElderModOrAbove] = useState(false);
 
   useEffect(() => {
     fetchComments();
@@ -62,7 +65,19 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     fetchFollowStatus();
     fetchFollowerCount();
     incrementView();
+    fetchStaffRole();
   }, [video.id]);
+
+  const fetchStaffRole = async () => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", currentUserId);
+    if (data) {
+      const role = getStaffRole(data as { role: string }[]);
+      setIsElderModOrAbove(isAtLeast(role, "elder_moderator"));
+    }
+  };
 
   // Realtime comments
   useEffect(() => {
@@ -298,7 +313,14 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
 
           {/* Info */}
           <div className="p-3 space-y-3">
-            <h1 className="text-lg font-bold">{video.title}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg font-bold">{video.title}</h1>
+              <VideoStarRating
+                videoId={video.id}
+                currentUserId={currentUserId}
+                isElderModOrAbove={isElderModOrAbove}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               {video.views_count + 1} views · {formatDate(video.created_at)}
             </p>
