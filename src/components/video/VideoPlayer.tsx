@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import FeaturedAvatar from "./FeaturedAvatar";
+import VideoStarRating from "./VideoStarRating";
 import { getCategoryLabel } from "@/utils/videoCategories";
+import { getStaffRole, isAtLeast } from "@/utils/roleConfig";
 
 interface Video {
   id: string;
