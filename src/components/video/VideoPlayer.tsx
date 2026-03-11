@@ -313,10 +313,14 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
 
           {/* Info */}
           <div className="p-3 space-y-3">
-            <h1 className="text-lg font-bold">{video.title}</h1>
-            <p className="text-xs text-muted-foreground">
-              {video.views_count + 1} views · {formatDate(video.created_at)}
-            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg font-bold">{video.title}</h1>
+              <VideoStarRating
+                videoId={video.id}
+                currentUserId={currentUserId}
+                isElderModOrAbove={isElderModOrAbove}
+              />
+            </div>
 
             {/* Actions row */}
             <div className="flex items-center gap-3 flex-wrap">
