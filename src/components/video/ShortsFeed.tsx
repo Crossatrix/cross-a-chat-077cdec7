@@ -86,7 +86,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
     setLoading(true);
     const { data } = await (supabase
       .from("videos")
-      .select("*, profiles(username, avatar_url)")
+      .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
       .or("duration.lte.180,duration.is.null")
       .order("created_at", { ascending: false }) as any).eq("moderation_status", "approved");
 

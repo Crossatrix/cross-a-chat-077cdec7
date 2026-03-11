@@ -124,7 +124,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
     const [{ data }, { data: blockedCatsData }] = await Promise.all([
       (supabase
         .from("videos")
-        .select("*, profiles(username, avatar_url)")
+        .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
         .order("created_at", { ascending: false }) as any).eq("moderation_status", "approved"),
       supabase
         .from("blocked_categories" as any)
