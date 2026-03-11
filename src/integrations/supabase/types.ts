@@ -1456,6 +1456,45 @@ export type Database = {
           },
         ]
       }
+      video_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating: number
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_ratings_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_reports: {
         Row: {
           ai_reason: string | null
@@ -1575,6 +1614,8 @@ export type Database = {
           likes_count: number
           moderation_reason: string | null
           moderation_status: string
+          staff_rated_by: string | null
+          staff_rating: number | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -1595,6 +1636,8 @@ export type Database = {
           likes_count?: number
           moderation_reason?: string | null
           moderation_status?: string
+          staff_rated_by?: string | null
+          staff_rating?: number | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -1615,6 +1658,8 @@ export type Database = {
           likes_count?: number
           moderation_reason?: string | null
           moderation_status?: string
+          staff_rated_by?: string | null
+          staff_rating?: number | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
@@ -1623,6 +1668,13 @@ export type Database = {
           views_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "videos_staff_rated_by_fkey"
+            columns: ["staff_rated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "videos_user_id_fkey"
             columns: ["user_id"]
