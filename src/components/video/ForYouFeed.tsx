@@ -139,7 +139,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     // Fetch all videos (we score client-side)
     const { data } = await (supabase
       .from("videos")
-      .select("*, profiles(username, avatar_url)")
+      .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
       .order("created_at", { ascending: false })
       .limit(200) as any).eq("moderation_status", "approved");
 
