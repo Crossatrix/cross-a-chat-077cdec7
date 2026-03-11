@@ -65,7 +65,19 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     fetchFollowStatus();
     fetchFollowerCount();
     incrementView();
+    fetchStaffRole();
   }, [video.id]);
+
+  const fetchStaffRole = async () => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", currentUserId);
+    if (data) {
+      const role = getStaffRole(data as { role: string }[]);
+      setIsElderModOrAbove(isAtLeast(role, "elder_moderator"));
+    }
+  };
 
   // Realtime comments
   useEffect(() => {
