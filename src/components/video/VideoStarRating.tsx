@@ -145,7 +145,7 @@ const VideoStarRating = ({ videoId, currentUserId, isElderModOrAbove }: VideoSta
         <span className="text-[10px] text-muted-foreground">({ratingCount})</span>
       )}
       {isStaffRated && (
-        <span className="text-[10px] text-amber-400 font-semibold">★</span>
+        <span className="text-[10px] text-primary font-semibold">★</span>
       )}
 
       {/* Rate button */}
