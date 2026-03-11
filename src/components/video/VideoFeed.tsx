@@ -99,7 +99,7 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
   const fetchPendingVideos = async () => {
     const { data } = await (supabase
       .from("videos")
-      .select("*, profiles(username, avatar_url)")
+      .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
       .eq("user_id", currentUserId)
       .order("created_at", { ascending: false }) as any).eq("moderation_status", "pending");
     const pending = (data || []) as unknown as Video[];
