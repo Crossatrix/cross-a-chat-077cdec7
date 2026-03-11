@@ -321,6 +321,9 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                 isElderModOrAbove={isElderModOrAbove}
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              {video.views_count + 1} views · {formatDate(video.created_at)}
+            </p>
 
             {/* Actions row */}
             <div className="flex items-center gap-3 flex-wrap">
