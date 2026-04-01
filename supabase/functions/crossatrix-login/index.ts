@@ -143,6 +143,7 @@ async function handleMigration(
       await supabaseAdmin
         .from("profiles")
         .update({
+          username: oldProfile.username,
           avatar_url: oldProfile.avatar_url,
           bio: oldProfile.bio,
           text_hue: oldProfile.text_hue,
