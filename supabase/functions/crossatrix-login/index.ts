@@ -78,11 +78,23 @@ serve(async (req) => {
       crossatrixUser.user_metadata?.display_name ||
       email.split("@")[0];
 
+    // Check if username is already taken, append suffix if needed
+    let finalUsername = username;
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("username", username)
+      .maybeSingle();
+
+    if (existingProfile) {
+      finalUsername = `${username}_${Date.now().toString(36)}`;
+    }
+
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { username },
+      user_metadata: { username: finalUsername },
     });
 
     if (createError) {
