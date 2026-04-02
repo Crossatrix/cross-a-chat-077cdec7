@@ -59,6 +59,36 @@ serve(async (req) => {
       await supabaseAdmin.auth.signInWithPassword({ email, password });
 
     if (signInData?.session) {
+      // Sync username from Crossatrix if profile still has email-based username
+      const crossatrixUsername =
+        crossatrixUser.user_metadata?.username ||
+        crossatrixUser.user_metadata?.display_name;
+
+      if (crossatrixUsername) {
+        const { data: localProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("username")
+          .eq("id", signInData.user.id)
+          .maybeSingle();
+
+        if (localProfile && localProfile.username !== crossatrixUsername) {
+          // Check if the Crossatrix username is available
+          const { data: taken } = await supabaseAdmin
+            .from("profiles")
+            .select("id")
+            .eq("username", crossatrixUsername)
+            .neq("id", signInData.user.id)
+            .maybeSingle();
+
+          if (!taken) {
+            await supabaseAdmin
+              .from("profiles")
+              .update({ username: crossatrixUsername })
+              .eq("id", signInData.user.id);
+          }
+        }
+      }
+
       // User exists locally, handle migration if requested
       if (migrate_user_id) {
         await handleMigration(supabaseAdmin, migrate_user_id, signInData.user.id);
