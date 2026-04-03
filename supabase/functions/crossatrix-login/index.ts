@@ -40,12 +40,13 @@ serve(async (req) => {
       return jsonResponse({ error: "Email and password are required" }, 400);
     }
 
-    const crossatrixUser = await verifyCrossatrixCredentials(email, password);
-    const crossatrixUsername = extractCrossatrixUsername(crossatrixUser, email);
-
     const supabaseUrl = requireEnv("SUPABASE_URL");
     const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
+
+    const crossatrixUser = await verifyCrossatrixCredentials(email, password);
+    const crossatrixUsername = extractCrossatrixUsername(crossatrixUser, email);
+    const localPassword = await deriveLocalPassword(email, password, serviceRoleKey);
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
     const supabaseAuth = createClient(supabaseUrl, anonKey);
@@ -61,7 +62,7 @@ serve(async (req) => {
     let isNew = false;
 
     if (existingLocalUser) {
-      await syncAuthCredentials(supabaseAdmin, existingLocalUser.id, email, password, crossatrixUsername);
+      await syncAuthCredentials(supabaseAdmin, existingLocalUser.id, email, localPassword, crossatrixUsername);
 
       if (migrationSourceId && migrationSourceId !== existingLocalUser.id) {
         await migrateLegacyAccount(supabaseAdmin, migrationSourceId, existingLocalUser.id, crossatrixUsername);
@@ -69,16 +70,16 @@ serve(async (req) => {
         await syncProfileUsername(supabaseAdmin, existingLocalUser.id, crossatrixUsername);
       }
     } else if (migrationSourceId) {
-      await repurposeLegacyAccount(supabaseAdmin, migrationSourceId, email, password, crossatrixUsername);
+      await repurposeLegacyAccount(supabaseAdmin, migrationSourceId, email, localPassword, crossatrixUsername);
       targetUserId = migrationSourceId;
     } else {
       const finalUsername = await makeAvailableUsername(supabaseAdmin, crossatrixUsername, []);
-      const newUser = await createLocalUser(supabaseAdmin, email, password, finalUsername);
+      const newUser = await createLocalUser(supabaseAdmin, email, localPassword, finalUsername);
       targetUserId = newUser.id;
       isNew = true;
     }
 
-    const signInData = await signInLocalUser(supabaseAuth, email, password);
+    const signInData = await signInLocalUser(supabaseAuth, email, localPassword);
 
     return jsonResponse(
       {
@@ -245,12 +246,12 @@ async function syncAuthCredentials(
   supabaseAdmin: any,
   userId: string,
   email: string,
-  password: string,
+  localPassword: string,
   username: string,
 ) {
   const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
     email,
-    password,
+    password: localPassword,
     email_confirm: true,
     user_metadata: { username },
   });
@@ -289,11 +290,21 @@ async function repurposeLegacyAccount(
   supabaseAdmin: any,
   legacyUserId: string,
   email: string,
-  password: string,
+  localPassword: string,
   username: string,
 ) {
-  await syncAuthCredentials(supabaseAdmin, legacyUserId, email, password, username);
+  await syncAuthCredentials(supabaseAdmin, legacyUserId, email, localPassword, username);
   await syncProfileUsername(supabaseAdmin, legacyUserId, username);
+}
+
+async function deriveLocalPassword(email: string, password: string, salt: string) {
+  const payload = new TextEncoder().encode(`${salt}::${email}::${password}`);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", payload);
+  const hash = Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+
+  return `CxA1!${hash}`;
 }
 
 async function syncProfileUsername(supabaseAdmin: any, userId: string, desiredUsername: string) {
