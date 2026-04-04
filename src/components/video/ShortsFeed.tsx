@@ -10,6 +10,7 @@ import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2,
 import { getCategoryLabel, getCategoryIcon } from "@/utils/videoCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { creditCroins, checkViewMilestone } from "@/utils/croins";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import AgeVerificationDialog from "./AgeVerificationDialog";
