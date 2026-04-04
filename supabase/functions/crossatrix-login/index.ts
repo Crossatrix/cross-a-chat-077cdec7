@@ -45,7 +45,7 @@ serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
 
     const crossatrixUser = await verifyCrossatrixCredentials(email, password);
-    const crossatrixUsername = extractCrossatrixUsername(crossatrixUser, email);
+    const { username: crossatrixUsername, isExplicit: isExplicitUsername } = extractCrossatrixUsername(crossatrixUser, email);
     const localPassword = await deriveLocalPassword(email, password, serviceRoleKey);
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
@@ -66,9 +66,11 @@ serve(async (req) => {
 
       if (migrationSourceId && migrationSourceId !== existingLocalUser.id) {
         await migrateLegacyAccount(supabaseAdmin, migrationSourceId, existingLocalUser.id, crossatrixUsername);
-      } else {
+      } else if (isExplicitUsername) {
+        // Only sync profile username if Crossatrix has an explicit username/display_name set
         await syncProfileUsername(supabaseAdmin, existingLocalUser.id, crossatrixUsername);
       }
+      // If not explicit, keep existing profile username as-is
     } else if (migrationSourceId) {
       await repurposeLegacyAccount(supabaseAdmin, migrationSourceId, email, localPassword, crossatrixUsername);
       targetUserId = migrationSourceId;
@@ -131,17 +133,18 @@ async function verifyCrossatrixCredentials(email: string, password: string): Pro
   return data.user;
 }
 
-function extractCrossatrixUsername(user: CrossatrixUser, email: string) {
+function extractCrossatrixUsername(user: CrossatrixUser, email: string): { username: string; isExplicit: boolean } {
   const metadata = user.user_metadata || {};
-  const candidates = [metadata.username, metadata.display_name, user.email?.split("@")[0], email.split("@")[0]];
-
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim().length > 0) {
-      return candidate.trim();
-    }
+  // Only username or display_name count as "explicit" – email prefix is just a fallback
+  if (typeof metadata.username === "string" && metadata.username.trim().length > 0) {
+    return { username: metadata.username.trim(), isExplicit: true };
   }
-
-  return `user_${Date.now().toString(36)}`;
+  if (typeof metadata.display_name === "string" && metadata.display_name.trim().length > 0) {
+    return { username: metadata.display_name.trim(), isExplicit: true };
+  }
+  // Fallback to email prefix – NOT explicit
+  const fallback = (user.email?.split("@")[0] || email.split("@")[0] || `user_${Date.now().toString(36)}`).trim();
+  return { username: fallback, isExplicit: false };
 }
 
 async function findUserByEmail(supabaseAdmin: any, email: string) {
