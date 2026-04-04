@@ -249,6 +249,14 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           dislikes: p[shortId].dislikes + (!isLike ? 1 : 0) - (prev === false ? 1 : 0),
         }
       }));
+
+      // Award 1 Croin to short owner for a new like
+      if (isLike && prev === null) {
+        const short = shorts.find(s => s.id === shortId);
+        if (short && short.user_id !== currentUserId) {
+          creditCroins(short.user_id, 1, "Like on short: " + short.title);
+        }
+      }
     }
 
     const { count: newLikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", shortId).eq("is_like", true);
