@@ -131,17 +131,18 @@ async function verifyCrossatrixCredentials(email: string, password: string): Pro
   return data.user;
 }
 
-function extractCrossatrixUsername(user: CrossatrixUser, email: string) {
+function extractCrossatrixUsername(user: CrossatrixUser, email: string): { username: string; isExplicit: boolean } {
   const metadata = user.user_metadata || {};
-  const candidates = [metadata.username, metadata.display_name, user.email?.split("@")[0], email.split("@")[0]];
-
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim().length > 0) {
-      return candidate.trim();
-    }
+  // Only username or display_name count as "explicit" – email prefix is just a fallback
+  if (typeof metadata.username === "string" && metadata.username.trim().length > 0) {
+    return { username: metadata.username.trim(), isExplicit: true };
   }
-
-  return `user_${Date.now().toString(36)}`;
+  if (typeof metadata.display_name === "string" && metadata.display_name.trim().length > 0) {
+    return { username: metadata.display_name.trim(), isExplicit: true };
+  }
+  // Fallback to email prefix – NOT explicit
+  const fallback = (user.email?.split("@")[0] || email.split("@")[0] || `user_${Date.now().toString(36)}`).trim();
+  return { username: fallback, isExplicit: false };
 }
 
 async function findUserByEmail(supabaseAdmin: any, email: string) {
