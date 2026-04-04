@@ -176,6 +176,10 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
       if (isLike) {
         setLikesCount((c) => c + 1);
         if (prevLike === false) setDislikesCount((c) => c - 1);
+        // Award 1 Croin to video owner for a new like (not switching from dislike)
+        if (prevLike === null && video.user_id !== currentUserId) {
+          creditCroins(video.user_id, 1, "Like on video: " + video.title);
+        }
       } else {
         setDislikesCount((c) => c + 1);
         if (prevLike === true) setLikesCount((c) => c - 1);
