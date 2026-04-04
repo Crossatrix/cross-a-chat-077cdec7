@@ -101,6 +101,11 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
       if (isLike) newLikes++;
       else newDislikes++;
 
+      // Award 1 Croin to post owner for a new like
+      if (isLike && liked === null && post.user_id !== currentUserId) {
+        creditCroins(post.user_id, 1, "Like on post");
+      }
+
       setLikesCount(newLikes);
       setDislikesCount(newDislikes);
       setLiked(isLike);
