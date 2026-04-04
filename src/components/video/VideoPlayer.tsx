@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { creditCroins, checkViewMilestone } from "@/utils/croins";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import FeaturedAvatar from "./FeaturedAvatar";
