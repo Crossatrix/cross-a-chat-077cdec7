@@ -104,7 +104,16 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const incrementView = async () => {
     if (viewCounted) return;
     setViewCounted(true);
-    await supabase.from("videos").update({ views_count: video.views_count + 1 }).eq("id", video.id);
+    const newViewCount = video.views_count + 1;
+    await supabase.from("videos").update({ views_count: newViewCount }).eq("id", video.id);
+
+    // Award Croin for view milestone (longform = every 10 views)
+    // Determine if short by checking duration < 180s; if no duration info, assume longform
+    const isShort = false; // VideoPlayer is used for longform
+    if (checkViewMilestone(newViewCount, isShort) && video.user_id !== currentUserId) {
+      creditCroins(video.user_id, 1, `View milestone (${newViewCount}) on: ${video.title}`);
+    }
+
     // Track weekly stats
     const weekStart = getWeekStart();
     const { data: existing } = await supabase
