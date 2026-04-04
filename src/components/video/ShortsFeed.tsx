@@ -189,8 +189,13 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
         }
         if (!viewedSet.current.has(short?.id)) {
           viewedSet.current.add(short?.id);
-          supabase.from("videos").update({ views_count: short.views_count + 1 }).eq("id", short.id);
+          const newViewCount = short.views_count + 1;
+          supabase.from("videos").update({ views_count: newViewCount }).eq("id", short.id);
           trackCategoryView(short.category);
+          // Award Croin for short view milestone (every 50 views)
+          if (checkViewMilestone(newViewCount, true) && short.user_id !== currentUserId) {
+            creditCroins(short.user_id, 1, `Short view milestone (${newViewCount}): ${short.title}`);
+          }
         }
       } else {
         video.pause();
