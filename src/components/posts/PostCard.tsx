@@ -5,6 +5,7 @@ import { ThumbsUp, ThumbsDown, MessageCircle, Trash2, Pencil, BarChart3 } from "
 import EditPostDialog from "./EditPostDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { creditCroins } from "@/utils/croins";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "@/components/video/CreatorBadge";
 import FeaturedAvatar from "@/components/video/FeaturedAvatar";
