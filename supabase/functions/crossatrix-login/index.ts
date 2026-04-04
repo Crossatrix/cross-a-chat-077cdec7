@@ -45,7 +45,7 @@ serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
 
     const crossatrixUser = await verifyCrossatrixCredentials(email, password);
-    const crossatrixUsername = extractCrossatrixUsername(crossatrixUser, email);
+    const { username: crossatrixUsername, isExplicit: isExplicitUsername } = extractCrossatrixUsername(crossatrixUser, email);
     const localPassword = await deriveLocalPassword(email, password, serviceRoleKey);
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
@@ -66,9 +66,11 @@ serve(async (req) => {
 
       if (migrationSourceId && migrationSourceId !== existingLocalUser.id) {
         await migrateLegacyAccount(supabaseAdmin, migrationSourceId, existingLocalUser.id, crossatrixUsername);
-      } else {
+      } else if (isExplicitUsername) {
+        // Only sync profile username if Crossatrix has an explicit username/display_name set
         await syncProfileUsername(supabaseAdmin, existingLocalUser.id, crossatrixUsername);
       }
+      // If not explicit, keep existing profile username as-is
     } else if (migrationSourceId) {
       await repurposeLegacyAccount(supabaseAdmin, migrationSourceId, email, localPassword, crossatrixUsername);
       targetUserId = migrationSourceId;
