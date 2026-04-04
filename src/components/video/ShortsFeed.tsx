@@ -10,6 +10,7 @@ import { ThumbsUp, ThumbsDown, UserPlus, UserMinus, MessageCircle, Send, Trash2,
 import { getCategoryLabel, getCategoryIcon } from "@/utils/videoCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { creditCroins, checkViewMilestone } from "@/utils/croins";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import AgeVerificationDialog from "./AgeVerificationDialog";
@@ -188,8 +189,13 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
         }
         if (!viewedSet.current.has(short?.id)) {
           viewedSet.current.add(short?.id);
-          supabase.from("videos").update({ views_count: short.views_count + 1 }).eq("id", short.id);
+          const newViewCount = short.views_count + 1;
+          supabase.from("videos").update({ views_count: newViewCount }).eq("id", short.id);
           trackCategoryView(short.category);
+          // Award Croin for short view milestone (every 50 views)
+          if (checkViewMilestone(newViewCount, true) && short.user_id !== currentUserId) {
+            creditCroins(short.user_id, 1, `Short view milestone (${newViewCount}): ${short.title}`);
+          }
         }
       } else {
         video.pause();
@@ -243,6 +249,14 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           dislikes: p[shortId].dislikes + (!isLike ? 1 : 0) - (prev === false ? 1 : 0),
         }
       }));
+
+      // Award 1 Croin to short owner for a new like
+      if (isLike && prev === null) {
+        const short = shorts.find(s => s.id === shortId);
+        if (short && short.user_id !== currentUserId) {
+          creditCroins(short.user_id, 1, "Like on short: " + short.title);
+        }
+      }
     }
 
     const { count: newLikes } = await supabase.from("video_likes").select("*", { count: "exact", head: true }).eq("video_id", shortId).eq("is_like", true);

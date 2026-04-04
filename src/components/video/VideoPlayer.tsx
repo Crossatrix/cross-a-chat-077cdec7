@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { creditCroins, checkViewMilestone } from "@/utils/croins";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import FeaturedAvatar from "./FeaturedAvatar";
@@ -103,7 +104,16 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const incrementView = async () => {
     if (viewCounted) return;
     setViewCounted(true);
-    await supabase.from("videos").update({ views_count: video.views_count + 1 }).eq("id", video.id);
+    const newViewCount = video.views_count + 1;
+    await supabase.from("videos").update({ views_count: newViewCount }).eq("id", video.id);
+
+    // Award Croin for view milestone (longform = every 10 views)
+    // Determine if short by checking duration < 180s; if no duration info, assume longform
+    const isShort = false; // VideoPlayer is used for longform
+    if (checkViewMilestone(newViewCount, isShort) && video.user_id !== currentUserId) {
+      creditCroins(video.user_id, 1, `View milestone (${newViewCount}) on: ${video.title}`);
+    }
+
     // Track weekly stats
     const weekStart = getWeekStart();
     const { data: existing } = await supabase
@@ -175,6 +185,10 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
       if (isLike) {
         setLikesCount((c) => c + 1);
         if (prevLike === false) setDislikesCount((c) => c - 1);
+        // Award 1 Croin to video owner for a new like (not switching from dislike)
+        if (prevLike === null && video.user_id !== currentUserId) {
+          creditCroins(video.user_id, 1, "Like on video: " + video.title);
+        }
       } else {
         setDislikesCount((c) => c + 1);
         if (prevLike === true) setLikesCount((c) => c - 1);

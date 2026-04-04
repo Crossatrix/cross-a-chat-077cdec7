@@ -5,6 +5,7 @@ import { ThumbsUp, ThumbsDown, MessageCircle, Trash2, Pencil, BarChart3 } from "
 import EditPostDialog from "./EditPostDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { creditCroins } from "@/utils/croins";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "@/components/video/CreatorBadge";
 import FeaturedAvatar from "@/components/video/FeaturedAvatar";
@@ -99,6 +100,11 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
       if (liked === false) newDislikes--;
       if (isLike) newLikes++;
       else newDislikes++;
+
+      // Award 1 Croin to post owner for a new like
+      if (isLike && liked === null && post.user_id !== currentUserId) {
+        creditCroins(post.user_id, 1, "Like on post");
+      }
 
       setLikesCount(newLikes);
       setDislikesCount(newDislikes);

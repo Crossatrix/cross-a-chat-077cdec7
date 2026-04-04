@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins } from "lucide-react";
+import { getBalance as getCroinBalance } from "@/utils/croins";
+import croinIcon from "@/assets/croin.png";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -74,6 +76,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
   const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts">("chats");
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
+  const [croinBalance, setCroinBalance] = useState<number>(0);
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
@@ -282,6 +285,9 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
       // Fetch AI credits
       fetchAiCredits();
+
+      // Fetch Croin balance
+      getCroinBalance(user.id).then(b => setCroinBalance(b));
     };
 
     fetchUserData();
@@ -1073,7 +1079,13 @@ return (
           <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
             <div className="min-w-0">
               <h1 className="text-lg font-bold text-primary truncate">Cross Chat</h1>
-              <p className="text-xs text-muted-foreground truncate">@{username}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground truncate">@{username}</p>
+                <span className="flex items-center gap-0.5 text-xs font-semibold text-amber-500">
+                  <img src={croinIcon} alt="Croins" className="h-3.5 w-3.5" loading="lazy" width={14} height={14} />
+                  {croinBalance}
+                </span>
+              </div>
             </div>
           </div>
           <div className="flex gap-0.5 md:gap-1 shrink-0 items-center ml-auto">
