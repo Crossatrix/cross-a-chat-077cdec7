@@ -189,7 +189,7 @@ Remember: The reporter felt strongly enough to file this complaint. Evaluate whe
             .from('user_bans')
             .insert({
               user_id: report.reporter_id,
-              banned_by: report.reported_user_id, // Ironically, the falsely reported user
+              banned_by: report.reporter_id, // System auto-ban: attribute to the offending user themselves
               reason: `[Auto-Ban] 3 false reports submitted. User has been warned ${warnings.length} times for submitting baseless reports.`,
               expires_at: expiresAt.toISOString(),
             });
