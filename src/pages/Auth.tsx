@@ -61,6 +61,11 @@ const Auth = () => {
           refresh_token: data.session.refresh_token,
         });
 
+        // Store Crossatrix user ID for Croins API
+        if (data.crossatrix_user_id) {
+          localStorage.setItem("crossatrix_user_id", data.crossatrix_user_id);
+        }
+
         // Check if user is banned
         const { data: ban } = await supabase
           .from("user_bans")
