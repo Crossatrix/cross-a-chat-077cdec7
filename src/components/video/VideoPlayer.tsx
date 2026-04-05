@@ -15,6 +15,7 @@ import FeaturedAvatar from "./FeaturedAvatar";
 import VideoStarRating from "./VideoStarRating";
 import { getCategoryLabel } from "@/utils/videoCategories";
 import { getStaffRole, isAtLeast } from "@/utils/roleConfig";
+import AdPlayer, { pickRandomAd } from "./AdPlayer";
 
 interface Video {
   id: string;
@@ -59,6 +60,9 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
   const [isElderModOrAbove, setIsElderModOrAbove] = useState(false);
+  const [showingAd, setShowingAd] = useState(true);
+  const [currentAd, setCurrentAd] = useState<any>(null);
+  const [adChecked, setAdChecked] = useState(false);
 
   useEffect(() => {
     fetchComments();
@@ -67,6 +71,12 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     fetchFollowerCount();
     incrementView();
     fetchStaffRole();
+    // Check for ad
+    pickRandomAd(supabase).then((ad) => {
+      setCurrentAd(ad);
+      setShowingAd(!!ad);
+      setAdChecked(true);
+    });
   }, [video.id]);
 
   const fetchStaffRole = async () => {
@@ -316,14 +326,18 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
 
       <ScrollArea className="flex-1">
         <div className="max-w-3xl mx-auto">
-          {/* Video */}
-          <video
-            controls
-            autoPlay
-            src={video.video_url}
-            className="w-full aspect-video bg-black"
-            preload="metadata"
-          />
+          {/* Ad or Video */}
+          {showingAd && currentAd ? (
+            <AdPlayer ad={currentAd} onAdComplete={() => setShowingAd(false)} />
+          ) : (
+            <video
+              controls
+              autoPlay
+              src={video.video_url}
+              className="w-full aspect-video bg-black"
+              preload="metadata"
+            />
+          )}
 
           {/* Info */}
           <div className="p-3 space-y-3">

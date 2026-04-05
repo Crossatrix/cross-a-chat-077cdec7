@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { StaffRole, getStaffRole, CAN, ROLE_CONFIG, isAtLeast } from "@/utils/roleConfig";
+import AdManager from "@/components/admin/AdManager";
 
 const Admin = () => {
   const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
@@ -936,6 +937,15 @@ const Admin = () => {
         <div className="border-b border-border bg-card/50 p-3 shrink-0">
           <div className="max-w-7xl mx-auto">
             <CreatorVerificationManager staffRole={staffRole} />
+          </div>
+        </div>
+      )}
+
+      {/* Ad Manager - admin only */}
+      {CAN.manageVersion(staffRole) && (
+        <div className="border-b border-border bg-card/50 p-3 shrink-0">
+          <div className="max-w-7xl mx-auto">
+            <AdManager />
           </div>
         </div>
       )}
