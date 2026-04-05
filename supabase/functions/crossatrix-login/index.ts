@@ -46,6 +46,7 @@ serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
 
     const crossatrixUser = await verifyCrossatrixCredentials(email, password);
+    const crossatrixUserId = crossatrixUser.id || null;
     const { username: crossatrixUsername, isExplicit: isExplicitUsername } = extractCrossatrixUsername(crossatrixUser, email);
     const localPassword = await deriveLocalPassword(email, password, serviceRoleKey);
 
