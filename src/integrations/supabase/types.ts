@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          duration: number
+          id: string
+          title: string
+          video_url: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          duration?: number
+          id?: string
+          title: string
+          video_url: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          duration?: number
+          id?: string
+          title?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_credits: {
         Row: {
           created_at: string
