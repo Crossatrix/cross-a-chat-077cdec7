@@ -85,6 +85,11 @@ serve(async (req) => {
 
     const signInData = await signInLocalUser(supabaseAuth, email, localPassword);
 
+    // Store Crossatrix user ID in profile for Croins lookups
+    if (crossatrixUserId && signInData.user?.id) {
+      await supabaseAdmin.from("profiles").update({ crossatrix_user_id: crossatrixUserId }).eq("id", signInData.user.id);
+    }
+
     return jsonResponse(
       {
         session: signInData.session,
