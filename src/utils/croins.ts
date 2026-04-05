@@ -1,11 +1,30 @@
+import { supabase } from "@/integrations/supabase/client";
+
 const CROINS_API = "https://digjxtmzafzcgytgcwmb.supabase.co/functions/v1/croins";
 
 /**
- * Get the Crossatrix user ID stored during login.
+ * Get the Crossatrix user ID stored during login (for current user).
  * Falls back to the provided local user ID if not available.
  */
 export const getCrossatrixUserId = (fallbackId?: string): string => {
   return localStorage.getItem("crossatrix_user_id") || fallbackId || "";
+};
+
+/**
+ * Look up a user's Crossatrix ID from their local profile.
+ * Used when crediting Croins to other users (e.g. video/post owners).
+ */
+export const lookupCrossatrixId = async (localUserId: string): Promise<string> => {
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("crossatrix_user_id")
+      .eq("id", localUserId)
+      .maybeSingle();
+    return (data as any)?.crossatrix_user_id || localUserId;
+  } catch {
+    return localUserId;
+  }
 };
 
 export const getBalance = async (userId: string): Promise<number> => {
@@ -22,12 +41,14 @@ export const getBalance = async (userId: string): Promise<number> => {
   }
 };
 
-export const creditCroins = async (userId: string, amount: number, description: string): Promise<boolean> => {
+export const creditCroins = async (localUserId: string, amount: number, description: string): Promise<boolean> => {
   try {
+    // Look up the Crossatrix user ID for the target user
+    const crossatrixId = await lookupCrossatrixId(localUserId);
     const res = await fetch(CROINS_API, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "credit", user_id: userId, amount, description }),
+      body: JSON.stringify({ action: "credit", user_id: crossatrixId, amount, description }),
     });
     return res.ok;
   } catch {
