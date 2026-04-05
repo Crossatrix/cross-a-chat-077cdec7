@@ -1,5 +1,13 @@
 const CROINS_API = "https://digjxtmzafzcgytgcwmb.supabase.co/functions/v1/croins";
 
+/**
+ * Get the Crossatrix user ID stored during login.
+ * Falls back to the provided local user ID if not available.
+ */
+export const getCrossatrixUserId = (fallbackId?: string): string => {
+  return localStorage.getItem("crossatrix_user_id") || fallbackId || "";
+};
+
 export const getBalance = async (userId: string): Promise<number> => {
   try {
     const res = await fetch(CROINS_API, {
