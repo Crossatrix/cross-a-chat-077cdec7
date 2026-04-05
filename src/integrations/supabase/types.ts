@@ -933,6 +933,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          crossatrix_user_id: string | null
           id: string
           last_seen: string | null
           show_online_status: boolean
@@ -947,6 +948,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          crossatrix_user_id?: string | null
           id: string
           last_seen?: string | null
           show_online_status?: boolean
@@ -961,6 +963,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          crossatrix_user_id?: string | null
           id?: string
           last_seen?: string | null
           show_online_status?: boolean
