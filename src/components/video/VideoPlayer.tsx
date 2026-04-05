@@ -60,6 +60,9 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
   const [isElderModOrAbove, setIsElderModOrAbove] = useState(false);
+  const [showingAd, setShowingAd] = useState(true);
+  const [currentAd, setCurrentAd] = useState<any>(null);
+  const [adChecked, setAdChecked] = useState(false);
 
   useEffect(() => {
     fetchComments();
