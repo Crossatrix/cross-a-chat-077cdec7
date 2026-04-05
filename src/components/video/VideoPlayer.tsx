@@ -15,6 +15,7 @@ import FeaturedAvatar from "./FeaturedAvatar";
 import VideoStarRating from "./VideoStarRating";
 import { getCategoryLabel } from "@/utils/videoCategories";
 import { getStaffRole, isAtLeast } from "@/utils/roleConfig";
+import AdPlayer, { pickRandomAd } from "./AdPlayer";
 
 interface Video {
   id: string;
