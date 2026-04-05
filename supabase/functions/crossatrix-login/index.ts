@@ -10,6 +10,7 @@ const CROSSATRIX_AUTH_URL = "https://digjxtmzafzcgytgcwmb.supabase.co/functions/
 const DEFAULT_ROLE = "user";
 
 type CrossatrixUser = {
+  id?: string;
   email?: string;
   user_metadata?: Record<string, unknown>;
 };
