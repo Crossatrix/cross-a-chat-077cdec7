@@ -91,6 +91,7 @@ serve(async (req) => {
         user: signInData.user,
         is_new: isNew,
         migrated: Boolean(migrationSourceId && migrationSourceId !== targetUserId),
+        crossatrix_user_id: crossatrixUserId,
       },
       200,
     );
