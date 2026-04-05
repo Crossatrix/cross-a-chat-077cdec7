@@ -71,6 +71,12 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     fetchFollowerCount();
     incrementView();
     fetchStaffRole();
+    // Check for ad
+    pickRandomAd(supabase).then((ad) => {
+      setCurrentAd(ad);
+      setShowingAd(!!ad);
+      setAdChecked(true);
+    });
   }, [video.id]);
 
   const fetchStaffRole = async () => {
