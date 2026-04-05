@@ -326,14 +326,18 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
 
       <ScrollArea className="flex-1">
         <div className="max-w-3xl mx-auto">
-          {/* Video */}
-          <video
-            controls
-            autoPlay
-            src={video.video_url}
-            className="w-full aspect-video bg-black"
-            preload="metadata"
-          />
+          {/* Ad or Video */}
+          {showingAd && currentAd ? (
+            <AdPlayer ad={currentAd} onAdComplete={() => setShowingAd(false)} />
+          ) : (
+            <video
+              controls
+              autoPlay
+              src={video.video_url}
+              className="w-full aspect-video bg-black"
+              preload="metadata"
+            />
+          )}
 
           {/* Info */}
           <div className="p-3 space-y-3">
