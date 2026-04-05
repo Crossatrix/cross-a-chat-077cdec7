@@ -286,8 +286,9 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       // Fetch AI credits
       fetchAiCredits();
 
-      // Fetch Croin balance
-      getCroinBalance(user.id).then(b => setCroinBalance(b));
+      // Fetch Croin balance using Crossatrix user ID
+      const crossatrixId = localStorage.getItem("crossatrix_user_id") || user.id;
+      getCroinBalance(crossatrixId).then(b => setCroinBalance(b));
     };
 
     fetchUserData();

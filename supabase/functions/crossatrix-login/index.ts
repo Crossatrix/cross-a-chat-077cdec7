@@ -10,6 +10,7 @@ const CROSSATRIX_AUTH_URL = "https://digjxtmzafzcgytgcwmb.supabase.co/functions/
 const DEFAULT_ROLE = "user";
 
 type CrossatrixUser = {
+  id?: string;
   email?: string;
   user_metadata?: Record<string, unknown>;
 };
@@ -45,6 +46,7 @@ serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
 
     const crossatrixUser = await verifyCrossatrixCredentials(email, password);
+    const crossatrixUserId = crossatrixUser.id || null;
     const { username: crossatrixUsername, isExplicit: isExplicitUsername } = extractCrossatrixUsername(crossatrixUser, email);
     const localPassword = await deriveLocalPassword(email, password, serviceRoleKey);
 
@@ -83,12 +85,18 @@ serve(async (req) => {
 
     const signInData = await signInLocalUser(supabaseAuth, email, localPassword);
 
+    // Store Crossatrix user ID in profile for Croins lookups
+    if (crossatrixUserId && signInData.user?.id) {
+      await supabaseAdmin.from("profiles").update({ crossatrix_user_id: crossatrixUserId }).eq("id", signInData.user.id);
+    }
+
     return jsonResponse(
       {
         session: signInData.session,
         user: signInData.user,
         is_new: isNew,
         migrated: Boolean(migrationSourceId && migrationSourceId !== targetUserId),
+        crossatrix_user_id: crossatrixUserId,
       },
       200,
     );
