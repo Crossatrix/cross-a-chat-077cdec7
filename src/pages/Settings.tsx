@@ -49,6 +49,9 @@ const Settings = () => {
   const [loadingNotInterested, setLoadingNotInterested] = useState(false);
   const [blockedCategories, setBlockedCategories] = useState<string[]>([]);
   const [loadingBlockedCategories, setLoadingBlockedCategories] = useState(false);
+  const [isPro, setIsPro] = useState(false);
+  const [proExpiry, setProExpiry] = useState<string | null>(null);
+  const [buyingPro, setBuyingPro] = useState(false);
 
   useEffect(() => {
     loadProfile();
