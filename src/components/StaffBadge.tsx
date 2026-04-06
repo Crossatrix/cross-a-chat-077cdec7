@@ -36,7 +36,7 @@ interface StaffBadgeProps {
 const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
   const [badges, setBadges] = useState<BadgeRole[]>([]);
   const [loaded, setLoaded] = useState(
-    userId === NOTIFICATIONS_SYSTEM_USER_ID || (roleCache.has(userId) && officialCache.has(userId))
+    userId === NOTIFICATIONS_SYSTEM_USER_ID || (roleCache.has(userId) && officialCache.has(userId) && proCache.has(userId))
   );
 
   useEffect(() => {
