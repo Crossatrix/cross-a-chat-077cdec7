@@ -11,6 +11,7 @@ import { getCategoryLabel, getCategoryIcon } from "@/utils/videoCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { creditCroins, checkViewMilestone } from "@/utils/croins";
+import { checkProStatus } from "@/utils/proSubscription";
 import StaffBadge from "@/components/StaffBadge";
 import AdPlayer, { pickRandomAd } from "./AdPlayer";
 import CreatorBadge from "./CreatorBadge";
