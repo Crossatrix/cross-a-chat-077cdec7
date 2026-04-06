@@ -195,6 +195,39 @@ const Settings = () => {
     setNotInterestedItems(prev => prev.filter(i => i.id !== id));
   };
 
+  const loadProStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("pro_subscriptions" as any)
+      .select("expires_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data && new Date((data as any).expires_at) > new Date()) {
+      setIsPro(true);
+      setProExpiry((data as any).expires_at);
+    }
+  };
+
+  const handleBuyPro = async () => {
+    setBuyingPro(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const result = await purchasePro(user.id);
+      if (result.success) {
+        toast.success(result.message);
+        loadProStatus();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err: any) {
+      toast.error("Purchase failed");
+    } finally {
+      setBuyingPro(false);
+    }
+  };
+
   const loadBlockedCategories = async () => {
     setLoadingBlockedCategories(true);
     try {
