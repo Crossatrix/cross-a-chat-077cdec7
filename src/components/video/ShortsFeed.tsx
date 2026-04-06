@@ -71,6 +71,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const adShownSet = useRef<Set<number>>(new Set());
   const [showingAd, setShowingAd] = useState(false);
   const [currentAd, setCurrentAd] = useState<any>(null);
+  const isProRef = useRef(false);
   const [ageVerified, setAgeVerified] = useState(false);
   const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
 
