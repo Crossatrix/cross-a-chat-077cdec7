@@ -404,10 +404,22 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   return (
     <div
       ref={containerRef}
-      className="h-full overflow-y-scroll snap-y snap-mandatory"
+      className="h-full overflow-y-scroll snap-y snap-mandatory relative"
       onScroll={handleScroll}
       style={{ scrollSnapType: "y mandatory" }}
     >
+      {/* Ad overlay */}
+      {showingAd && currentAd && (
+        <div className="absolute inset-0 z-50 bg-black flex items-center justify-center">
+          <AdPlayer
+            ad={currentAd}
+            onAdComplete={() => {
+              setShowingAd(false);
+              setCurrentAd(null);
+            }}
+          />
+        </div>
+      )}
       {shorts.map((short, index) => (
         <div
           key={short.id}
