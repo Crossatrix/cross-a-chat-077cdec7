@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { creditCroins, checkViewMilestone } from "@/utils/croins";
 import StaffBadge from "@/components/StaffBadge";
+import AdPlayer, { pickRandomAd } from "./AdPlayer";
 import CreatorBadge from "./CreatorBadge";
 import AgeVerificationDialog from "./AgeVerificationDialog";
 import FeaturedAvatar from "./FeaturedAvatar";
