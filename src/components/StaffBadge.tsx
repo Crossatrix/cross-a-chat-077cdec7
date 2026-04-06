@@ -6,10 +6,11 @@ import elderModIcon from "@/assets/roles/elder_moderator.jpeg";
 import moderatorIcon from "@/assets/roles/moderator.jpeg";
 import modLiteIcon from "@/assets/roles/moderator_lite.jpeg";
 import officialIcon from "@/assets/roles/official_notifications.png";
+import proBadgeIcon from "@/assets/pro-badge.png";
 
 const NOTIFICATIONS_SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
 
-type BadgeRole = StaffRole | "official";
+type BadgeRole = StaffRole | "official" | "pro";
 
 const ROLE_ICONS: Record<BadgeRole, string> = {
   admin: adminIcon,
@@ -17,6 +18,7 @@ const ROLE_ICONS: Record<BadgeRole, string> = {
   moderator: moderatorIcon,
   moderator_lite: modLiteIcon,
   official: officialIcon,
+  pro: proBadgeIcon,
 };
 
 const ROLE_PRIORITY: StaffRole[] = ["admin", "elder_moderator", "moderator", "moderator_lite"];
