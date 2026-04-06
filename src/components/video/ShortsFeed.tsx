@@ -78,6 +78,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   useEffect(() => {
     fetchShorts();
     checkAgeVerification();
+    checkProStatus(currentUserId).then((pro) => { isProRef.current = pro; });
   }, []);
 
   const checkAgeVerification = async () => {
