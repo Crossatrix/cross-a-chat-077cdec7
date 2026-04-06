@@ -58,6 +58,7 @@ const Settings = () => {
     loadGroupBlockedUsers();
     loadNotInterested();
     loadBlockedCategories();
+    loadProStatus();
   }, []);
 
   const loadProfile = async () => {
