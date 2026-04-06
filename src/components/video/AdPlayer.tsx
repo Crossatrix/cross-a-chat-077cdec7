@@ -92,7 +92,10 @@ const AdPlayer = ({ ad, onAdComplete }: AdPlayerProps) => {
 export default AdPlayer;
 
 // Utility: pick a random ad with weighted category selection
-export async function pickRandomAd(supabase: any): Promise<Ad | null> {
+export async function pickRandomAd(supabase: any, isPro?: boolean): Promise<Ad | null> {
+  // Pro users never see ads
+  if (isPro) return null;
+
   // 10% chance
   if (Math.random() > 0.1) return null;
 
