@@ -58,9 +58,10 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
     }
 
     const fetchBadges = async () => {
-      const [rolesRes, officialRes] = await Promise.all([
+      const [rolesRes, officialRes, proRes] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", userId),
         supabase.from("official_accounts").select("id").eq("user_id", userId).maybeSingle(),
+        supabase.from("pro_subscriptions" as any).select("expires_at").eq("user_id", userId).maybeSingle(),
       ]);
 
       const result: BadgeRole[] = [];
@@ -82,6 +83,11 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
       const isOfficial = !!officialRes.data;
       officialCache.set(userId, isOfficial);
       if (isOfficial) result.push("official");
+
+      // Pro badge
+      const isPro = proRes.data && new Date((proRes.data as any).expires_at) > new Date();
+      proCache.set(userId, !!isPro);
+      if (isPro) result.push("pro");
 
       setBadges(result);
       setLoaded(true);
