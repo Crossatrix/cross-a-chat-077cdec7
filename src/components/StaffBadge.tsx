@@ -6,10 +6,11 @@ import elderModIcon from "@/assets/roles/elder_moderator.jpeg";
 import moderatorIcon from "@/assets/roles/moderator.jpeg";
 import modLiteIcon from "@/assets/roles/moderator_lite.jpeg";
 import officialIcon from "@/assets/roles/official_notifications.png";
+import proBadgeIcon from "@/assets/pro-badge.png";
 
 const NOTIFICATIONS_SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
 
-type BadgeRole = StaffRole | "official";
+type BadgeRole = StaffRole | "official" | "pro";
 
 const ROLE_ICONS: Record<BadgeRole, string> = {
   admin: adminIcon,
@@ -17,14 +18,15 @@ const ROLE_ICONS: Record<BadgeRole, string> = {
   moderator: moderatorIcon,
   moderator_lite: modLiteIcon,
   official: officialIcon,
+  pro: proBadgeIcon,
 };
 
 const ROLE_PRIORITY: StaffRole[] = ["admin", "elder_moderator", "moderator", "moderator_lite"];
 
 // Cache roles globally to avoid repeated queries
 const roleCache = new Map<string, BadgeRole | null>();
-// Cache official status separately
 const officialCache = new Map<string, boolean>();
+const proCache = new Map<string, boolean>();
 
 interface StaffBadgeProps {
   userId: string;
@@ -34,7 +36,7 @@ interface StaffBadgeProps {
 const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
   const [badges, setBadges] = useState<BadgeRole[]>([]);
   const [loaded, setLoaded] = useState(
-    userId === NOTIFICATIONS_SYSTEM_USER_ID || (roleCache.has(userId) && officialCache.has(userId))
+    userId === NOTIFICATIONS_SYSTEM_USER_ID || (roleCache.has(userId) && officialCache.has(userId) && proCache.has(userId))
   );
 
   useEffect(() => {
@@ -44,20 +46,22 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
       return;
     }
 
-    if (roleCache.has(userId) && officialCache.has(userId)) {
+    if (roleCache.has(userId) && officialCache.has(userId) && proCache.has(userId)) {
       const result: BadgeRole[] = [];
       const cachedRole = roleCache.get(userId);
       if (cachedRole) result.push(cachedRole);
       if (officialCache.get(userId)) result.push("official");
+      if (proCache.get(userId)) result.push("pro");
       setBadges(result);
       setLoaded(true);
       return;
     }
 
     const fetchBadges = async () => {
-      const [rolesRes, officialRes] = await Promise.all([
+      const [rolesRes, officialRes, proRes] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", userId),
         supabase.from("official_accounts").select("id").eq("user_id", userId).maybeSingle(),
+        supabase.from("pro_subscriptions" as any).select("expires_at").eq("user_id", userId).maybeSingle(),
       ]);
 
       const result: BadgeRole[] = [];
@@ -80,6 +84,11 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
       officialCache.set(userId, isOfficial);
       if (isOfficial) result.push("official");
 
+      // Pro badge
+      const isPro = proRes.data && new Date((proRes.data as any).expires_at) > new Date();
+      proCache.set(userId, !!isPro);
+      if (isPro) result.push("pro");
+
       setBadges(result);
       setLoaded(true);
     };
@@ -95,11 +104,11 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
         <img
           key={badge}
           src={ROLE_ICONS[badge]}
-          alt={badge === "official" ? "Official" : badge}
+          alt={badge === "official" ? "Official" : badge === "pro" ? "Pro" : badge}
           width={size}
           height={size}
           className="inline-block rounded-full"
-          title={badge === "official" ? "Official Account" : badge.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+          title={badge === "official" ? "Official Account" : badge === "pro" ? "Cross Chat Pro" : badge.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
         />
       ))}
     </span>

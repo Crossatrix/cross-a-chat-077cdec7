@@ -10,7 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban } from "lucide-react";
+import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban, Crown } from "lucide-react";
+import { checkProStatus, purchasePro } from "@/utils/proSubscription";
+import proBadgeIcon from "@/assets/pro-badge.png";
 import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -47,12 +49,16 @@ const Settings = () => {
   const [loadingNotInterested, setLoadingNotInterested] = useState(false);
   const [blockedCategories, setBlockedCategories] = useState<string[]>([]);
   const [loadingBlockedCategories, setLoadingBlockedCategories] = useState(false);
+  const [isPro, setIsPro] = useState(false);
+  const [proExpiry, setProExpiry] = useState<string | null>(null);
+  const [buyingPro, setBuyingPro] = useState(false);
 
   useEffect(() => {
     loadProfile();
     loadGroupBlockedUsers();
     loadNotInterested();
     loadBlockedCategories();
+    loadProStatus();
   }, []);
 
   const loadProfile = async () => {
@@ -187,6 +193,39 @@ const Settings = () => {
 
     toast.success("Removed from Not Interested");
     setNotInterestedItems(prev => prev.filter(i => i.id !== id));
+  };
+
+  const loadProStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("pro_subscriptions" as any)
+      .select("expires_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data && new Date((data as any).expires_at) > new Date()) {
+      setIsPro(true);
+      setProExpiry((data as any).expires_at);
+    }
+  };
+
+  const handleBuyPro = async () => {
+    setBuyingPro(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const result = await purchasePro(user.id);
+      if (result.success) {
+        toast.success(result.message);
+        loadProStatus();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err: any) {
+      toast.error("Purchase failed");
+    } finally {
+      setBuyingPro(false);
+    }
   };
 
   const loadBlockedCategories = async () => {
@@ -360,8 +399,12 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">{t("settings.profile")}</TabsTrigger>
+          <TabsTrigger value="pro" className="gap-1">
+            <Crown className="h-3 w-3 hidden sm:inline text-yellow-500" />
+            Pro
+          </TabsTrigger>
           <TabsTrigger value="privacy" className="gap-1">
             <Shield className="h-3 w-3 hidden sm:inline" />
             {t("settings.privacy")}
@@ -369,6 +412,53 @@ const Settings = () => {
           <TabsTrigger value="appearance">{t("settings.appearance")}</TabsTrigger>
           <TabsTrigger value="language">{t("settings.language")}</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="pro" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <img src={proBadgeIcon} alt="Pro" className="h-8 w-8" />
+                Cross Chat Pro
+              </CardTitle>
+              <CardDescription>
+                Remove all ads and get a special Pro badge next to your name!
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isPro ? (
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <img src={proBadgeIcon} alt="Pro" className="h-6 w-6" />
+                    <span className="font-semibold text-primary">You are a Pro member!</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Your subscription expires on {proExpiry ? new Date(proExpiry).toLocaleDateString() : "N/A"}
+                  </p>
+                  <Button onClick={handleBuyPro} disabled={buyingPro} variant="outline" className="w-full mt-2">
+                    {buyingPro ? "Processing..." : "Extend for 50 Croins (+1 month)"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Benefits:</h3>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>✅ No more ads before videos</li>
+                      <li>✅ Exclusive Pro badge next to your name</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-lg bg-secondary/50 text-center">
+                    <span className="text-2xl font-bold">50 Croins</span>
+                    <span className="text-sm text-muted-foreground"> / month</span>
+                  </div>
+                  <Button onClick={handleBuyPro} disabled={buyingPro} className="w-full" size="lg">
+                    {buyingPro ? "Processing..." : "Buy Cross Chat Pro"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="profile" className="space-y-4">
           <Card>

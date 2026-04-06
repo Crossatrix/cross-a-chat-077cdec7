@@ -9,6 +9,7 @@ import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Fla
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { creditCroins, checkViewMilestone } from "@/utils/croins";
+import { checkProStatus } from "@/utils/proSubscription";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "./CreatorBadge";
 import FeaturedAvatar from "./FeaturedAvatar";
@@ -71,11 +72,13 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     fetchFollowerCount();
     incrementView();
     fetchStaffRole();
-    // Check for ad
-    pickRandomAd(supabase).then((ad) => {
-      setCurrentAd(ad);
-      setShowingAd(!!ad);
-      setAdChecked(true);
+    // Check for ad (respecting Pro status)
+    checkProStatus(currentUserId).then((isPro) => {
+      pickRandomAd(supabase, isPro).then((ad) => {
+        setCurrentAd(ad);
+        setShowingAd(!!ad);
+        setAdChecked(true);
+      });
     });
   }, [video.id]);
 

@@ -11,6 +11,7 @@ import { getCategoryLabel, getCategoryIcon } from "@/utils/videoCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { creditCroins, checkViewMilestone } from "@/utils/croins";
+import { checkProStatus } from "@/utils/proSubscription";
 import StaffBadge from "@/components/StaffBadge";
 import AdPlayer, { pickRandomAd } from "./AdPlayer";
 import CreatorBadge from "./CreatorBadge";
@@ -70,12 +71,14 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const adShownSet = useRef<Set<number>>(new Set());
   const [showingAd, setShowingAd] = useState(false);
   const [currentAd, setCurrentAd] = useState<any>(null);
+  const isProRef = useRef(false);
   const [ageVerified, setAgeVerified] = useState(false);
   const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
 
   useEffect(() => {
     fetchShorts();
     checkAgeVerification();
+    checkProStatus(currentUserId).then((pro) => { isProRef.current = pro; });
   }, []);
 
   const checkAgeVerification = async () => {
@@ -184,11 +187,10 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   useEffect(() => {
     if (!adShownSet.current.has(currentIndex)) {
       adShownSet.current.add(currentIndex);
-      pickRandomAd(supabase).then((ad) => {
+      pickRandomAd(supabase, isProRef.current).then((ad) => {
         if (ad) {
           setCurrentAd(ad);
           setShowingAd(true);
-          // Pause current video while ad plays
           videoRefs.current.forEach((v) => v?.pause());
         }
       });
