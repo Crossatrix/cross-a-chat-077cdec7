@@ -25,8 +25,8 @@ const ROLE_PRIORITY: StaffRole[] = ["admin", "elder_moderator", "moderator", "mo
 
 // Cache roles globally to avoid repeated queries
 const roleCache = new Map<string, BadgeRole | null>();
-// Cache official status separately
 const officialCache = new Map<string, boolean>();
+const proCache = new Map<string, boolean>();
 
 interface StaffBadgeProps {
   userId: string;
