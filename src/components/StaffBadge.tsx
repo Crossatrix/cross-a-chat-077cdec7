@@ -46,11 +46,12 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
       return;
     }
 
-    if (roleCache.has(userId) && officialCache.has(userId)) {
+    if (roleCache.has(userId) && officialCache.has(userId) && proCache.has(userId)) {
       const result: BadgeRole[] = [];
       const cachedRole = roleCache.get(userId);
       if (cachedRole) result.push(cachedRole);
       if (officialCache.get(userId)) result.push("official");
+      if (proCache.get(userId)) result.push("pro");
       setBadges(result);
       setLoaded(true);
       return;
