@@ -180,12 +180,27 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
     }
   }, [currentIndex, shorts.length]);
 
+  // Check for ad when swiping to a new short
   useEffect(() => {
+    if (!adShownSet.current.has(currentIndex)) {
+      adShownSet.current.add(currentIndex);
+      pickRandomAd(supabase).then((ad) => {
+        if (ad) {
+          setCurrentAd(ad);
+          setShowingAd(true);
+          // Pause current video while ad plays
+          videoRefs.current.forEach((v) => v?.pause());
+        }
+      });
+    }
+  }, [currentIndex]);
+
+  useEffect(() => {
+    if (showingAd) return; // Don't play videos while ad is showing
     videoRefs.current.forEach((video, i) => {
       if (!video) return;
       const short = shorts[i];
       if (i === currentIndex) {
-        // Don't autoplay adult content for unverified users
         if (short?.adults_only && !ageVerified) {
           video.pause();
         } else {
@@ -196,7 +211,6 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           const newViewCount = short.views_count + 1;
           supabase.from("videos").update({ views_count: newViewCount }).eq("id", short.id);
           trackCategoryView(short.category);
-          // Award Croin for short view milestone (every 50 views)
           if (checkViewMilestone(newViewCount, true) && short.user_id !== currentUserId) {
             creditCroins(short.user_id, 1, `Short view milestone (${newViewCount}): ${short.title}`);
           }
@@ -205,7 +219,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
         video.pause();
       }
     });
-  }, [currentIndex, shorts, ageVerified]);
+  }, [currentIndex, shorts, ageVerified, showingAd]);
 
   const trackCategoryView = async (category: string) => {
     const { data: existing } = await supabase
