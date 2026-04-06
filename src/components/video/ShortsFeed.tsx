@@ -67,6 +67,9 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const viewedSet = useRef<Set<string>>(new Set());
+  const adShownSet = useRef<Set<number>>(new Set());
+  const [showingAd, setShowingAd] = useState(false);
+  const [currentAd, setCurrentAd] = useState<any>(null);
   const [ageVerified, setAgeVerified] = useState(false);
   const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
 
