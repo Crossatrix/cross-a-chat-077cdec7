@@ -187,11 +187,10 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   useEffect(() => {
     if (!adShownSet.current.has(currentIndex)) {
       adShownSet.current.add(currentIndex);
-      pickRandomAd(supabase).then((ad) => {
+      pickRandomAd(supabase, isProRef.current).then((ad) => {
         if (ad) {
           setCurrentAd(ad);
           setShowingAd(true);
-          // Pause current video while ad plays
           videoRefs.current.forEach((v) => v?.pause());
         }
       });

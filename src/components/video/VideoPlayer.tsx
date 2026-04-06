@@ -72,11 +72,13 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     fetchFollowerCount();
     incrementView();
     fetchStaffRole();
-    // Check for ad
-    pickRandomAd(supabase).then((ad) => {
-      setCurrentAd(ad);
-      setShowingAd(!!ad);
-      setAdChecked(true);
+    // Check for ad (respecting Pro status)
+    checkProStatus(currentUserId).then((isPro) => {
+      pickRandomAd(supabase, isPro).then((ad) => {
+        setCurrentAd(ad);
+        setShowingAd(!!ad);
+        setAdChecked(true);
+      });
     });
   }, [video.id]);
 
