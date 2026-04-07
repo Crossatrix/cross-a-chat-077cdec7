@@ -58,10 +58,11 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
     }
 
     const fetchBadges = async () => {
-      const [rolesRes, officialRes, proRes] = await Promise.all([
+      const [rolesRes, officialRes, proRes, creatorProRes] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", userId),
         supabase.from("official_accounts").select("id").eq("user_id", userId).maybeSingle(),
         supabase.from("pro_subscriptions" as any).select("expires_at").eq("user_id", userId).maybeSingle(),
+        supabase.from("creator_pro_subscriptions" as any).select("expires_at").eq("user_id", userId).maybeSingle(),
       ]);
 
       const result: BadgeRole[] = [];
