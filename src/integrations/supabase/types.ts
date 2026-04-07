@@ -52,6 +52,33 @@ export type Database = {
           },
         ]
       }
+      ai_credit_purchases: {
+        Row: {
+          chats_amount: number
+          credits_amount: number
+          croins_spent: number
+          id: string
+          purchased_at: string
+          user_id: string
+        }
+        Insert: {
+          chats_amount?: number
+          credits_amount?: number
+          croins_spent?: number
+          id?: string
+          purchased_at?: string
+          user_id: string
+        }
+        Update: {
+          chats_amount?: number
+          credits_amount?: number
+          croins_spent?: number
+          id?: string
+          purchased_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_credits: {
         Row: {
           created_at: string
@@ -280,6 +307,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      creator_pro_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          purchased_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          purchased_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          purchased_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       creator_verifications: {
         Row: {
@@ -1095,6 +1146,48 @@ export type Database = {
           id?: string
           last_used_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_ad_requests: {
+        Row: {
+          created_at: string
+          duration: number
+          id: string
+          price: number
+          review_note: string | null
+          reviewed_by: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration?: number
+          id?: string
+          price?: number
+          review_note?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration?: number
+          id?: string
+          price?: number
+          review_note?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
         }
         Relationships: []
       }

@@ -1082,10 +1082,10 @@ return (
               <h1 className="text-lg font-bold text-primary truncate">Cross Chat</h1>
               <div className="flex items-center gap-2">
                 <p className="text-xs text-muted-foreground truncate">@{username}</p>
-                <span className="flex items-center gap-0.5 text-xs font-semibold text-amber-500">
+                <button onClick={() => navigate("/store")} className="flex items-center gap-0.5 text-xs font-semibold text-amber-500 hover:opacity-80 transition-opacity">
                   <img src={croinIcon} alt="Croins" className="h-3.5 w-3.5" loading="lazy" width={14} height={14} />
                   {croinBalance}
-                </span>
+                </button>
               </div>
             </div>
           </div>

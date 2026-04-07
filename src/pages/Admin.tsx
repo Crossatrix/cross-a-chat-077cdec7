@@ -22,6 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { StaffRole, getStaffRole, CAN, ROLE_CONFIG, isAtLeast } from "@/utils/roleConfig";
 import AdManager from "@/components/admin/AdManager";
+import AdRequestManager from "@/components/admin/AdRequestManager";
 
 const Admin = () => {
   const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
@@ -946,6 +947,16 @@ const Admin = () => {
         <div className="border-b border-border bg-card/50 p-3 shrink-0">
           <div className="max-w-7xl mx-auto">
             <AdManager />
+          </div>
+        </div>
+      )}
+
+      {/* Ad Request Manager - admin only */}
+      {CAN.manageVersion(staffRole) && (
+        <div className="border-b border-border bg-card/50 p-3 shrink-0">
+          <div className="max-w-7xl mx-auto">
+            <h3 className="text-lg font-bold mb-3">User Ad Requests</h3>
+            <AdRequestManager />
           </div>
         </div>
       )}

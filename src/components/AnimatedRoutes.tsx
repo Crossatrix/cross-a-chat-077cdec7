@@ -13,6 +13,8 @@ const Admin = lazy(() => import("@/pages/Admin"));
 const Banned = lazy(() => import("@/pages/Banned"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const GroupInvites = lazy(() => import("@/pages/GroupInvites"));
+const Store = lazy(() => import("@/pages/Store"));
+const Studio = lazy(() => import("@/pages/Studio"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Maintenance = lazy(() => import("@/pages/Maintenance"));
 
@@ -86,6 +88,22 @@ const AnimatedRoutes = () => {
             element={
               <PageTransition>
                 <GroupInvites />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/store"
+            element={
+              <PageTransition>
+                <Store />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/studio"
+            element={
+              <PageTransition>
+                <Studio />
               </PageTransition>
             }
           />
