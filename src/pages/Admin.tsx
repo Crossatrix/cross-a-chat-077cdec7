@@ -951,6 +951,16 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Ad Request Manager - admin only */}
+      {CAN.manageVersion(staffRole) && (
+        <div className="border-b border-border bg-card/50 p-3 shrink-0">
+          <div className="max-w-7xl mx-auto">
+            <h3 className="text-lg font-bold mb-3">User Ad Requests</h3>
+            <AdRequestManager />
+          </div>
+        </div>
+      )}
+
       {/* File Explorer Layout */}
       <main className="flex-1 flex flex-col md:flex-row gap-4 p-4 max-w-7xl mx-auto w-full min-h-0">
         <div className="w-full md:w-80 shrink-0 h-64 md:h-auto">

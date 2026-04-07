@@ -92,6 +92,22 @@ const AnimatedRoutes = () => {
             }
           />
           <Route
+            path="/store"
+            element={
+              <PageTransition>
+                <Store />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/studio"
+            element={
+              <PageTransition>
+                <Studio />
+              </PageTransition>
+            }
+          />
+          <Route
             path="/maintenance"
             element={
               <PageTransition>
