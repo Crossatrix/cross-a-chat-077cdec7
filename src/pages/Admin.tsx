@@ -22,6 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { StaffRole, getStaffRole, CAN, ROLE_CONFIG, isAtLeast } from "@/utils/roleConfig";
 import AdManager from "@/components/admin/AdManager";
+import AdRequestManager from "@/components/admin/AdRequestManager";
 
 const Admin = () => {
   const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
