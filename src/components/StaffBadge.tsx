@@ -85,8 +85,9 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
       officialCache.set(userId, isOfficial);
       if (isOfficial) result.push("official");
 
-      // Pro badge
-      const isPro = proRes.data && new Date((proRes.data as any).expires_at) > new Date();
+      // Pro badge (from either pro_subscriptions or creator_pro_subscriptions)
+      const isPro = (proRes.data && new Date((proRes.data as any).expires_at) > new Date()) ||
+        (creatorProRes.data && new Date((creatorProRes.data as any).expires_at) > new Date());
       proCache.set(userId, !!isPro);
       if (isPro) result.push("pro");
 
