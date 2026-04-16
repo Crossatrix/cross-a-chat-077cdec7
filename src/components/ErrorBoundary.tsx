@@ -252,7 +252,21 @@ class ErrorBoundary extends Component<Props, State> {
       window.removeEventListener('unhandledrejection', this.unhandledRejectionHandler);
     }
   }
-
+  private openGitHubIssue = () => {
+    const { error, errorInfo, errorCode } = this.state;
+    const title = encodeURIComponent(`[Error] ${errorCode}: ${error?.message || 'Unknown error'}`);
+    const stack = error?.stack || errorInfo?.componentStack || 'No stack trace available';
+    const body = encodeURIComponent(
+      `**Error Code:** ${errorCode}\n\n` +
+      `**Message:** ${error?.message || 'Unknown error'}\n\n` +
+      `**Stack Trace:**\n\`\`\`\n${stack}\n\`\`\`\n\n` +
+      `**URL:** ${window.location.href}\n` +
+      `**User Agent:** ${navigator.userAgent}\n` +
+      `**Screen Size:** ${window.innerWidth}x${window.innerHeight}\n`
+    );
+    const url = `https://github.com/Crossatrix/cross-a-chat/issues/new?title=${title}&body=${body}`;
+    window.open(url, '_blank', 'noopener');
+  };
   render() {
     if (this.state.hasError) {
       const { error, errorCode, countdown, isSending, sent } = this.state;
