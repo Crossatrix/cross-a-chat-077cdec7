@@ -17,6 +17,7 @@ const Store = lazy(() => import("@/pages/Store"));
 const Studio = lazy(() => import("@/pages/Studio"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Maintenance = lazy(() => import("@/pages/Maintenance"));
+const Support = lazy(() => import("@/pages/Support"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
