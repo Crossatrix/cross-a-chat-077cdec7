@@ -323,7 +323,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
           <div className="flex items-center justify-center py-20">
             <p className="text-muted-foreground">Loading your feed...</p>
           </div>
-        ) : videos.length === 0 ? (
+        ) : videos.length === 0 && liveStreams.length === 0 && musicTracks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
             <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No recommendations yet</h3>
