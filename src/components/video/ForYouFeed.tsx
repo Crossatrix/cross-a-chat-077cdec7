@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Sparkles, ShieldAlert, FileText } from "lucide-react";
+import { Play, Eye, ThumbsUp, Sparkles, ShieldAlert, FileText, Radio, Music as MusicIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import VideoPlayer from "./VideoPlayer";
 import StaffBadge from "@/components/StaffBadge";
@@ -10,6 +10,8 @@ import AgeVerificationDialog from "./AgeVerificationDialog";
 import FeaturedAvatar from "./FeaturedAvatar";
 import { getCategoryIcon, getCategoryLabel } from "@/utils/videoCategories";
 import PostCard from "@/components/posts/PostCard";
+import MusicCard, { MusicTrack } from "@/components/music/MusicCard";
+import LiveViewer, { Livestream } from "@/components/live/LiveViewer";
 
 interface Video {
   id: string;
@@ -42,12 +44,29 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
   const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
   const [followedPosts, setFollowedPosts] = useState<any[]>([]);
+  const [liveStreams, setLiveStreams] = useState<Livestream[]>([]);
+  const [musicTracks, setMusicTracks] = useState<MusicTrack[]>([]);
+  const [selectedLive, setSelectedLive] = useState<Livestream | null>(null);
 
   useEffect(() => {
     fetchForYou();
     checkAgeVerification();
     fetchFollowedPosts();
+    fetchLiveAndMusic();
   }, []);
+
+  const fetchLiveAndMusic = async () => {
+    const [liveRes, musicRes] = await Promise.all([
+      supabase.from("livestreams")
+        .select("*, profiles!livestreams_user_id_fkey(username, avatar_url)")
+        .eq("status", "live").order("started_at", { ascending: false }).limit(10),
+      supabase.from("music_tracks")
+        .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url)")
+        .order("created_at", { ascending: false }).limit(15),
+    ]);
+    setLiveStreams((liveRes.data || []) as unknown as Livestream[]);
+    setMusicTracks((musicRes.data || []) as unknown as MusicTrack[]);
+  };
 
   const checkAgeVerification = async () => {
     const { data } = await supabase
