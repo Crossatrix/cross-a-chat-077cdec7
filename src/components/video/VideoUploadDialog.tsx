@@ -172,7 +172,12 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+      {broadcastingId && (
+        <LiveBroadcaster streamId={broadcastingId} userId={userId}
+          onEnd={() => { setBroadcastingId(null); onUploaded(); }} />
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-2">
           <Upload className="h-4 w-4" /> Upload
@@ -183,6 +188,13 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
           <DialogTitle>Upload Video</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border border-destructive/50 bg-destructive/5 p-3">
+            <div className="flex items-center gap-2">
+              <Radio className="h-4 w-4 text-destructive" />
+              <span className="text-sm font-medium">Want to go live?</span>
+            </div>
+            <GoLiveDialog userId={userId} onLiveStart={(id) => { setOpen(false); setBroadcastingId(id); }} />
+          </div>
           <Input
             placeholder="Video title *"
             value={title}
