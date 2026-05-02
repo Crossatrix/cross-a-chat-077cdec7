@@ -1122,48 +1122,6 @@ export type Database = {
           },
         ]
       }
-      render_jobs: {
-        Row: {
-          created_at: string
-          error: string | null
-          id: string
-          input_path: string | null
-          output_path: string | null
-          progress: number
-          recipe: Json
-          status: string
-          updated_at: string
-          user_id: string
-          worker_job_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          error?: string | null
-          id?: string
-          input_path?: string | null
-          output_path?: string | null
-          progress?: number
-          recipe?: Json
-          status?: string
-          updated_at?: string
-          user_id: string
-          worker_job_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          error?: string | null
-          id?: string
-          input_path?: string | null
-          output_path?: string | null
-          progress?: number
-          recipe?: Json
-          status?: string
-          updated_at?: string
-          user_id?: string
-          worker_job_id?: string | null
-        }
-        Relationships: []
-      }
       trusted_devices: {
         Row: {
           created_at: string
