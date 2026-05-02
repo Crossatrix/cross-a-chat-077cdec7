@@ -1040,6 +1040,24 @@ return (
           <span>Shorts</span>
         </button>
         <button
+          onClick={() => { setActiveTab("live"); setSelectedConversationId(null); }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            activeTab === "live" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Radio className="h-5 w-5" />
+          <span>Live</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab("music"); setSelectedConversationId(null); }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            activeTab === "music" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Music className="h-5 w-5" />
+          <span>Music</span>
+        </button>
+        <button
           onClick={() => { setActiveTab("posts"); setSelectedConversationId(null); }}
           className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
             activeTab === "posts" ? "text-primary" : "text-muted-foreground hover:text-foreground"
@@ -1074,6 +1092,14 @@ return (
       ) : activeTab === "posts" ? (
         <div className="flex-1 min-h-0">
           <PostsFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
+        </div>
+      ) : activeTab === "music" ? (
+        <div className="flex-1 min-h-0">
+          <MusicFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
+        </div>
+      ) : activeTab === "live" ? (
+        <div className="flex-1 min-h-0">
+          <LiveFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
         </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">
