@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Sparkles, ShieldAlert, FileText } from "lucide-react";
+import { Play, Eye, ThumbsUp, Sparkles, ShieldAlert, FileText, Radio, Music as MusicIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import VideoPlayer from "./VideoPlayer";
 import StaffBadge from "@/components/StaffBadge";
@@ -10,6 +10,8 @@ import AgeVerificationDialog from "./AgeVerificationDialog";
 import FeaturedAvatar from "./FeaturedAvatar";
 import { getCategoryIcon, getCategoryLabel } from "@/utils/videoCategories";
 import PostCard from "@/components/posts/PostCard";
+import MusicCard, { MusicTrack } from "@/components/music/MusicCard";
+import LiveViewer, { Livestream } from "@/components/live/LiveViewer";
 
 interface Video {
   id: string;
@@ -42,12 +44,29 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   const [ageVerifyOpen, setAgeVerifyOpen] = useState(false);
   const [pendingAdultVideo, setPendingAdultVideo] = useState<Video | null>(null);
   const [followedPosts, setFollowedPosts] = useState<any[]>([]);
+  const [liveStreams, setLiveStreams] = useState<Livestream[]>([]);
+  const [musicTracks, setMusicTracks] = useState<MusicTrack[]>([]);
+  const [selectedLive, setSelectedLive] = useState<Livestream | null>(null);
 
   useEffect(() => {
     fetchForYou();
     checkAgeVerification();
     fetchFollowedPosts();
+    fetchLiveAndMusic();
   }, []);
+
+  const fetchLiveAndMusic = async () => {
+    const [liveRes, musicRes] = await Promise.all([
+      supabase.from("livestreams")
+        .select("*, profiles!livestreams_user_id_fkey(username, avatar_url)")
+        .eq("status", "live").order("started_at", { ascending: false }).limit(10),
+      supabase.from("music_tracks")
+        .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url)")
+        .order("created_at", { ascending: false }).limit(15),
+    ]);
+    setLiveStreams((liveRes.data || []) as unknown as Livestream[]);
+    setMusicTracks((musicRes.data || []) as unknown as MusicTrack[]);
+  };
 
   const checkAgeVerification = async () => {
     const { data } = await supabase
@@ -260,6 +279,14 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     trackCategoryView(video.category);
   };
 
+  if (selectedLive) {
+    return (
+      <LiveViewer stream={selectedLive} currentUserId={currentUserId}
+        onBack={() => { setSelectedLive(null); fetchLiveAndMusic(); }}
+        onCreatorClick={onCreatorClick} />
+    );
+  }
+
   if (selectedVideo) {
     return (
       <VideoPlayer
@@ -296,7 +323,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
           <div className="flex items-center justify-center py-20">
             <p className="text-muted-foreground">Loading your feed...</p>
           </div>
-        ) : videos.length === 0 ? (
+        ) : videos.length === 0 && liveStreams.length === 0 && musicTracks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
             <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No recommendations yet</h3>
@@ -304,6 +331,44 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
+            {/* Live now */}
+            {liveStreams.length > 0 && (
+              <div className="col-span-full space-y-2 mb-2">
+                <div className="flex items-center gap-2 px-1">
+                  <Radio className="h-4 w-4 text-destructive" />
+                  <span className="text-sm font-semibold text-destructive">Live now</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {liveStreams.map((s) => (
+                    <button key={s.id} onClick={() => setSelectedLive(s)}
+                      className="rounded-xl overflow-hidden border border-destructive/40 bg-card hover:border-destructive transition-colors text-left">
+                      <div className="relative aspect-video bg-gradient-to-br from-destructive/30 to-primary/30 flex items-center justify-center">
+                        <Radio className="h-8 w-8 text-white/80" />
+                        <span className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold">LIVE</span>
+                        <span className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                          <Eye className="h-3 w-3" />{s.viewer_count}
+                        </span>
+                      </div>
+                      <div className="p-2 text-sm font-semibold line-clamp-1">{s.title}</div>
+                      <div className="px-2 pb-2 text-xs text-muted-foreground truncate">{s.profiles.username}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Music tracks */}
+            {musicTracks.length > 0 && (
+              <div className="col-span-full space-y-2 mb-2">
+                <div className="flex items-center gap-2 px-1">
+                  <MusicIcon className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Music for you</span>
+                </div>
+                {musicTracks.slice(0, 5).map((t) => (
+                  <MusicCard key={t.id} track={t} currentUserId={currentUserId}
+                    onCreatorClick={onCreatorClick} onDeleted={fetchLiveAndMusic} />
+                ))}
+              </div>
+            )}
             {/* Posts from followed creators */}
             {followedPosts.length > 0 && (
               <div className="col-span-full space-y-3 mb-2">

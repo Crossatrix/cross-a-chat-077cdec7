@@ -671,6 +671,119 @@ export type Database = {
         }
         Relationships: []
       }
+      livestream_likes: {
+        Row: {
+          created_at: string
+          id: string
+          is_like: boolean
+          stream_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_like: boolean
+          stream_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_like?: boolean
+          stream_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      livestream_signals: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          signal_data: string
+          signal_type: string
+          stream_id: string
+          to_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          signal_data: string
+          signal_type: string
+          stream_id: string
+          to_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          signal_data?: string
+          signal_type?: string
+          stream_id?: string
+          to_user_id?: string | null
+        }
+        Relationships: []
+      }
+      livestreams: {
+        Row: {
+          adults_only: boolean
+          category: string
+          created_at: string
+          description: string | null
+          dislikes_count: number
+          ended_at: string | null
+          id: string
+          likes_count: number
+          started_at: string
+          status: string
+          thumbnail_url: string | null
+          title: string
+          user_id: string
+          viewer_count: number
+        }
+        Insert: {
+          adults_only?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          dislikes_count?: number
+          ended_at?: string | null
+          id?: string
+          likes_count?: number
+          started_at?: string
+          status?: string
+          thumbnail_url?: string | null
+          title: string
+          user_id: string
+          viewer_count?: number
+        }
+        Update: {
+          adults_only?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          dislikes_count?: number
+          ended_at?: string | null
+          id?: string
+          likes_count?: number
+          started_at?: string
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          user_id?: string
+          viewer_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livestreams_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -799,6 +912,86 @@ export type Database = {
           },
           {
             foreignKeyName: "messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      music_likes: {
+        Row: {
+          created_at: string
+          id: string
+          is_like: boolean
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_like: boolean
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_like?: boolean
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      music_tracks: {
+        Row: {
+          audio_url: string
+          category: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          dislikes_count: number
+          duration: number
+          id: string
+          likes_count: number
+          plays_count: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_url: string
+          category?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          dislikes_count?: number
+          duration?: number
+          id?: string
+          likes_count?: number
+          plays_count?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_url?: string
+          category?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          dislikes_count?: number
+          duration?: number
+          id?: string
+          likes_count?: number
+          plays_count?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_tracks_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

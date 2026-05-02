@@ -6,10 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Upload, X, Image, ShieldAlert, Loader2 } from "lucide-react";
+import { Upload, X, Image, ShieldAlert, Loader2, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
+import GoLiveDialog from "@/components/live/GoLiveDialog";
+import LiveBroadcaster from "@/components/live/LiveBroadcaster";
 
 interface VideoUploadDialogProps {
   userId: string;
@@ -28,6 +30,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [creatorStatus, setCreatorStatus] = useState<string | null>(null);
+  const [broadcastingId, setBroadcastingId] = useState<string | null>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
 
@@ -169,7 +172,12 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+      {broadcastingId && (
+        <LiveBroadcaster streamId={broadcastingId} userId={userId}
+          onEnd={() => { setBroadcastingId(null); onUploaded(); }} />
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-2">
           <Upload className="h-4 w-4" /> Upload
@@ -180,6 +188,13 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
           <DialogTitle>Upload Video</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border border-destructive/50 bg-destructive/5 p-3">
+            <div className="flex items-center gap-2">
+              <Radio className="h-4 w-4 text-destructive" />
+              <span className="text-sm font-medium">Want to go live?</span>
+            </div>
+            <GoLiveDialog userId={userId} onLiveStart={(id) => { setOpen(false); setBroadcastingId(id); }} />
+          </div>
           <Input
             placeholder="Video title *"
             value={title}
@@ -281,6 +296,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 };
 
