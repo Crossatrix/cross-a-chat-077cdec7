@@ -279,6 +279,14 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     trackCategoryView(video.category);
   };
 
+  if (selectedLive) {
+    return (
+      <LiveViewer stream={selectedLive} currentUserId={currentUserId}
+        onBack={() => { setSelectedLive(null); fetchLiveAndMusic(); }}
+        onCreatorClick={onCreatorClick} />
+    );
+  }
+
   if (selectedVideo) {
     return (
       <VideoPlayer
@@ -323,6 +331,44 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
+            {/* Live now */}
+            {liveStreams.length > 0 && (
+              <div className="col-span-full space-y-2 mb-2">
+                <div className="flex items-center gap-2 px-1">
+                  <Radio className="h-4 w-4 text-destructive" />
+                  <span className="text-sm font-semibold text-destructive">Live now</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {liveStreams.map((s) => (
+                    <button key={s.id} onClick={() => setSelectedLive(s)}
+                      className="rounded-xl overflow-hidden border border-destructive/40 bg-card hover:border-destructive transition-colors text-left">
+                      <div className="relative aspect-video bg-gradient-to-br from-destructive/30 to-primary/30 flex items-center justify-center">
+                        <Radio className="h-8 w-8 text-white/80" />
+                        <span className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold">LIVE</span>
+                        <span className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                          <Eye className="h-3 w-3" />{s.viewer_count}
+                        </span>
+                      </div>
+                      <div className="p-2 text-sm font-semibold line-clamp-1">{s.title}</div>
+                      <div className="px-2 pb-2 text-xs text-muted-foreground truncate">{s.profiles.username}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Music tracks */}
+            {musicTracks.length > 0 && (
+              <div className="col-span-full space-y-2 mb-2">
+                <div className="flex items-center gap-2 px-1">
+                  <MusicIcon className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Music for you</span>
+                </div>
+                {musicTracks.slice(0, 5).map((t) => (
+                  <MusicCard key={t.id} track={t} currentUserId={currentUserId}
+                    onCreatorClick={onCreatorClick} onDeleted={fetchLiveAndMusic} />
+                ))}
+              </div>
+            )}
             {/* Posts from followed creators */}
             {followedPosts.length > 0 && (
               <div className="col-span-full space-y-3 mb-2">
