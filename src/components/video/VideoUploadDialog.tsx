@@ -296,6 +296,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 };
 
