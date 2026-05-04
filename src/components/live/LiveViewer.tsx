@@ -183,6 +183,17 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
           <Radio className="h-3 w-3" /> {ended ? "ENDED" : "LIVE"}
         </span>
         <span className="text-xs text-muted-foreground ml-auto">{stream.viewer_count} watching</span>
+        <Select value={quality} onValueChange={(v) => setQuality(v as any)}>
+          <SelectTrigger className="h-8 w-24 text-xs">
+            <Settings className="h-3 w-3 mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="relative bg-black aspect-video">
@@ -200,10 +211,10 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
         )}
       </div>
 
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-2 shrink-0">
         <h2 className="text-base font-bold">{stream.title}</h2>
         {stream.description && <p className="text-sm text-muted-foreground">{stream.description}</p>}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <FeaturedAvatar
             userId={stream.user_id}
             avatarUrl={stream.profiles.avatar_url}
@@ -219,16 +230,34 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
             onClick={() => onCreatorClick?.(stream.user_id)}>
             {stream.profiles.username}
           </span>
-        </div>
-        <div className="flex items-center gap-2 pt-1">
-          <Button variant={liked === true ? "default" : "outline"} size="sm" className="gap-1" onClick={() => vote(true)}>
-            <ThumbsUp className="h-4 w-4" />{likes}
-          </Button>
-          <Button variant={liked === false ? "destructive" : "outline"} size="sm" className="gap-1" onClick={() => vote(false)}>
-            <ThumbsDown className="h-4 w-4" />{dislikes}
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button variant={liked === true ? "default" : "outline"} size="sm" className="gap-1" onClick={() => vote(true)}>
+              <ThumbsUp className="h-4 w-4" />{likes}
+            </Button>
+            <Button variant={liked === false ? "destructive" : "outline"} size="sm" className="gap-1" onClick={() => vote(false)}>
+              <ThumbsDown className="h-4 w-4" />{dislikes}
+            </Button>
+          </div>
         </div>
       </div>
+
+      <div className="flex-1 min-h-0 p-2 pt-0">
+        <LiveChat
+          streamId={stream.id}
+          streamerId={stream.user_id}
+          currentUserId={currentUserId}
+          emojis={emojis}
+          onOpenGift={() => setGiftOpen(true)}
+        />
+      </div>
+
+      <SendCroinsDialog
+        open={giftOpen}
+        onOpenChange={setGiftOpen}
+        streamId={stream.id}
+        fromUserId={currentUserId}
+        toUserId={stream.user_id}
+      />
     </div>
   );
 };
