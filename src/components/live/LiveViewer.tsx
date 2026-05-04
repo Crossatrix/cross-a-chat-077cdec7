@@ -45,6 +45,34 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
   const [liked, setLiked] = useState<boolean | null>(null);
   const [likes, setLikes] = useState(stream.likes_count);
   const [dislikes, setDislikes] = useState(stream.dislikes_count);
+  const [quality, setQuality] = useState<"low" | "medium" | "high">("high");
+  const [giftOpen, setGiftOpen] = useState(false);
+  const [emojis, setEmojis] = useState<CreatorEmoji[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("creator_emojis" as any).select("*").eq("creator_id", stream.user_id);
+      setEmojis((data || []) as any);
+    })();
+  }, [stream.user_id]);
+
+  // Apply quality bandwidth limit on the receiver
+  useEffect(() => {
+    const pc = pcRef.current;
+    if (!pc) return;
+    const cap = quality === "low" ? 250_000 : quality === "medium" ? 800_000 : 2_500_000;
+    pc.getReceivers().forEach((r) => {
+      try {
+        const params = (r as any).getParameters?.() || {};
+        params.encodings = params.encodings || [{}];
+        params.encodings[0].maxBitrate = cap;
+        (r as any).setParameters?.(params).catch(() => {});
+      } catch {}
+    });
+    if (videoRef.current) {
+      videoRef.current.style.imageRendering = quality === "low" ? "pixelated" : "auto";
+    }
+  }, [quality, connected]);
 
   useEffect(() => {
     if (ended) return;
