@@ -232,6 +232,69 @@ export type Database = {
           },
         ]
       }
+      channel_memberships: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          name: string
+          perks: string | null
+          price_croins: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          name: string
+          perks?: string | null
+          price_croins: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          name?: string
+          perks?: string | null
+          price_croins?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      channel_subscriptions: {
+        Row: {
+          created_at: string
+          creator_id: string
+          expires_at: string
+          id: string
+          membership_id: string
+          purchased_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          expires_at: string
+          id?: string
+          membership_id: string
+          purchased_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          expires_at?: string
+          id?: string
+          membership_id?: string
+          purchased_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -307,6 +370,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      creator_emojis: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          image_url: string
+          membership_id: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          image_url: string
+          membership_id?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          image_url?: string
+          membership_id?: string | null
+          name?: string
+        }
+        Relationships: []
       }
       creator_pro_subscriptions: {
         Row: {
@@ -668,6 +758,33 @@ export type Database = {
           invited_by?: string
           invited_user_id?: string
           status?: string
+        }
+        Relationships: []
+      }
+      livestream_chat: {
+        Row: {
+          created_at: string
+          croins_gift: number
+          id: string
+          message: string
+          stream_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          croins_gift?: number
+          id?: string
+          message: string
+          stream_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          croins_gift?: number
+          id?: string
+          message?: string
+          stream_id?: string
+          user_id?: string
         }
         Relationships: []
       }

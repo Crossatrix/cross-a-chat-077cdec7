@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Radio, ThumbsUp, ThumbsDown, Loader2 } from "lucide-react";
+import { ArrowLeft, Radio, ThumbsUp, ThumbsDown, Loader2, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { creditCroins } from "@/utils/croins";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "@/components/video/CreatorBadge";
 import FeaturedAvatar from "@/components/video/FeaturedAvatar";
+import LiveChat from "./LiveChat";
+import SendCroinsDialog from "./SendCroinsDialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { CreatorEmoji } from "@/utils/memberships";
 
 export interface Livestream {
   id: string;
@@ -41,6 +45,34 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
   const [liked, setLiked] = useState<boolean | null>(null);
   const [likes, setLikes] = useState(stream.likes_count);
   const [dislikes, setDislikes] = useState(stream.dislikes_count);
+  const [quality, setQuality] = useState<"low" | "medium" | "high">("high");
+  const [giftOpen, setGiftOpen] = useState(false);
+  const [emojis, setEmojis] = useState<CreatorEmoji[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("creator_emojis" as any).select("*").eq("creator_id", stream.user_id);
+      setEmojis((data || []) as any);
+    })();
+  }, [stream.user_id]);
+
+  // Apply quality bandwidth limit on the receiver
+  useEffect(() => {
+    const pc = pcRef.current;
+    if (!pc) return;
+    const cap = quality === "low" ? 250_000 : quality === "medium" ? 800_000 : 2_500_000;
+    pc.getReceivers().forEach((r) => {
+      try {
+        const params = (r as any).getParameters?.() || {};
+        params.encodings = params.encodings || [{}];
+        params.encodings[0].maxBitrate = cap;
+        (r as any).setParameters?.(params).catch(() => {});
+      } catch {}
+    });
+    if (videoRef.current) {
+      videoRef.current.style.imageRendering = quality === "low" ? "pixelated" : "auto";
+    }
+  }, [quality, connected]);
 
   useEffect(() => {
     if (ended) return;
@@ -151,6 +183,17 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
           <Radio className="h-3 w-3" /> {ended ? "ENDED" : "LIVE"}
         </span>
         <span className="text-xs text-muted-foreground ml-auto">{stream.viewer_count} watching</span>
+        <Select value={quality} onValueChange={(v) => setQuality(v as any)}>
+          <SelectTrigger className="h-8 w-24 text-xs">
+            <Settings className="h-3 w-3 mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="relative bg-black aspect-video">
@@ -168,10 +211,10 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
         )}
       </div>
 
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-2 shrink-0">
         <h2 className="text-base font-bold">{stream.title}</h2>
         {stream.description && <p className="text-sm text-muted-foreground">{stream.description}</p>}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <FeaturedAvatar
             userId={stream.user_id}
             avatarUrl={stream.profiles.avatar_url}
@@ -187,16 +230,34 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
             onClick={() => onCreatorClick?.(stream.user_id)}>
             {stream.profiles.username}
           </span>
-        </div>
-        <div className="flex items-center gap-2 pt-1">
-          <Button variant={liked === true ? "default" : "outline"} size="sm" className="gap-1" onClick={() => vote(true)}>
-            <ThumbsUp className="h-4 w-4" />{likes}
-          </Button>
-          <Button variant={liked === false ? "destructive" : "outline"} size="sm" className="gap-1" onClick={() => vote(false)}>
-            <ThumbsDown className="h-4 w-4" />{dislikes}
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button variant={liked === true ? "default" : "outline"} size="sm" className="gap-1" onClick={() => vote(true)}>
+              <ThumbsUp className="h-4 w-4" />{likes}
+            </Button>
+            <Button variant={liked === false ? "destructive" : "outline"} size="sm" className="gap-1" onClick={() => vote(false)}>
+              <ThumbsDown className="h-4 w-4" />{dislikes}
+            </Button>
+          </div>
         </div>
       </div>
+
+      <div className="flex-1 min-h-0 p-2 pt-0">
+        <LiveChat
+          streamId={stream.id}
+          streamerId={stream.user_id}
+          currentUserId={currentUserId}
+          emojis={emojis}
+          onOpenGift={() => setGiftOpen(true)}
+        />
+      </div>
+
+      <SendCroinsDialog
+        open={giftOpen}
+        onOpenChange={setGiftOpen}
+        streamId={stream.id}
+        fromUserId={currentUserId}
+        toUserId={stream.user_id}
+      />
     </div>
   );
 };

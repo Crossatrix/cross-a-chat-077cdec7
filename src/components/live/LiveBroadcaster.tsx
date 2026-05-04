@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Radio, X, MicOff, VideoOff, Mic, Video as VideoIcon } from "lucide-react";
+import { Radio, X, MicOff, VideoOff, Mic, Video as VideoIcon, MonitorUp, MonitorOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -20,10 +20,14 @@ const LiveBroadcaster = ({ streamId, userId, onEnd }: Props) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
   const [viewerCount, setViewerCount] = useState(0);
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const screenSupported = typeof navigator !== "undefined" && !!(navigator.mediaDevices as any)?.getDisplayMedia;
 
   useEffect(() => {
     let mounted = true;
@@ -33,6 +37,7 @@ const LiveBroadcaster = ({ streamId, userId, onEnd }: Props) => {
       try {
         const ms = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         if (!mounted) { ms.getTracks().forEach(t => t.stop()); return; }
+        cameraStreamRef.current = ms;
         streamRef.current = ms;
         if (videoRef.current) videoRef.current.srcObject = ms;
       } catch (e: any) {
@@ -119,6 +124,43 @@ const LiveBroadcaster = ({ streamId, userId, onEnd }: Props) => {
     if (video) { video.enabled = !video.enabled; setCamOff(!video.enabled); }
   };
 
+  const replaceVideoTrack = async (newTrack: MediaStreamTrack) => {
+    peersRef.current.forEach(pc => {
+      const sender = pc.getSenders().find(s => s.track?.kind === "video");
+      if (sender) sender.replaceTrack(newTrack).catch(() => {});
+    });
+  };
+
+  const toggleScreenShare = async () => {
+    if (sharing) {
+      // Stop screen, restore camera
+      screenStreamRef.current?.getTracks().forEach(t => t.stop());
+      screenStreamRef.current = null;
+      const camTrack = cameraStreamRef.current?.getVideoTracks()[0];
+      if (camTrack) await replaceVideoTrack(camTrack);
+      if (videoRef.current && cameraStreamRef.current) videoRef.current.srcObject = cameraStreamRef.current;
+      streamRef.current = cameraStreamRef.current;
+      setSharing(false);
+      return;
+    }
+    try {
+      const display = await (navigator.mediaDevices as any).getDisplayMedia({ video: true, audio: false });
+      screenStreamRef.current = display;
+      const screenTrack = display.getVideoTracks()[0];
+      await replaceVideoTrack(screenTrack);
+      // Build a combined stream (screen video + camera audio) for preview
+      const combined = new MediaStream();
+      combined.addTrack(screenTrack);
+      cameraStreamRef.current?.getAudioTracks().forEach(t => combined.addTrack(t));
+      if (videoRef.current) videoRef.current.srcObject = combined;
+      streamRef.current = combined;
+      screenTrack.onended = () => toggleScreenShare();
+      setSharing(true);
+    } catch {
+      // user cancelled
+    }
+  };
+
   const endStream = async () => {
     await supabase.from("livestreams").update({
       status: "ended", ended_at: new Date().toISOString(),
@@ -157,6 +199,11 @@ const LiveBroadcaster = ({ streamId, userId, onEnd }: Props) => {
         <Button variant={camOff ? "destructive" : "secondary"} size="icon" onClick={toggleCam}>
           {camOff ? <VideoOff className="h-5 w-5" /> : <VideoIcon className="h-5 w-5" />}
         </Button>
+        {screenSupported && (
+          <Button variant={sharing ? "default" : "secondary"} size="icon" onClick={toggleScreenShare} title="Share screen">
+            {sharing ? <MonitorOff className="h-5 w-5" /> : <MonitorUp className="h-5 w-5" />}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -3,7 +3,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar, Flame, FileText } from "lucide-react";
+import { ArrowLeft, UserPlus, UserMinus, Play, Eye, ThumbsUp, Calendar, Flame, FileText, Crown } from "lucide-react";
+import MembershipsSection from "@/components/creator/MembershipsSection";
 import { supabase } from "@/integrations/supabase/client";
 import StaffBadge from "@/components/StaffBadge";
 import { formatMessageText } from "@/utils/textFormatting";
@@ -280,6 +281,10 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
               <FileText className="h-3.5 w-3.5 mr-1" />
               Posts
             </TabsTrigger>
+            <TabsTrigger value="memberships" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-2.5 text-sm">
+              <Crown className="h-3.5 w-3.5 mr-1" />
+              Members
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="videos" className="mt-0">
             <VideoGrid items={videos} />
@@ -294,6 +299,9 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
               hideCreateButton={creatorId !== currentUserId}
               onCreatorClick={undefined}
             />
+          </TabsContent>
+          <TabsContent value="memberships" className="mt-0">
+            <MembershipsSection creatorId={creatorId} currentUserId={currentUserId} />
           </TabsContent>
         </Tabs>
       </div>
