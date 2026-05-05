@@ -54,6 +54,9 @@ const App = () => {
                 <Sonner />
                 <BrowserRouter>
                   <AnimatedRoutes />
+                  {needsBetaCheck && !betaUnlocked && (
+                    <BetaPaywall onUnlocked={() => { setBetaUnlocked(true); setNeedsBetaCheck(false); }} />
+                  )}
                 </BrowserRouter>
               </div>
             </TooltipProvider>
