@@ -36,6 +36,7 @@ import CreatorProfile from "@/components/video/CreatorProfile";
 import PostsFeed from "@/components/posts/PostsFeed";
 import MusicFeed from "@/components/music/MusicFeed";
 import LiveFeed from "@/components/live/LiveFeed";
+import CrossunityFeed from "@/components/crossunity/CrossunityFeed";
 
 interface Message {
   id: string;
@@ -76,7 +77,7 @@ const Index = () => {
 const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live">("chats");
+  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity">("chats");
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const [croinBalance, setCroinBalance] = useState<number>(0);
   const navigate = useNavigate();
