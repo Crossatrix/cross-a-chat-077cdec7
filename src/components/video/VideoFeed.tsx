@@ -18,6 +18,7 @@ import VideoLeaderboard from "./VideoLeaderboard";
 import AgeVerificationDialog from "./AgeVerificationDialog";
 import FeaturedAvatar from "./FeaturedAvatar";
 import StruckVideosDialog from "./StruckVideosDialog";
+import LiveFeed from "@/components/live/LiveFeed";
 
 interface Video {
   id: string;
@@ -409,6 +410,9 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       </div>
 
       <ScrollArea className="flex-1">
+        <div className="border-b border-border">
+          <LiveFeed currentUserId={currentUserId} onCreatorClick={(id) => setSelectedCreatorId(id)} />
+        </div>
         <VideoLeaderboard
           onSelectVideo={(videoId) => {
             const v = videos.find(v => v.id === videoId);

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe } from "lucide-react";
 import { getBalance as getCroinBalance } from "@/utils/croins";
 import croinIcon from "@/assets/croin.png";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ import CreatorProfile from "@/components/video/CreatorProfile";
 import PostsFeed from "@/components/posts/PostsFeed";
 import MusicFeed from "@/components/music/MusicFeed";
 import LiveFeed from "@/components/live/LiveFeed";
+import CrossunityFeed from "@/components/crossunity/CrossunityFeed";
 
 interface Message {
   id: string;
@@ -76,7 +77,7 @@ const Index = () => {
 const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live">("chats");
+  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity">("chats");
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const [croinBalance, setCroinBalance] = useState<number>(0);
   const navigate = useNavigate();
@@ -1040,13 +1041,13 @@ return (
           <span>Shorts</span>
         </button>
         <button
-          onClick={() => { setActiveTab("live"); setSelectedConversationId(null); }}
+          onClick={() => { setActiveTab("crossunity"); setSelectedConversationId(null); }}
           className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
-            activeTab === "live" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            activeTab === "crossunity" ? "text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Radio className="h-5 w-5" />
-          <span>Live</span>
+          <Globe className="h-5 w-5" />
+          <span>Crossunity</span>
         </button>
         <button
           onClick={() => { setActiveTab("music"); setSelectedConversationId(null); }}
@@ -1097,9 +1098,9 @@ return (
         <div className="flex-1 min-h-0">
           <MusicFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
         </div>
-      ) : activeTab === "live" ? (
+      ) : activeTab === "crossunity" ? (
         <div className="flex-1 min-h-0">
-          <LiveFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
+          <CrossunityFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
         </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">

@@ -1498,6 +1498,195 @@ export type Database = {
         }
         Relationships: []
       }
+      subcross_comment_votes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          is_like: boolean
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          is_like: boolean
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          is_like?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subcross_comments: {
+        Row: {
+          content: string
+          created_at: string
+          dislikes_count: number
+          id: string
+          likes_count: number
+          parent_id: string | null
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          dislikes_count?: number
+          id?: string
+          likes_count?: number
+          parent_id?: string | null
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          dislikes_count?: number
+          id?: string
+          likes_count?: number
+          parent_id?: string | null
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subcross_members: {
+        Row: {
+          id: string
+          joined_at: string
+          subcross_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          subcross_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          subcross_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subcross_post_votes: {
+        Row: {
+          created_at: string
+          id: string
+          is_like: boolean
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_like: boolean
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_like?: boolean
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subcross_posts: {
+        Row: {
+          comments_count: number
+          content: string | null
+          created_at: string
+          dislikes_count: number
+          id: string
+          image_url: string | null
+          likes_count: number
+          link_url: string | null
+          subcross_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_count?: number
+          content?: string | null
+          created_at?: string
+          dislikes_count?: number
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          link_url?: string | null
+          subcross_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_count?: number
+          content?: string | null
+          created_at?: string
+          dislikes_count?: number
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          link_url?: string | null
+          subcross_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subcrosses: {
+        Row: {
+          banner_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          display_name: string
+          icon_url: string | null
+          id: string
+          members_count: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          display_name: string
+          icon_url?: string | null
+          id?: string
+          members_count?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          display_name?: string
+          icon_url?: string | null
+          id?: string
+          members_count?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trusted_devices: {
         Row: {
           created_at: string
