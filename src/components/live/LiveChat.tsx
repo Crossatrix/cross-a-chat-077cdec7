@@ -114,8 +114,10 @@ const LiveChat = ({ streamId, streamerId, currentUserId, emojis, onOpenGift }: P
       }
     }
     setText("");
+    const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
+    const safe = await escapeUnauthorizedCreatorEmojis(t, currentUserId);
     const { error } = await supabase.from("livestream_chat" as any).insert({
-      stream_id: streamId, user_id: currentUserId, message: t, croins_gift: 0,
+      stream_id: streamId, user_id: currentUserId, message: safe, croins_gift: 0,
     });
     if (error) toast.error("Failed to send");
   };

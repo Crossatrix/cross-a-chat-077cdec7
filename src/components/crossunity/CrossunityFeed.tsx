@@ -332,8 +332,10 @@ const PostDetail = ({ post, currentUserId, onBack, onCreatorClick, onDelete, onV
 
   const submit = async () => {
     if (!text.trim()) return;
+    const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
+    const safe = await escapeUnauthorizedCreatorEmojis(text.trim(), currentUserId);
     const { error } = await sb.from("subcross_comments").insert({
-      post_id: post.id, user_id: currentUserId, content: text.trim(),
+      post_id: post.id, user_id: currentUserId, content: safe,
     });
     if (error) { toast.error("Failed"); return; }
     setText(""); load();
