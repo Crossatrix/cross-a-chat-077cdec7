@@ -534,9 +534,11 @@ const CreatePostDialog = ({ open, onOpenChange, currentUserId, subcrosses, preSe
       if (upErr) { toast.error("Upload failed"); setBusy(false); return; }
       image_url = supabase.storage.from("subcross-media").getPublicUrl(path).data.publicUrl;
     }
+    const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
+    const safeContent = content.trim() ? await escapeUnauthorizedCreatorEmojis(content.trim(), currentUserId) : null;
     const { error } = await sb.from("subcross_posts").insert({
       subcross_id: subId, user_id: currentUserId,
-      title: title.trim(), content: content.trim() || null, image_url,
+      title: title.trim(), content: safeContent, image_url,
     });
     setBusy(false);
     if (error) { toast.error("Failed"); return; }

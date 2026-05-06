@@ -303,10 +303,12 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
 
   const handleComment = async () => {
     if (!newComment.trim() || !commentsVideoId) return;
+    const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
+    const safe = await escapeUnauthorizedCreatorEmojis(newComment.trim(), currentUserId);
     const { error } = await supabase.from("video_comments").insert({
       video_id: commentsVideoId,
       user_id: currentUserId,
-      content: newComment.trim(),
+      content: safe,
     });
     if (error) {
       toast.error("Failed to post comment");
