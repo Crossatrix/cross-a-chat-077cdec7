@@ -24,6 +24,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("other");
   const [adultsOnly, setAdultsOnly] = useState(false);
+  const [membersOnly, setMembersOnly] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -100,6 +101,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         thumbnail_url: thumbnailUrl,
         category,
         adults_only: adultsOnly,
+        members_only: membersOnly,
         moderation_status: needsAnalysis ? 'pending' : 'approved',
       } as any).select().single();
 
@@ -224,6 +226,10 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
               <Label htmlFor="adults-only" className="text-sm font-medium cursor-pointer">Adults Only (18+)</Label>
             </div>
             <Switch id="adults-only" checked={adultsOnly} onCheckedChange={setAdultsOnly} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <Label htmlFor="members-only" className="text-sm font-medium cursor-pointer">Members Only</Label>
+            <Switch id="members-only" checked={membersOnly} onCheckedChange={setMembersOnly} />
           </div>
 
           {!isVerifiedCreator && !adultsOnly && (

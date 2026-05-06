@@ -21,6 +21,7 @@ const MusicUploadDialog = ({ userId, onUploaded }: Props) => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [membersOnly, setMembersOnly] = useState(false);
   const [uploading, setUploading] = useState(false);
   const audioInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +77,7 @@ const MusicUploadDialog = ({ userId, onUploaded }: Props) => {
         audio_url: audioUrl,
         cover_url: coverUrl,
         duration,
+        members_only: membersOnly,
       } as any);
       if (insErr) throw insErr;
 
@@ -129,6 +131,10 @@ const MusicUploadDialog = ({ userId, onUploaded }: Props) => {
               </div>
             )}
           </div>
+          <label className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer">
+            <span className="text-sm font-medium">Members Only</span>
+            <input type="checkbox" checked={membersOnly} onChange={(e) => setMembersOnly(e.target.checked)} className="h-4 w-4" />
+          </label>
           <Button onClick={handleUpload} disabled={uploading || !title.trim() || !audioFile} className="w-full">
             {uploading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Uploading...</> : "Upload Track"}
           </Button>
