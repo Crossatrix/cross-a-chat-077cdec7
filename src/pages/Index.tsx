@@ -572,9 +572,11 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       videoUrl = publicUrl;
     }
 
+    const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
+    const safeContent = await escapeUnauthorizedCreatorEmojis(content, user.id);
     const messagePayload: any = {
       user_id: user.id,
-      content,
+      content: safeContent,
       conversation_id: selectedConversationId,
       image_url: imageUrl,
       voice_url: voiceUrl,

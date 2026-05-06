@@ -250,10 +250,12 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
 
   const handleComment = async () => {
     if (!newComment.trim()) return;
+    const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
+    const safe = await escapeUnauthorizedCreatorEmojis(newComment.trim(), currentUserId);
     const { error } = await supabase.from("video_comments").insert({
       video_id: video.id,
       user_id: currentUserId,
-      content: newComment.trim(),
+      content: safe,
     });
     if (error) {
       toast.error("Failed to post comment");

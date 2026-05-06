@@ -23,6 +23,7 @@ const GoLiveDialog = ({ userId, onLiveStart, trigger }: Props) => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("other");
   const [adultsOnly, setAdultsOnly] = useState(false);
+  const [membersOnly, setMembersOnly] = useState(false);
   const [starting, setStarting] = useState(false);
 
   const handleStart = async () => {
@@ -31,12 +32,12 @@ const GoLiveDialog = ({ userId, onLiveStart, trigger }: Props) => {
     try {
       const { data, error } = await supabase.from("livestreams").insert({
         user_id: userId, title: title.trim(), description: description.trim() || null,
-        category, adults_only: adultsOnly, status: "live",
+        category, adults_only: adultsOnly, members_only: membersOnly, status: "live",
       } as any).select().single();
       if (error) throw error;
       toast.success("You're live!");
       setOpen(false);
-      setTitle(""); setDescription(""); setCategory("other"); setAdultsOnly(false);
+      setTitle(""); setDescription(""); setCategory("other"); setAdultsOnly(false); setMembersOnly(false);
       onLiveStart((data as any).id);
     } catch (err: any) {
       toast.error("Failed to go live: " + err.message);
@@ -73,6 +74,10 @@ const GoLiveDialog = ({ userId, onLiveStart, trigger }: Props) => {
               <Label htmlFor="live-adults" className="text-sm cursor-pointer">Adults Only (18+)</Label>
             </div>
             <Switch id="live-adults" checked={adultsOnly} onCheckedChange={setAdultsOnly} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <Label htmlFor="live-mem" className="text-sm cursor-pointer">Members Only</Label>
+            <Switch id="live-mem" checked={membersOnly} onCheckedChange={setMembersOnly} />
           </div>
           <p className="text-xs text-muted-foreground">
             Your camera and microphone will be shared with viewers. Make sure you're ready!

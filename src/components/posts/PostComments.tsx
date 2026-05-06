@@ -44,10 +44,12 @@ const PostComments = ({ postId, currentUserId, onCommentsCountChange, onCreatorC
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
+    const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
+    const safe = await escapeUnauthorizedCreatorEmojis(newComment.trim(), currentUserId);
     const { error } = await supabase.from('post_comments').insert({
       post_id: postId,
       user_id: currentUserId,
-      content: newComment.trim(),
+      content: safe,
     });
     if (error) { toast.error("Failed to comment"); return; }
     setNewComment("");

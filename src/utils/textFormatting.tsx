@@ -11,29 +11,31 @@ let emojisFetched = false;
 
 export const fetchEmojisForFormatting = async () => {
   if (emojisFetched) return cachedEmojis;
-  
-  const { data } = await supabase
-    .from('custom_emojis')
-    .select('name, image_url');
-  
-  if (data) {
-    cachedEmojis = data;
-    emojisFetched = true;
+
+  const [{ data: custom }, { data: creator }] = await Promise.all([
+    supabase.from('custom_emojis').select('name, image_url'),
+    supabase.from('creator_emojis' as any).select('name, image_url'),
+  ]);
+
+  const merged: CustomEmoji[] = [...(custom || [])];
+  // Creator emojis: first one for a given name wins if not already present
+  for (const c of (creator as any[] || [])) {
+    if (!merged.find(e => e.name === c.name)) {
+      merged.push({ name: c.name, image_url: c.image_url });
+    }
   }
+  cachedEmojis = merged;
+  emojisFetched = true;
   return cachedEmojis;
 };
 
 // Subscribe to emoji changes
 supabase
   .channel('emoji_formatting_updates')
-  .on(
-    'postgres_changes',
-    { event: '*', schema: 'public', table: 'custom_emojis' },
-    async () => {
-      emojisFetched = false;
-      await fetchEmojisForFormatting();
-    }
-  )
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_emojis' },
+    async () => { emojisFetched = false; await fetchEmojisForFormatting(); })
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'creator_emojis' },
+    async () => { emojisFetched = false; await fetchEmojisForFormatting(); })
   .subscribe();
 
 // Text effect components

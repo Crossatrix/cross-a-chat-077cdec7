@@ -876,6 +876,7 @@ export type Database = {
           ended_at: string | null
           id: string
           likes_count: number
+          members_only: boolean
           started_at: string
           status: string
           thumbnail_url: string | null
@@ -892,6 +893,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           likes_count?: number
+          members_only?: boolean
           started_at?: string
           status?: string
           thumbnail_url?: string | null
@@ -908,6 +910,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           likes_count?: number
+          members_only?: boolean
           started_at?: string
           status?: string
           thumbnail_url?: string | null
@@ -1095,6 +1098,7 @@ export type Database = {
           duration: number
           id: string
           likes_count: number
+          members_only: boolean
           plays_count: number
           title: string
           updated_at: string
@@ -1110,6 +1114,7 @@ export type Database = {
           duration?: number
           id?: string
           likes_count?: number
+          members_only?: boolean
           plays_count?: number
           title: string
           updated_at?: string
@@ -1125,6 +1130,7 @@ export type Database = {
           duration?: number
           id?: string
           likes_count?: number
+          members_only?: boolean
           plays_count?: number
           title?: string
           updated_at?: string
@@ -2365,6 +2371,7 @@ export type Database = {
           duration: number | null
           id: string
           likes_count: number
+          members_only: boolean
           moderation_reason: string | null
           moderation_status: string
           staff_rated_by: string | null
@@ -2387,6 +2394,7 @@ export type Database = {
           duration?: number | null
           id?: string
           likes_count?: number
+          members_only?: boolean
           moderation_reason?: string | null
           moderation_status?: string
           staff_rated_by?: string | null
@@ -2409,6 +2417,7 @@ export type Database = {
           duration?: number | null
           id?: string
           likes_count?: number
+          members_only?: boolean
           moderation_reason?: string | null
           moderation_status?: string
           staff_rated_by?: string | null
