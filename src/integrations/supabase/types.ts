@@ -1556,7 +1556,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subcross_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "subcross_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcross_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subcross_members: {
         Row: {
@@ -1646,7 +1661,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subcross_posts_subcross_id_fkey"
+            columns: ["subcross_id"]
+            isOneToOne: false
+            referencedRelation: "subcrosses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcross_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subcrosses: {
         Row: {
