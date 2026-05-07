@@ -25,6 +25,8 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
   const [category, setCategory] = useState("other");
   const [adultsOnly, setAdultsOnly] = useState(false);
   const [membersOnly, setMembersOnly] = useState(false);
+  const [memberships, setMemberships] = useState<{ id: string; name: string; price_croins: number }[]>([]);
+  const [allowedTierIds, setAllowedTierIds] = useState<string[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
