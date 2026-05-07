@@ -46,8 +46,21 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         .maybeSingle();
       setCreatorStatus(data?.status || null);
     };
+    const fetchMemberships = async () => {
+      const { data } = await supabase
+        .from("channel_memberships" as any)
+        .select("id, name, price_croins")
+        .eq("creator_id", userId)
+        .order("price_croins", { ascending: true });
+      setMemberships((data as any) || []);
+    };
     fetchCreatorStatus();
+    fetchMemberships();
   }, [userId]);
+
+  const toggleTier = (id: string) => {
+    setAllowedTierIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
 
   const isVerifiedCreator = creatorStatus === "verified" || creatorStatus === "verified_plus";
 
