@@ -2362,6 +2362,7 @@ export type Database = {
       videos: {
         Row: {
           adults_only: boolean
+          allowed_membership_ids: string[]
           appeal_status: string
           category: string
           comments_count: number
@@ -2385,6 +2386,7 @@ export type Database = {
         }
         Insert: {
           adults_only?: boolean
+          allowed_membership_ids?: string[]
           appeal_status?: string
           category?: string
           comments_count?: number
@@ -2408,6 +2410,7 @@ export type Database = {
         }
         Update: {
           adults_only?: boolean
+          allowed_membership_ids?: string[]
           appeal_status?: string
           category?: string
           comments_count?: number

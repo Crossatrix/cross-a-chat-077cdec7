@@ -91,3 +91,28 @@ export const hasActiveChannelMembership = async (
   if (!data) return false;
   return new Date((data as any).expires_at) > new Date();
 };
+
+/**
+ * Returns true if the user can access content gated to specific membership tiers.
+ * - Creator always allowed.
+ * - If allowedMembershipIds is empty/null, any active membership is allowed.
+ * - Otherwise the user's active membership_id must be in the allowed list.
+ */
+export const hasAllowedMembershipTier = async (
+  userId: string,
+  creatorId: string,
+  allowedMembershipIds: string[] | null | undefined,
+): Promise<boolean> => {
+  if (userId === creatorId) return true;
+  const { data } = await supabase
+    .from("channel_subscriptions" as any)
+    .select("membership_id, expires_at")
+    .eq("user_id", userId)
+    .eq("creator_id", creatorId)
+    .maybeSingle();
+  if (!data) return false;
+  const d: any = data;
+  if (new Date(d.expires_at) <= new Date()) return false;
+  if (!allowedMembershipIds || allowedMembershipIds.length === 0) return true;
+  return allowedMembershipIds.includes(d.membership_id);
+};
