@@ -117,6 +117,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         category,
         adults_only: adultsOnly,
         members_only: membersOnly,
+        allowed_membership_ids: membersOnly ? allowedTierIds : [],
         moderation_status: needsAnalysis ? 'pending' : 'approved',
       } as any).select().single();
 
@@ -242,9 +243,39 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
             </div>
             <Switch id="adults-only" checked={adultsOnly} onCheckedChange={setAdultsOnly} />
           </div>
-          <div className="flex items-center justify-between rounded-lg border border-border p-3">
-            <Label htmlFor="members-only" className="text-sm font-medium cursor-pointer">Members Only</Label>
-            <Switch id="members-only" checked={membersOnly} onCheckedChange={setMembersOnly} />
+          <div className="rounded-lg border border-border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="members-only" className="text-sm font-medium cursor-pointer">Members Only</Label>
+              <Switch id="members-only" checked={membersOnly} onCheckedChange={setMembersOnly} />
+            </div>
+            {membersOnly && (
+              memberships.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  You don't have any membership tiers yet. Create them on your creator profile. Leaving this on with no tiers selected will allow any active member.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">
+                    Select which tiers can watch (none selected = all members):
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {memberships.map(m => {
+                      const active = allowedTierIds.includes(m.id);
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => toggleTier(m.id)}
+                          className={`text-xs px-2 py-1 rounded-md border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:border-primary/50"}`}
+                        >
+                          {m.name} · {m.price_croins}C
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )
+            )}
           </div>
 
           {!isVerifiedCreator && !adultsOnly && (
