@@ -89,6 +89,7 @@ const Admin = () => {
       }
 
       setStaffRole(role);
+      setIsOwner((user.email || "").toLowerCase() === "cross.a.trix.owner@hotmail.com");
       setLoading(false);
     };
 
