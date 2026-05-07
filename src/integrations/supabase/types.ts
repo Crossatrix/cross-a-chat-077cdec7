@@ -183,6 +183,66 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_actions: {
+        Row: {
+          action_type: string
+          bot_id: string
+          created_at: string
+          id: string
+          target_id: string
+        }
+        Insert: {
+          action_type: string
+          bot_id: string
+          created_at?: string
+          id?: string
+          target_id: string
+        }
+        Update: {
+          action_type?: string
+          bot_id?: string
+          created_at?: string
+          id?: string
+          target_id?: string
+        }
+        Relationships: []
+      }
+      bots: {
+        Row: {
+          active: boolean
+          comment_posts: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          last_run_at: string | null
+          persona: string
+          reply_chats: boolean
+          system_prompt: string
+        }
+        Insert: {
+          active?: boolean
+          comment_posts?: boolean
+          created_at?: string
+          created_by?: string | null
+          id: string
+          last_run_at?: string | null
+          persona?: string
+          reply_chats?: boolean
+          system_prompt?: string
+        }
+        Update: {
+          active?: boolean
+          comment_posts?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_run_at?: string | null
+          persona?: string
+          reply_chats?: boolean
+          system_prompt?: string
+        }
+        Relationships: []
+      }
       call_signals: {
         Row: {
           conversation_id: string
@@ -2500,6 +2560,7 @@ export type Database = {
         Returns: boolean
       }
       is_app_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_app_owner: { Args: { _user_id: string }; Returns: boolean }
       is_conversation_member: {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean

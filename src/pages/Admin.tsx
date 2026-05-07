@@ -23,9 +23,11 @@ import { Label } from "@/components/ui/label";
 import { StaffRole, getStaffRole, CAN, ROLE_CONFIG, isAtLeast } from "@/utils/roleConfig";
 import AdManager from "@/components/admin/AdManager";
 import AdRequestManager from "@/components/admin/AdRequestManager";
+import BotManager from "@/components/admin/BotManager";
 
 const Admin = () => {
   const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -87,6 +89,7 @@ const Admin = () => {
       }
 
       setStaffRole(role);
+      setIsOwner((user.email || "").toLowerCase() === "cross.a.trix.owner@hotmail.com");
       setLoading(false);
     };
 
@@ -957,6 +960,15 @@ const Admin = () => {
           <div className="max-w-7xl mx-auto">
             <h3 className="text-lg font-bold mb-3">User Ad Requests</h3>
             <AdRequestManager />
+          </div>
+        </div>
+      )}
+
+      {/* Bot Manager - owner only */}
+      {isOwner && (
+        <div className="border-b border-border bg-card/50 p-3 shrink-0">
+          <div className="max-w-7xl mx-auto">
+            <BotManager />
           </div>
         </div>
       )}

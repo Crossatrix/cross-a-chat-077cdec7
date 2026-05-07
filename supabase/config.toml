@@ -1,1 +1,7 @@
 project_id = "kwewkdolmnrjmgplzxrk"
+
+[functions.bots-tick]
+verify_jwt = false
+
+[functions.bot-admin]
+verify_jwt = false
