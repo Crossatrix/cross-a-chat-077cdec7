@@ -27,6 +27,7 @@ import BotManager from "@/components/admin/BotManager";
 
 const Admin = () => {
   const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
