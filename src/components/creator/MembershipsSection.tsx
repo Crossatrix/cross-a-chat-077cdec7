@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card } from "@/components/ui/card";
 import { Crown, Plus, Trash2, Check, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { type ChannelMembership, type CreatorEmoji, purchaseMembership, getActiveMembership } from "@/utils/memberships";
+import { type ChannelMembership, type CreatorEmoji, purchaseMembership, getActiveMembership, unsubscribeMembership } from "@/utils/memberships";
 
 interface Props {
   creatorId: string;
@@ -26,6 +26,7 @@ const MembershipsSection = ({ creatorId, currentUserId }: Props) => {
   const [perks, setPerks] = useState("");
   const [emojiName, setEmojiName] = useState("");
   const [emojiTier, setEmojiTier] = useState<string>("");
+  const [unsubscribing, setUnsubscribing] = useState(false);
 
   const load = async () => {
     const [{ data: t }, { data: e }] = await Promise.all([
@@ -64,14 +65,19 @@ const MembershipsSection = ({ creatorId, currentUserId }: Props) => {
   };
 
   const unsubscribe = async () => {
-    const { error } = await supabase.from("channel_subscriptions" as any)
-      .delete()
-      .eq("user_id", currentUserId)
-      .eq("creator_id", creatorId);
-    if (error) { toast.error("Failed to unsubscribe"); return; }
-    toast.success("Unsubscribed successfully");
-    setActiveMembershipId(null);
-    load();
+    setUnsubscribing(true);
+    try {
+      const res = await unsubscribeMembership(currentUserId, creatorId);
+      if (res.success) {
+        toast.success(res.message);
+        setActiveMembershipId(null);
+        load();
+      } else {
+        toast.error(res.message);
+      }
+    } finally {
+      setUnsubscribing(false);
+    }
   };
 
   const uploadEmoji = async (file: File) => {
@@ -137,7 +143,11 @@ const MembershipsSection = ({ creatorId, currentUserId }: Props) => {
                   </div>
                   <div className="flex flex-col gap-1">
                     {!isOwner && !isActive && <Button size="sm" onClick={() => subscribe(t)}>Subscribe</Button>}
-                    {!isOwner && isActive && <Button size="sm" variant="destructive" onClick={unsubscribe}>Unsubscribe</Button>}
+                    {!isOwner && isActive && (
+                      <Button size="sm" variant="destructive" onClick={unsubscribe} disabled={unsubscribing}>
+                        {unsubscribing ? "Unsubscribing..." : "Unsubscribe"}
+                      </Button>
+                    )}
                     {isOwner && <Button size="icon" variant="ghost" onClick={() => deleteTier(t.id)}><Trash2 className="h-3.5 w-3.5" /></Button>}
                   </div>
                 </div>
