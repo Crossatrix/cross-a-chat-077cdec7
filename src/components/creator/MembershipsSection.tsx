@@ -63,6 +63,17 @@ const MembershipsSection = ({ creatorId, currentUserId }: Props) => {
     if (res.success) load();
   };
 
+  const unsubscribe = async () => {
+    const { error } = await supabase.from("channel_subscriptions" as any)
+      .delete()
+      .eq("user_id", currentUserId)
+      .eq("creator_id", creatorId);
+    if (error) { toast.error("Failed to unsubscribe"); return; }
+    toast.success("Unsubscribed successfully");
+    setActiveMembershipId(null);
+    load();
+  };
+
   const uploadEmoji = async (file: File) => {
     const cleanName = emojiName.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
     if (!cleanName) { toast.error("Enter an emoji name (letters/numbers/_)"); return; }
@@ -126,6 +137,7 @@ const MembershipsSection = ({ creatorId, currentUserId }: Props) => {
                   </div>
                   <div className="flex flex-col gap-1">
                     {!isOwner && !isActive && <Button size="sm" onClick={() => subscribe(t)}>Subscribe</Button>}
+                    {!isOwner && isActive && <Button size="sm" variant="destructive" onClick={unsubscribe}>Unsubscribe</Button>}
                     {isOwner && <Button size="icon" variant="ghost" onClick={() => deleteTier(t.id)}><Trash2 className="h-3.5 w-3.5" /></Button>}
                   </div>
                 </div>
@@ -172,5 +184,4 @@ const MembershipsSection = ({ creatorId, currentUserId }: Props) => {
     </div>
   );
 };
-
 export default MembershipsSection;
