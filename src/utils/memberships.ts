@@ -32,6 +32,39 @@ export const getActiveMembership = async (userId: string, creatorId: string): Pr
   return d.membership_id as string;
 };
 
+/** Unsubscribe from a creator's channel membership */
+export const unsubscribeMembership = async (
+  userId: string,
+  creatorId: string,
+): Promise<{ success: boolean; message: string }> => {
+  // Find the subscription row
+  const { data: sub, error: fetchError } = await supabase
+    .from("channel_subscriptions" as any)
+    .select("id")
+    .eq("user_id", userId)
+    .eq("creator_id", creatorId)
+    .maybeSingle();
+
+  if (fetchError) {
+    return { success: false, message: "Failed to find subscription." };
+  }
+
+  if (!sub) {
+    return { success: false, message: "No active subscription found." };
+  }
+
+  const { error } = await supabase
+    .from("channel_subscriptions" as any)
+    .delete()
+    .eq("id", (sub as any).id);
+
+  if (error) {
+    return { success: false, message: "Failed to unsubscribe: " + error.message };
+  }
+
+  return { success: true, message: "Unsubscribed successfully!" };
+};
+
 export const purchaseMembership = async (
   userId: string,
   membership: ChannelMembership,
