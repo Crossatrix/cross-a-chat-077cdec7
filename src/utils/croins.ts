@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const CROINS_API = "https://digjxtmzafzcgytgcwmb.supabase.co/functions/v1/croins";
+const CROSSATRIX_KEY = import.meta.env.CROSSATRIX_KEY || "";
 
 /**
  * Get the Crossatrix user ID stored during login (for current user).
@@ -31,7 +32,10 @@ export const getBalance = async (userId: string): Promise<number> => {
   try {
     const res = await fetch(CROINS_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": CROSSATRIX_KEY,
+      },
       body: JSON.stringify({ action: "balance", user_id: userId }),
     });
     const data = await res.json();
@@ -47,7 +51,10 @@ export const creditCroins = async (localUserId: string, amount: number, descript
     const crossatrixId = await lookupCrossatrixId(localUserId);
     const res = await fetch(CROINS_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": CROSSATRIX_KEY,
+      },
       body: JSON.stringify({ action: "credit", user_id: crossatrixId, amount, description }),
     });
     return res.ok;
@@ -60,7 +67,10 @@ export const debitCroins = async (userId: string, amount: number, description: s
   try {
     const res = await fetch(CROINS_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": CROSSATRIX_KEY,
+      },
       body: JSON.stringify({ action: "debit", user_id: userId, amount, description }),
     });
     return res.ok;
