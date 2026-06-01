@@ -1,7 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const CROINS_API = "https://digjxtmzafzcgytgcwmb.supabase.co/functions/v1/croins";
-const CROSSATRIX_KEY = import.meta.env.CROSSATRIX_KEY || "";
+// All Croin calls are proxied through our edge function so the CROINKEY
+// stays server-side and an x-api-key header is added to every request.
+const CROINS_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/croins-proxy`;
+
+async function callCroins(body: Record<string, unknown>): Promise<any> {
+  const res = await fetch(CROINS_PROXY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return { ok: res.ok, data: await res.json().catch(() => ({})) };
+}
 
 /**
  * Get the Crossatrix user ID stored during login (for current user).
@@ -30,15 +40,7 @@ export const lookupCrossatrixId = async (localUserId: string): Promise<string> =
 
 export const getBalance = async (userId: string): Promise<number> => {
   try {
-    const res = await fetch(CROINS_API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": CROSSATRIX_KEY,
-      },
-      body: JSON.stringify({ action: "balance", user_id: userId }),
-    });
-    const data = await res.json();
+    const { data } = await callCroins({ action: "balance", user_id: userId });
     return data?.balance ?? 0;
   } catch {
     return 0;
@@ -47,17 +49,9 @@ export const getBalance = async (userId: string): Promise<number> => {
 
 export const creditCroins = async (localUserId: string, amount: number, description: string): Promise<boolean> => {
   try {
-    // Look up the Crossatrix user ID for the target user
     const crossatrixId = await lookupCrossatrixId(localUserId);
-    const res = await fetch(CROINS_API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": CROSSATRIX_KEY,
-      },
-      body: JSON.stringify({ action: "credit", user_id: crossatrixId, amount, description }),
-    });
-    return res.ok;
+    const { ok } = await callCroins({ action: "credit", user_id: crossatrixId, amount, description });
+    return ok;
   } catch {
     return false;
   }
@@ -65,15 +59,8 @@ export const creditCroins = async (localUserId: string, amount: number, descript
 
 export const debitCroins = async (userId: string, amount: number, description: string): Promise<boolean> => {
   try {
-    const res = await fetch(CROINS_API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": CROSSATRIX_KEY,
-      },
-      body: JSON.stringify({ action: "debit", user_id: userId, amount, description }),
-    });
-    return res.ok;
+    const { ok } = await callCroins({ action: "debit", user_id: userId, amount, description });
+    return ok;
   } catch {
     return false;
   }
