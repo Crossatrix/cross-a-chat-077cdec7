@@ -1083,10 +1083,6 @@ return (
         <div className="flex-1 min-h-0">
           <ShortsFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
         </div>
-      ) : activeTab === "posts" ? (
-        <div className="flex-1 min-h-0">
-          <PostsFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
-        </div>
       ) : activeTab === "music" ? (
         <div className="flex-1 min-h-0">
           <MusicFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
