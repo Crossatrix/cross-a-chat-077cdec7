@@ -8,10 +8,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Users, Plus, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Loader2, Search, Trash2, Send,
+  Users, Plus, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Loader2, Search, Trash2, Send, FileText,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import PostsFeed from "@/components/posts/PostsFeed";
 
 interface Subcross {
   id: string;
@@ -62,7 +63,7 @@ const formatTime = (s: string) => {
 };
 
 const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
-  const [view, setView] = useState<"home" | "subcross" | "post">("home");
+  const [view, setView] = useState<"home" | "subcross" | "post" | "posts">("home");
   const [subcrosses, setSubcrosses] = useState<Subcross[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [activeSub, setActiveSub] = useState<Subcross | null>(null);
