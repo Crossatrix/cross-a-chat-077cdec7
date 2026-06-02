@@ -1383,6 +1383,15 @@ return (
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <BetaDialog open={betaDialogOpen} onOpenChange={setBetaDialogOpen} />
+      <ScamDetector
+        conversationId={selectedConversationId}
+        currentUserDbId={user?.id}
+        otherUserId={selectedUserId}
+        isGroup={isGroup}
+        isAIChat={selectedUserId === '00000000-0000-0000-0000-000000000000'}
+        enabled={isBeta}
+      />
     </div>
     </>
   );
