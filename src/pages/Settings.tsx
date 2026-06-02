@@ -63,6 +63,7 @@ const Settings = () => {
     loadNotInterested();
     loadBlockedCategories();
     loadProStatus();
+    loadBetaStatus();
   }, []);
 
   const loadProfile = async () => {
