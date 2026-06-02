@@ -27,6 +27,7 @@ interface MessageInputProps {
   onCreditsUpdate?: () => void;
   isSending?: boolean;
   canSendSystemMessage?: boolean;
+  isBeta?: boolean;
 }
 
 const messageSchema = z.string()
