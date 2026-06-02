@@ -83,6 +83,8 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity">("chats");
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const [croinBalance, setCroinBalance] = useState<number>(0);
+  const [betaDialogOpen, setBetaDialogOpen] = useState(false);
+  const isBeta = useBetaStatus(user?.id);
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
