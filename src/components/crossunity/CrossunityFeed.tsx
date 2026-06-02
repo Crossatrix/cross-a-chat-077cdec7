@@ -158,6 +158,24 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
     s.display_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // ============ POSTS (c/posts) ============
+  if (view === "posts") {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-2 p-3 border-b border-border bg-card shrink-0">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setView("home")}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <FileText className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-bold text-primary truncate">c/posts</h2>
+        </div>
+        <div className="flex-1 min-h-0">
+          <PostsFeed currentUserId={currentUserId} onCreatorClick={onCreatorClick} />
+        </div>
+      </div>
+    );
+  }
+
   // ============ POST DETAIL ============
   if (view === "post" && activePost) {
     return <PostDetail post={activePost} currentUserId={currentUserId}
