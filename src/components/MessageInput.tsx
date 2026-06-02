@@ -305,6 +305,12 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
           onEditCancel={() => setEditingEffect(null)}
           canSendSystemMessage={canSendSystemMessage}
         />
+        {isBeta && !isAIChat && getBetaAIMessageEnabled() && (
+          <BetaAIMessageButton
+            disabled={disabled || isRecording}
+            onInsert={(text) => setMessage((prev) => (prev ? prev + " " + text : text))}
+          />
+        )}
         <RichTextInput
           value={message}
           onChange={(val) => {
