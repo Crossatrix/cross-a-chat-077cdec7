@@ -1136,6 +1136,11 @@ return (
             <Button onClick={() => navigate("/settings")} variant="secondary" size="icon" className="h-8 w-8" aria-label="Settings">
               <Settings className="h-3.5 w-3.5" />
             </Button>
+            {isBeta && (
+              <Button onClick={() => setBetaDialogOpen(true)} variant="secondary" size="icon" className="h-8 w-8" aria-label="Beta features" title="Beta features">
+                <FlaskConical className="h-3.5 w-3.5 text-primary" />
+              </Button>
+            )}
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5" />
             </Button>
