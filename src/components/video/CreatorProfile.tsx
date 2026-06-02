@@ -77,11 +77,12 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
 
     if (profileData) setProfile(profileData);
     if (videosData) {
-      const allVids = videosData as unknown as Video[];
-      setVideos(allVids.filter(v => v.duration === null || v.duration > 180));
-      setShorts(allVids.filter(v => v.duration !== null && v.duration <= 180));
-      setTotalViews(allVids.reduce((sum, v) => sum + v.views_count, 0));
-      setTotalLikes(allVids.reduce((sum, v) => sum + v.likes_count, 0));
+      const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
+      const accessibleVids = await filterAccessibleMembersOnly(videosData as any, currentUserId) as unknown as Video[];
+      setVideos(accessibleVids.filter(v => v.duration === null || v.duration > 180));
+      setShorts(accessibleVids.filter(v => v.duration !== null && v.duration <= 180));
+      setTotalViews(accessibleVids.reduce((sum, v) => sum + v.views_count, 0));
+      setTotalLikes(accessibleVids.reduce((sum, v) => sum + v.likes_count, 0));
     }
     setFollowerCount(followers ?? 0);
     setFollowingCount(following ?? 0);

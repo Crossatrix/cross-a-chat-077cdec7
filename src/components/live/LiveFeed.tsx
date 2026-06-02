@@ -30,7 +30,9 @@ const LiveFeed = ({ currentUserId, onCreatorClick }: Props) => {
       .eq("status", "live")
       .order("started_at", { ascending: false })
       .limit(50);
-    setStreams((data || []) as unknown as Livestream[]);
+    const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
+    const filtered = await filterAccessibleMembersOnly((data || []) as any, currentUserId);
+    setStreams(filtered as unknown as Livestream[]);
     setLoading(false);
   };
 

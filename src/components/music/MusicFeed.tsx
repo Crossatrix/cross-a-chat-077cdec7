@@ -23,7 +23,9 @@ const MusicFeed = ({ currentUserId, onCreatorClick }: Props) => {
       .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url)")
       .order("created_at", { ascending: false })
       .limit(100);
-    setTracks((data || []) as unknown as MusicTrack[]);
+    const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
+    const filtered = await filterAccessibleMembersOnly((data || []) as any, currentUserId);
+    setTracks(filtered as unknown as MusicTrack[]);
     setLoading(false);
   };
 
