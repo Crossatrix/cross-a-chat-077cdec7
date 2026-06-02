@@ -167,7 +167,9 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
       return;
     }
 
-    const allVideos = data as unknown as Video[];
+    const allVideosRaw = data as unknown as Video[];
+    const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
+    const allVideos = await filterAccessibleMembersOnly(allVideosRaw as any, currentUserId) as Video[];
 
     // Filter out exact not-interested videos, then apply scoring
     const filteredVideos = allVideos.filter(v => !notInterestedVideoIds.has(v.id) && !blockedCats.has(v.category));

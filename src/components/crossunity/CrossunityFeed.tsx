@@ -8,10 +8,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Users, Plus, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Loader2, Search, Trash2, Send,
+  Users, Plus, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Loader2, Search, Trash2, Send, FileText,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import PostsFeed from "@/components/posts/PostsFeed";
 
 interface Subcross {
   id: string;
@@ -62,7 +63,7 @@ const formatTime = (s: string) => {
 };
 
 const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
-  const [view, setView] = useState<"home" | "subcross" | "post">("home");
+  const [view, setView] = useState<"home" | "subcross" | "post" | "posts">("home");
   const [subcrosses, setSubcrosses] = useState<Subcross[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [activeSub, setActiveSub] = useState<Subcross | null>(null);
@@ -157,6 +158,24 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
     s.display_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // ============ POSTS (c/posts) ============
+  if (view === "posts") {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-2 p-3 border-b border-border bg-card shrink-0">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setView("home")}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <FileText className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-bold text-primary truncate">c/posts</h2>
+        </div>
+        <div className="flex-1 min-h-0">
+          <PostsFeed currentUserId={currentUserId} onCreatorClick={onCreatorClick} />
+        </div>
+      </div>
+    );
+  }
+
   // ============ POST DETAIL ============
   if (view === "post" && activePost) {
     return <PostDetail post={activePost} currentUserId={currentUserId}
@@ -207,20 +226,23 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
             <Input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search subcrosses..." className="pl-8 h-9" />
           </div>
-          {filteredSubs.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto mt-2 pb-1">
-              {filteredSubs.map(s => (
-                <button key={s.id} onClick={() => openSub(s)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary rounded-full text-xs whitespace-nowrap hover:bg-secondary/80">
-                  <Avatar className="h-5 w-5">
-                    <AvatarImage src={s.icon_url || undefined} />
-                    <AvatarFallback className="text-[9px]">c/</AvatarFallback>
-                  </Avatar>
-                  c/{s.name} <span className="text-muted-foreground">{s.members_count}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex gap-2 overflow-x-auto mt-2 pb-1">
+            <button onClick={() => setView("posts")}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/15 border border-primary/40 rounded-full text-xs whitespace-nowrap hover:bg-primary/25 text-primary font-semibold">
+              <FileText className="h-3.5 w-3.5" />
+              c/posts
+            </button>
+            {filteredSubs.map(s => (
+              <button key={s.id} onClick={() => openSub(s)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary rounded-full text-xs whitespace-nowrap hover:bg-secondary/80">
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={s.icon_url || undefined} />
+                  <AvatarFallback className="text-[9px]">c/</AvatarFallback>
+                </Avatar>
+                c/{s.name} <span className="text-muted-foreground">{s.members_count}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

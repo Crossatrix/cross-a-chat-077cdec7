@@ -115,7 +115,9 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
       categoryPrefs?.forEach(p => { prefMap[p.category] = p.view_count; });
       const totalViews = Object.values(prefMap).reduce((a, b) => a + b, 0) || 1;
 
-      const filtered = (data as unknown as Short[]).filter(s => !blockedCats.has(s.category));
+      let filtered = (data as unknown as Short[]).filter(s => !blockedCats.has(s.category));
+      const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
+      filtered = await filterAccessibleMembersOnly(filtered as any, currentUserId) as any;
 
       const sorted = [...filtered].sort((a, b) => {
         const aStatus = verifiedMap.get(a.user_id) || "";

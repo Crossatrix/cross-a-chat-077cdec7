@@ -143,7 +143,9 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
       const verifiedMap = new Map<string, string>();
       verifications?.forEach(v => verifiedMap.set(v.user_id, v.status));
 
-      const filtered = (data as unknown as Video[]).filter(v => !blockedCats.has(v.category));
+      let filtered = (data as unknown as Video[]).filter(v => !blockedCats.has(v.category));
+      const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
+      filtered = await filterAccessibleMembersOnly(filtered as any, currentUserId) as any;
 
       const sorted = [...filtered].sort((a, b) => {
         const aStatus = verifiedMap.get(a.user_id) || "";
