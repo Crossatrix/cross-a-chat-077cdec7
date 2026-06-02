@@ -499,6 +499,54 @@ const Settings = () => {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FlaskConical className="h-7 w-7 text-primary" />
+                Cross Chat Beta
+              </CardTitle>
+              <CardDescription>
+                Try experimental features early — AI Message generator, Scam Detector and more.
+                Adds a Beta button next to Settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isBeta ? (
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <FlaskConical className="h-6 w-6 text-primary" />
+                    <span className="font-semibold text-primary">You are a Beta member!</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Your subscription expires on {betaExpiry ? new Date(betaExpiry).toLocaleDateString() : "N/A"}
+                  </p>
+                  <Button onClick={handleBuyBeta} disabled={buyingBeta} variant="outline" className="w-full mt-2">
+                    {buyingBeta ? "Processing..." : `Extend for ${BETA_PRICE} Croins (+1 month)`}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Beta features:</h3>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>🧪 New Beta button next to Settings</li>
+                      <li>✨ AI Message generator in any chat</li>
+                      <li>🛡️ Scam Detector warns you about suspicious new contacts</li>
+                      <li>🚀 Early access to upcoming features</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-lg bg-secondary/50 text-center">
+                    <span className="text-2xl font-bold">{BETA_PRICE} Croins</span>
+                    <span className="text-sm text-muted-foreground"> / month</span>
+                  </div>
+                  <Button onClick={handleBuyBeta} disabled={buyingBeta} className="w-full" size="lg">
+                    {buyingBeta ? "Processing..." : "Buy Cross Chat Beta"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="profile" className="space-y-4">
