@@ -129,3 +129,35 @@ export const sendCroinsGift = async (
   await creditCroins(toUserId, amount, `Gift received: ${context}`);
   return { success: true, message: `Sent ${amount} Croins! 💎` };
 };
+
+/**
+ * Filter a list of items so users only see members-only content they have access to.
+ * Items must have user_id (creator). Optional members_only and allowed_membership_ids.
+ * The creator always sees their own content.
+ */
+export async function filterAccessibleMembersOnly<
+  T extends { user_id: string; members_only?: boolean | null; allowed_membership_ids?: string[] | null },
+>(items: T[], currentUserId: string): Promise<T[]> {
+  const restricted = items.filter(i => i.members_only && i.user_id !== currentUserId);
+  if (!restricted.length) return items;
+  const creatorIds = Array.from(new Set(restricted.map(i => i.user_id)));
+  const { data } = await supabase
+    .from("channel_subscriptions" as any)
+    .select("creator_id, membership_id, expires_at")
+    .eq("user_id", currentUserId)
+    .in("creator_id", creatorIds);
+  const now = Date.now();
+  const subs = new Map<string, string>();
+  (data || []).forEach((s: any) => {
+    if (new Date(s.expires_at).getTime() > now) subs.set(s.creator_id, s.membership_id);
+  });
+  return items.filter(i => {
+    if (!i.members_only) return true;
+    if (i.user_id === currentUserId) return true;
+    const tier = subs.get(i.user_id);
+    if (!tier) return false;
+    const allowed = i.allowed_membership_ids;
+    if (!allowed || allowed.length === 0) return true;
+    return allowed.includes(tier);
+  });
+}
