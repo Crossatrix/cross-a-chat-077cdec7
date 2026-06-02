@@ -232,6 +232,42 @@ const Settings = () => {
     }
   };
 
+  const loadBetaStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("beta_subscriptions" as any)
+      .select("expires_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data && new Date((data as any).expires_at) > new Date()) {
+      setIsBeta(true);
+      setBetaExpiry((data as any).expires_at);
+    } else {
+      setIsBeta(false);
+      setBetaExpiry(null);
+    }
+  };
+
+  const handleBuyBeta = async () => {
+    setBuyingBeta(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const result = await purchaseBeta(user.id);
+      if (result.success) {
+        toast.success(result.message);
+        loadBetaStatus();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err: any) {
+      toast.error("Purchase failed");
+    } finally {
+      setBuyingBeta(false);
+    }
+  };
+
   const loadBlockedCategories = async () => {
     setLoadingBlockedCategories(true);
     try {
