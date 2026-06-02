@@ -226,20 +226,23 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
             <Input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search subcrosses..." className="pl-8 h-9" />
           </div>
-          {filteredSubs.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto mt-2 pb-1">
-              {filteredSubs.map(s => (
-                <button key={s.id} onClick={() => openSub(s)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary rounded-full text-xs whitespace-nowrap hover:bg-secondary/80">
-                  <Avatar className="h-5 w-5">
-                    <AvatarImage src={s.icon_url || undefined} />
-                    <AvatarFallback className="text-[9px]">c/</AvatarFallback>
-                  </Avatar>
-                  c/{s.name} <span className="text-muted-foreground">{s.members_count}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex gap-2 overflow-x-auto mt-2 pb-1">
+            <button onClick={() => setView("posts")}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/15 border border-primary/40 rounded-full text-xs whitespace-nowrap hover:bg-primary/25 text-primary font-semibold">
+              <FileText className="h-3.5 w-3.5" />
+              c/posts
+            </button>
+            {filteredSubs.map(s => (
+              <button key={s.id} onClick={() => openSub(s)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary rounded-full text-xs whitespace-nowrap hover:bg-secondary/80">
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={s.icon_url || undefined} />
+                  <AvatarFallback className="text-[9px]">c/</AvatarFallback>
+                </Avatar>
+                c/{s.name} <span className="text-muted-foreground">{s.members_count}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
