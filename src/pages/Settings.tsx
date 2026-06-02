@@ -53,6 +53,9 @@ const Settings = () => {
   const [isPro, setIsPro] = useState(false);
   const [proExpiry, setProExpiry] = useState<string | null>(null);
   const [buyingPro, setBuyingPro] = useState(false);
+  const [isBeta, setIsBeta] = useState(false);
+  const [betaExpiry, setBetaExpiry] = useState<string | null>(null);
+  const [buyingBeta, setBuyingBeta] = useState(false);
 
   useEffect(() => {
     loadProfile();
