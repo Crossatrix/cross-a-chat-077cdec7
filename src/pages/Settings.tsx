@@ -10,8 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban, Crown } from "lucide-react";
+import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban, Crown, FlaskConical } from "lucide-react";
 import { checkProStatus, purchasePro } from "@/utils/proSubscription";
+import { checkBetaStatus, purchaseBeta, BETA_PRICE } from "@/utils/betaSubscription";
 import proBadgeIcon from "@/assets/pro-badge.png";
 import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -52,6 +53,9 @@ const Settings = () => {
   const [isPro, setIsPro] = useState(false);
   const [proExpiry, setProExpiry] = useState<string | null>(null);
   const [buyingPro, setBuyingPro] = useState(false);
+  const [isBeta, setIsBeta] = useState(false);
+  const [betaExpiry, setBetaExpiry] = useState<string | null>(null);
+  const [buyingBeta, setBuyingBeta] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -59,6 +63,7 @@ const Settings = () => {
     loadNotInterested();
     loadBlockedCategories();
     loadProStatus();
+    loadBetaStatus();
   }, []);
 
   const loadProfile = async () => {
@@ -225,6 +230,42 @@ const Settings = () => {
       toast.error("Purchase failed");
     } finally {
       setBuyingPro(false);
+    }
+  };
+
+  const loadBetaStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("beta_subscriptions" as any)
+      .select("expires_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data && new Date((data as any).expires_at) > new Date()) {
+      setIsBeta(true);
+      setBetaExpiry((data as any).expires_at);
+    } else {
+      setIsBeta(false);
+      setBetaExpiry(null);
+    }
+  };
+
+  const handleBuyBeta = async () => {
+    setBuyingBeta(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const result = await purchaseBeta(user.id);
+      if (result.success) {
+        toast.success(result.message);
+        loadBetaStatus();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err: any) {
+      toast.error("Purchase failed");
+    } finally {
+      setBuyingBeta(false);
     }
   };
 
@@ -453,6 +494,54 @@ const Settings = () => {
                   </div>
                   <Button onClick={handleBuyPro} disabled={buyingPro} className="w-full" size="lg">
                     {buyingPro ? "Processing..." : "Buy Cross Chat Pro"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FlaskConical className="h-7 w-7 text-primary" />
+                Cross Chat Beta
+              </CardTitle>
+              <CardDescription>
+                Try experimental features early — AI Message generator, Scam Detector and more.
+                Adds a Beta button next to Settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isBeta ? (
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <FlaskConical className="h-6 w-6 text-primary" />
+                    <span className="font-semibold text-primary">You are a Beta member!</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Your subscription expires on {betaExpiry ? new Date(betaExpiry).toLocaleDateString() : "N/A"}
+                  </p>
+                  <Button onClick={handleBuyBeta} disabled={buyingBeta} variant="outline" className="w-full mt-2">
+                    {buyingBeta ? "Processing..." : `Extend for ${BETA_PRICE} Croins (+1 month)`}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Beta features:</h3>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>🧪 New Beta button next to Settings</li>
+                      <li>✨ AI Message generator in any chat</li>
+                      <li>🛡️ Scam Detector warns you about suspicious new contacts</li>
+                      <li>🚀 Early access to upcoming features</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-lg bg-secondary/50 text-center">
+                    <span className="text-2xl font-bold">{BETA_PRICE} Croins</span>
+                    <span className="text-sm text-muted-foreground"> / month</span>
+                  </div>
+                  <Button onClick={handleBuyBeta} disabled={buyingBeta} className="w-full" size="lg">
+                    {buyingBeta ? "Processing..." : "Buy Cross Chat Beta"}
                   </Button>
                 </div>
               )}

@@ -16,15 +16,17 @@ export const checkBetaStatus = async (userId: string): Promise<boolean> => {
   return new Date((data as any).expires_at) > new Date();
 };
 
+export const BETA_PRICE = 50;
+
 export const purchaseBeta = async (userId: string): Promise<{ success: boolean; message: string }> => {
   const crossatrixId = getCrossatrixUserId(userId);
   const balance = await getBalance(crossatrixId);
 
-  if (balance < 100) {
-    return { success: false, message: `Not enough Croins! You have ${balance}, need 100.` };
+  if (balance < BETA_PRICE) {
+    return { success: false, message: `Not enough Croins! You have ${balance}, need ${BETA_PRICE}.` };
   }
 
-  const debited = await debitCroins(crossatrixId, 100, "Cross Chat Beta - 1 month");
+  const debited = await debitCroins(crossatrixId, BETA_PRICE, "Cross Chat Beta - 1 month");
   if (!debited) return { success: false, message: "Failed to debit Croins." };
 
   const expiresAt = new Date();

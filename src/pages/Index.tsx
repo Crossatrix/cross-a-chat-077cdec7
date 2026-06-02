@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe, FlaskConical } from "lucide-react";
+import { useBetaStatus } from "@/hooks/useBetaStatus";
+import BetaDialog from "@/components/BetaDialog";
+import ScamDetector from "@/components/ScamDetector";
 import { getBalance as getCroinBalance } from "@/utils/croins";
 import croinIcon from "@/assets/croin.png";
 import { toast } from "sonner";
@@ -80,6 +83,8 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity">("chats");
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const [croinBalance, setCroinBalance] = useState<number>(0);
+  const [betaDialogOpen, setBetaDialogOpen] = useState(false);
+  const isBeta = useBetaStatus(user?.id);
   const navigate = useNavigate();
 
   const fetchAiCredits = async () => {
@@ -1131,6 +1136,11 @@ return (
             <Button onClick={() => navigate("/settings")} variant="secondary" size="icon" className="h-8 w-8" aria-label="Settings">
               <Settings className="h-3.5 w-3.5" />
             </Button>
+            {isBeta && (
+              <Button onClick={() => setBetaDialogOpen(true)} variant="secondary" size="icon" className="h-8 w-8" aria-label="Beta features" title="Beta features">
+                <FlaskConical className="h-3.5 w-3.5 text-primary" />
+              </Button>
+            )}
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5" />
             </Button>
@@ -1255,6 +1265,12 @@ return (
               <Settings className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden md:inline md:ml-2">Settings</span>
             </Button>
+            {isBeta && (
+              <Button onClick={() => setBetaDialogOpen(true)} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Beta features" title="Beta features">
+                <FlaskConical className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+                <span className="hidden md:inline md:ml-2">Beta</span>
+              </Button>
+            )}
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden md:inline md:ml-2">Logout</span>
@@ -1307,6 +1323,7 @@ return (
                 onCreditsUpdate={fetchAiCredits}
                 isSending={isSendingMessage}
                 canSendSystemMessage={isModerator}
+                isBeta={isBeta}
                 onTyping={() => {
                   if (!selectedConversationId || !user?.id) return;
                   
@@ -1366,6 +1383,15 @@ return (
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <BetaDialog open={betaDialogOpen} onOpenChange={setBetaDialogOpen} />
+      <ScamDetector
+        conversationId={selectedConversationId}
+        currentUserDbId={user?.id}
+        otherUserId={selectedUserId}
+        isGroup={isGroup}
+        isAIChat={selectedUserId === '00000000-0000-0000-0000-000000000000'}
+        enabled={isBeta}
+      />
     </div>
     </>
   );

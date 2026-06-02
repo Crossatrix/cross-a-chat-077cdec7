@@ -78,7 +78,7 @@ const BetaPaywall = ({ onUnlocked }: Props) => {
           </p>
         </div>
         <div className="bg-muted/40 rounded-lg p-4">
-          <div className="text-3xl font-bold text-primary">100 Croins</div>
+          <div className="text-3xl font-bold text-primary">50 Croins</div>
           <div className="text-xs text-muted-foreground mt-1">per month</div>
         </div>
         <div className="text-sm">
@@ -88,11 +88,11 @@ const BetaPaywall = ({ onUnlocked }: Props) => {
           className="w-full"
           size="lg"
           onClick={handleBuy}
-          disabled={purchasing || balance < 100}
+          disabled={purchasing || balance < 50}
         >
           {purchasing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Subscribe Now"}
         </Button>
-        {balance < 100 && (
+        {balance < 50 && (
           <p className="text-xs text-destructive">Not enough Croins to subscribe.</p>
         )}
         <Button variant="ghost" size="sm" className="w-full" onClick={handleLogout}>

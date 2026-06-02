@@ -7,6 +7,8 @@ import EmojiPicker from "./EmojiPicker";
 import EffectsPicker from "./EffectsPicker";
 import MediaPicker from "./MediaPicker";
 import RichTextInput, { type EffectTagInfo } from "./RichTextInput";
+import BetaAIMessageButton from "./BetaAIMessageButton";
+import { getBetaAIMessageEnabled } from "./BetaDialog";
 
 interface CustomEmoji {
   id: string;
@@ -25,6 +27,7 @@ interface MessageInputProps {
   onCreditsUpdate?: () => void;
   isSending?: boolean;
   canSendSystemMessage?: boolean;
+  isBeta?: boolean;
 }
 
 const messageSchema = z.string()
@@ -35,7 +38,7 @@ const messageSchema = z.string()
     "Message contains invalid content"
   );
 
-const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping, aiCredits, onCreditsUpdate, isSending = false, canSendSystemMessage = false }: MessageInputProps) => {
+const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping, aiCredits, onCreditsUpdate, isSending = false, canSendSystemMessage = false, isBeta = false }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
@@ -302,6 +305,12 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
           onEditCancel={() => setEditingEffect(null)}
           canSendSystemMessage={canSendSystemMessage}
         />
+        {isBeta && !isAIChat && getBetaAIMessageEnabled() && (
+          <BetaAIMessageButton
+            disabled={disabled || isRecording}
+            onInsert={(text) => setMessage((prev) => (prev ? prev + " " + text : text))}
+          />
+        )}
         <RichTextInput
           value={message}
           onChange={(val) => {
