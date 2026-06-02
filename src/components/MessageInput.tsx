@@ -7,6 +7,8 @@ import EmojiPicker from "./EmojiPicker";
 import EffectsPicker from "./EffectsPicker";
 import MediaPicker from "./MediaPicker";
 import RichTextInput, { type EffectTagInfo } from "./RichTextInput";
+import BetaAIMessageButton from "./BetaAIMessageButton";
+import { getBetaAIMessageEnabled } from "./BetaDialog";
 
 interface CustomEmoji {
   id: string;
