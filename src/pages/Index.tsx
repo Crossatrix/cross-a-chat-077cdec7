@@ -1265,6 +1265,12 @@ return (
               <Settings className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden md:inline md:ml-2">Settings</span>
             </Button>
+            {isBeta && (
+              <Button onClick={() => setBetaDialogOpen(true)} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Beta features" title="Beta features">
+                <FlaskConical className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+                <span className="hidden md:inline md:ml-2">Beta</span>
+              </Button>
+            )}
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden md:inline md:ml-2">Logout</span>
