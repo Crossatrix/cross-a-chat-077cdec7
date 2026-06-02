@@ -1323,6 +1323,7 @@ return (
                 onCreditsUpdate={fetchAiCredits}
                 isSending={isSendingMessage}
                 canSendSystemMessage={isModerator}
+                isBeta={isBeta}
                 onTyping={() => {
                   if (!selectedConversationId || !user?.id) return;
                   
