@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PostsFeed from "@/components/posts/PostsFeed";
+import ShareLinkButton from "@/components/ShareLinkButton";
 
 interface Subcross {
   id: string;
