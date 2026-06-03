@@ -48,7 +48,12 @@ interface Comment {
   profiles: { username: string; avatar_url: string | null };
 }
 
-interface Props { currentUserId: string; onCreatorClick?: (id: string) => void; }
+interface Props {
+  currentUserId: string;
+  onCreatorClick?: (id: string) => void;
+  deepLinkSubcrossId?: string | null;
+  onDeepLinkConsumed?: () => void;
+}
 
 const sb = supabase as any;
 
@@ -62,7 +67,7 @@ const formatTime = (s: string) => {
   return `${Math.floor(h / 24)}d`;
 };
 
-const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
+const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onDeepLinkConsumed }: Props) => {
   const [view, setView] = useState<"home" | "subcross" | "post" | "posts">("home");
   const [subcrosses, setSubcrosses] = useState<Subcross[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -95,6 +100,19 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
   };
 
   useEffect(() => { loadHome(); }, []);
+
+  useEffect(() => {
+    if (!deepLinkSubcrossId) return;
+    (async () => {
+      let q = sb.from("subcrosses").select("*");
+      q = deepLinkSubcrossId.includes("-")
+        ? q.eq("id", deepLinkSubcrossId)
+        : q.eq("name", deepLinkSubcrossId);
+      const { data } = await q.maybeSingle();
+      if (data) await openSub(data as Subcross);
+      onDeepLinkConsumed?.();
+    })();
+  }, [deepLinkSubcrossId]);
 
   const openSub = async (sub: Subcross) => {
     setActiveSub(sub);
