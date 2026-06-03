@@ -7,6 +7,7 @@ import { creditCroins } from "@/utils/croins";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "@/components/video/CreatorBadge";
 import FeaturedAvatar from "@/components/video/FeaturedAvatar";
+import ShareLinkButton from "@/components/ShareLinkButton";
 
 export interface MusicTrack {
   id: string;
