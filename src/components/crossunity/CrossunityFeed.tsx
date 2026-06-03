@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PostsFeed from "@/components/posts/PostsFeed";
+import ShareLinkButton from "@/components/ShareLinkButton";
 
 interface Subcross {
   id: string;
@@ -48,7 +49,12 @@ interface Comment {
   profiles: { username: string; avatar_url: string | null };
 }
 
-interface Props { currentUserId: string; onCreatorClick?: (id: string) => void; }
+interface Props {
+  currentUserId: string;
+  onCreatorClick?: (id: string) => void;
+  deepLinkSubcrossId?: string | null;
+  onDeepLinkConsumed?: () => void;
+}
 
 const sb = supabase as any;
 
@@ -62,7 +68,7 @@ const formatTime = (s: string) => {
   return `${Math.floor(h / 24)}d`;
 };
 
-const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
+const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onDeepLinkConsumed }: Props) => {
   const [view, setView] = useState<"home" | "subcross" | "post" | "posts">("home");
   const [subcrosses, setSubcrosses] = useState<Subcross[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -95,6 +101,19 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
   };
 
   useEffect(() => { loadHome(); }, []);
+
+  useEffect(() => {
+    if (!deepLinkSubcrossId) return;
+    (async () => {
+      let q = sb.from("subcrosses").select("*");
+      q = deepLinkSubcrossId.includes("-")
+        ? q.eq("id", deepLinkSubcrossId)
+        : q.eq("name", deepLinkSubcrossId);
+      const { data } = await q.maybeSingle();
+      if (data) await openSub(data as Subcross);
+      onDeepLinkConsumed?.();
+    })();
+  }, [deepLinkSubcrossId]);
 
   const openSub = async (sub: Subcross) => {
     setActiveSub(sub);
@@ -203,10 +222,13 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick }: Props) => {
         </div>
         <div className="flex items-center gap-1">
           {view === "subcross" && activeSub && (
-            <Button size="sm" variant={memberOf.has(activeSub.id) ? "secondary" : "default"}
-              onClick={() => toggleMembership(activeSub.id)}>
-              {memberOf.has(activeSub.id) ? "Joined" : "Join"}
-            </Button>
+            <>
+              <Button size="sm" variant={memberOf.has(activeSub.id) ? "secondary" : "default"}
+                onClick={() => toggleMembership(activeSub.id)}>
+                {memberOf.has(activeSub.id) ? "Joined" : "Join"}
+              </Button>
+              <ShareLinkButton action="subcross" id={activeSub.name} variant="outline" iconOnly className="h-9 w-9" />
+            </>
           )}
           <Button size="sm" onClick={() => setCreatePostOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />Post

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { FlaskConical, Sparkles, ShieldAlert } from "lucide-react";
+import { FlaskConical, Sparkles, ShieldAlert, Share2 } from "lucide-react";
+import { getBetaLinkShareEnabled, setBetaLinkShareEnabled } from "@/utils/instantLinks";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 
@@ -19,6 +20,7 @@ export const getBetaScamEnabled = () => localStorage.getItem(BETA_SCAM_KEY) !== 
 const BetaDialog = ({ open, onOpenChange }: Props) => {
   const [aiOn, setAiOn] = useState(getBetaAIMessageEnabled());
   const [scamOn, setScamOn] = useState(getBetaScamEnabled());
+  const [linkOn, setLinkOn] = useState(getBetaLinkShareEnabled());
 
   const toggleAi = (v: boolean) => {
     setAiOn(v);
@@ -27,6 +29,10 @@ const BetaDialog = ({ open, onOpenChange }: Props) => {
   const toggleScam = (v: boolean) => {
     setScamOn(v);
     localStorage.setItem(BETA_SCAM_KEY, v ? "1" : "0");
+  };
+  const toggleLink = (v: boolean) => {
+    setLinkOn(v);
+    setBetaLinkShareEnabled(v);
   };
 
   return (
@@ -73,6 +79,22 @@ const BetaDialog = ({ open, onOpenChange }: Props) => {
             <CardContent className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Enabled</span>
               <Switch checked={scamOn} onCheckedChange={toggleScam} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Share2 className="h-4 w-4 text-primary" /> Link Share
+              </CardTitle>
+              <CardDescription>
+                Adds a Share button to your account, other user profiles, videos,
+                music and subcrosses. Sharing creates an instant-open link.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Enabled</span>
+              <Switch checked={linkOn} onCheckedChange={toggleLink} />
             </CardContent>
           </Card>
         </div>

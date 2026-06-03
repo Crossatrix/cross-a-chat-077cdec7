@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { consumePendingInstantLink } from "@/utils/instantLinks";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe, FlaskConical } from "lucide-react";
@@ -84,6 +85,9 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const [croinBalance, setCroinBalance] = useState<number>(0);
   const [betaDialogOpen, setBetaDialogOpen] = useState(false);
+  const [instantVideoId, setInstantVideoId] = useState<string | null>(null);
+  const [instantMusicId, setInstantMusicId] = useState<string | null>(null);
+  const [instantSubcrossId, setInstantSubcrossId] = useState<string | null>(null);
   const isBeta = useBetaStatus(user?.id);
   const navigate = useNavigate();
 
@@ -118,6 +122,44 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     };
     initNotifications();
   }, []);
+
+  // Handle pending instant-link after auth
+  useEffect(() => {
+    if (!user) return;
+    const pending = consumePendingInstantLink();
+    if (!pending) return;
+    (async () => {
+      try {
+        if (pending.action === "chat") {
+          const { data, error } = await supabase.rpc("find_or_create_conversation", {
+            other_user_id: pending.id,
+          });
+          if (error) throw error;
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", pending.id)
+            .single();
+          setSelectedConversationId(data as string);
+          setSelectedUsername(profile?.username || "");
+          setSelectedUserId(pending.id);
+          setIsGroup(false);
+          setActiveTab("chats");
+        } else if (pending.action === "video") {
+          setActiveTab("videos");
+          setInstantVideoId(pending.id);
+        } else if (pending.action === "music") {
+          setActiveTab("music");
+          setInstantMusicId(pending.id);
+        } else if (pending.action === "subcross") {
+          setActiveTab("crossunity");
+          setInstantSubcrossId(pending.id);
+        }
+      } catch (e) {
+        console.error("instant-link error", e);
+      }
+    })();
+  }, [user?.id]);
 
   useEffect(() => {
     // Set up auth state listener
@@ -1078,7 +1120,11 @@ return (
         </div>
       ) : activeTab === "videos" ? (
         <div className="flex-1 min-h-0">
-          <VideoFeed currentUserId={user.id} />
+          <VideoFeed
+            currentUserId={user.id}
+            deepLinkVideoId={instantVideoId}
+            onDeepLinkConsumed={() => setInstantVideoId(null)}
+          />
         </div>
       ) : activeTab === "foryou" ? (
         <div className="flex-1 min-h-0">
@@ -1090,11 +1136,21 @@ return (
         </div>
       ) : activeTab === "music" ? (
         <div className="flex-1 min-h-0">
-          <MusicFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
+          <MusicFeed
+            currentUserId={user.id}
+            onCreatorClick={(id) => setCreatorProfileId(id)}
+            deepLinkTrackId={instantMusicId}
+            onDeepLinkConsumed={() => setInstantMusicId(null)}
+          />
         </div>
       ) : activeTab === "crossunity" ? (
         <div className="flex-1 min-h-0">
-          <CrossunityFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
+          <CrossunityFeed
+            currentUserId={user.id}
+            onCreatorClick={(id) => setCreatorProfileId(id)}
+            deepLinkSubcrossId={instantSubcrossId}
+            onDeepLinkConsumed={() => setInstantSubcrossId(null)}
+          />
         </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">

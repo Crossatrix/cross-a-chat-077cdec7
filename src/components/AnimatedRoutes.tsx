@@ -17,6 +17,7 @@ const Store = lazy(() => import("@/pages/Store"));
 const Studio = lazy(() => import("@/pages/Studio"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Maintenance = lazy(() => import("@/pages/Maintenance"));
+const InstantLink = lazy(() => import("@/pages/InstantLink"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -112,6 +113,14 @@ const AnimatedRoutes = () => {
             element={
               <PageTransition>
                 <Maintenance />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/instant-link"
+            element={
+              <PageTransition>
+                <InstantLink />
               </PageTransition>
             }
           />

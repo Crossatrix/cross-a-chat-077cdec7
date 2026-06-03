@@ -8,13 +8,28 @@ import MusicCard, { MusicTrack } from "./MusicCard";
 interface Props {
   currentUserId: string;
   onCreatorClick?: (id: string) => void;
+  deepLinkTrackId?: string | null;
+  onDeepLinkConsumed?: () => void;
 }
 
-const MusicFeed = ({ currentUserId, onCreatorClick }: Props) => {
+const MusicFeed = ({ currentUserId, onCreatorClick, deepLinkTrackId, onDeepLinkConsumed }: Props) => {
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetch(); }, []);
+
+  useEffect(() => {
+    if (!deepLinkTrackId) return;
+    setTimeout(() => {
+      const el = document.getElementById(`music-${deepLinkTrackId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-primary");
+        setTimeout(() => el.classList.remove("ring-2", "ring-primary"), 2500);
+      }
+      onDeepLinkConsumed?.();
+    }, 600);
+  }, [deepLinkTrackId, tracks.length]);
 
   const fetch = async () => {
     setLoading(true);
@@ -52,8 +67,10 @@ const MusicFeed = ({ currentUserId, onCreatorClick }: Props) => {
         ) : (
           <div className="space-y-3 p-3">
             {tracks.map((t) => (
-              <MusicCard key={t.id} track={t} currentUserId={currentUserId}
-                onCreatorClick={onCreatorClick} onDeleted={fetch} />
+              <div id={`music-${t.id}`} key={t.id} className="rounded-xl transition-shadow">
+                <MusicCard track={t} currentUserId={currentUserId}
+                  onCreatorClick={onCreatorClick} onDeleted={fetch} />
+              </div>
             ))}
           </div>
         )}

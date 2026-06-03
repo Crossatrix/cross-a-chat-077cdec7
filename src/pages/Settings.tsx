@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban, Crown, FlaskConical } from "lucide-react";
+import ShareLinkButton from "@/components/ShareLinkButton";
 import { checkProStatus, purchasePro } from "@/utils/proSubscription";
 import { checkBetaStatus, purchaseBeta, BETA_PRICE } from "@/utils/betaSubscription";
 import proBadgeIcon from "@/assets/pro-badge.png";
@@ -28,6 +29,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [username, setUsername] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string>("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -73,6 +75,8 @@ const Settings = () => {
         navigate("/auth");
         return;
       }
+      setCurrentUserId(user.id);
+
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -611,6 +615,8 @@ const Settings = () => {
               <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
                 {saving ? "Saving..." : t("settings.save")}
               </Button>
+
+              <ShareLinkButton action="chat" id={currentUserId} label="Share my profile link" variant="outline" className="w-full gap-2" />
             </CardContent>
           </Card>
         </TabsContent>
