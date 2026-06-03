@@ -177,6 +177,7 @@ const MusicCard = ({ track, currentUserId, onCreatorClick, onDeleted }: Props) =
           onClick={() => vote(false)}>
           <ThumbsDown className="h-3.5 w-3.5" />{dislikes > 0 && dislikes}
         </Button>
+        <ShareLinkButton action="music" id={track.id} variant="ghost" iconOnly className="h-7 w-7" />
         <span className="ml-auto text-[11px] text-muted-foreground">{track.plays_count} plays</span>
         {track.user_id === currentUserId && (
           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleDelete}>
