@@ -26,6 +26,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Info, UserX, Flag, Image, Video, X, UsersRound } from "lucide-react";
+import ShareLinkButton from "@/components/ShareLinkButton";
 import { z } from "zod";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
@@ -464,6 +465,7 @@ const UserInfoDialog = ({ userId, username, currentUserId, conversationId }: Use
                   <UsersRound className="h-4 w-4" />
                   {isGroupBlocked ? t("privacy.unblockFromGroups") : t("privacy.blockFromGroups")}
                 </Button>
+                <ShareLinkButton action="chat" id={userId} label="Share profile link" variant="outline" className="w-full gap-2" />
               </div>
             </div>
           ) : (
