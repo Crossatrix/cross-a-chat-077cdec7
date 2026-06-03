@@ -123,6 +123,44 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     initNotifications();
   }, []);
 
+  // Handle pending instant-link after auth
+  useEffect(() => {
+    if (!user) return;
+    const pending = consumePendingInstantLink();
+    if (!pending) return;
+    (async () => {
+      try {
+        if (pending.action === "chat") {
+          const { data, error } = await supabase.rpc("find_or_create_conversation", {
+            other_user_id: pending.id,
+          });
+          if (error) throw error;
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", pending.id)
+            .single();
+          setSelectedConversationId(data as string);
+          setSelectedUsername(profile?.username || "");
+          setSelectedUserId(pending.id);
+          setIsGroup(false);
+          setActiveTab("chats");
+        } else if (pending.action === "video") {
+          setActiveTab("videos");
+          setInstantVideoId(pending.id);
+        } else if (pending.action === "music") {
+          setActiveTab("music");
+          setInstantMusicId(pending.id);
+        } else if (pending.action === "subcross") {
+          setActiveTab("crossunity");
+          setInstantSubcrossId(pending.id);
+        }
+      } catch (e) {
+        console.error("instant-link error", e);
+      }
+    })();
+  }, [user?.id]);
+
   useEffect(() => {
     // Set up auth state listener
     const {
