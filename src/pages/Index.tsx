@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { consumePendingInstantLink } from "@/utils/instantLinks";
+import { toast } from "sonner";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe, FlaskConical } from "lucide-react";
@@ -84,6 +86,9 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const [croinBalance, setCroinBalance] = useState<number>(0);
   const [betaDialogOpen, setBetaDialogOpen] = useState(false);
+  const [instantVideoId, setInstantVideoId] = useState<string | null>(null);
+  const [instantMusicId, setInstantMusicId] = useState<string | null>(null);
+  const [instantSubcrossId, setInstantSubcrossId] = useState<string | null>(null);
   const isBeta = useBetaStatus(user?.id);
   const navigate = useNavigate();
 
