@@ -1120,7 +1120,11 @@ return (
         </div>
       ) : activeTab === "videos" ? (
         <div className="flex-1 min-h-0">
-          <VideoFeed currentUserId={user.id} />
+          <VideoFeed
+            currentUserId={user.id}
+            deepLinkVideoId={instantVideoId}
+            onDeepLinkConsumed={() => setInstantVideoId(null)}
+          />
         </div>
       ) : activeTab === "foryou" ? (
         <div className="flex-1 min-h-0">
@@ -1132,11 +1136,21 @@ return (
         </div>
       ) : activeTab === "music" ? (
         <div className="flex-1 min-h-0">
-          <MusicFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
+          <MusicFeed
+            currentUserId={user.id}
+            onCreatorClick={(id) => setCreatorProfileId(id)}
+            deepLinkTrackId={instantMusicId}
+            onDeepLinkConsumed={() => setInstantMusicId(null)}
+          />
         </div>
       ) : activeTab === "crossunity" ? (
         <div className="flex-1 min-h-0">
-          <CrossunityFeed currentUserId={user.id} onCreatorClick={(id) => setCreatorProfileId(id)} />
+          <CrossunityFeed
+            currentUserId={user.id}
+            onCreatorClick={(id) => setCreatorProfileId(id)}
+            deepLinkSubcrossId={instantSubcrossId}
+            onDeepLinkConsumed={() => setInstantSubcrossId(null)}
+          />
         </div>
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">
