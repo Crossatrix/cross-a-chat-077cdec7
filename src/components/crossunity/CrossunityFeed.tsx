@@ -222,10 +222,13 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
         </div>
         <div className="flex items-center gap-1">
           {view === "subcross" && activeSub && (
-            <Button size="sm" variant={memberOf.has(activeSub.id) ? "secondary" : "default"}
-              onClick={() => toggleMembership(activeSub.id)}>
-              {memberOf.has(activeSub.id) ? "Joined" : "Join"}
-            </Button>
+            <>
+              <Button size="sm" variant={memberOf.has(activeSub.id) ? "secondary" : "default"}
+                onClick={() => toggleMembership(activeSub.id)}>
+                {memberOf.has(activeSub.id) ? "Joined" : "Join"}
+              </Button>
+              <ShareLinkButton action="subcross" id={activeSub.name} variant="outline" iconOnly className="h-9 w-9" />
+            </>
           )}
           <Button size="sm" onClick={() => setCreatePostOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />Post
