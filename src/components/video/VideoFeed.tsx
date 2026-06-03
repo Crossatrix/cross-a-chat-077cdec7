@@ -40,9 +40,11 @@ interface Video {
 
 interface VideoFeedProps {
   currentUserId: string;
+  deepLinkVideoId?: string | null;
+  onDeepLinkConsumed?: () => void;
 }
 
-const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
+const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: VideoFeedProps) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
@@ -275,6 +277,23 @@ const VideoFeed = ({ currentUserId }: VideoFeedProps) => {
 
     return result;
   }, [videos, searchQuery, selectedCategory, userCategoryPrefs]);
+
+  useEffect(() => {
+    if (!deepLinkVideoId || !videos.length) return;
+    const v = videos.find(vv => vv.id === deepLinkVideoId);
+    if (v) {
+      handleSelectVideo(v);
+      onDeepLinkConsumed?.();
+    } else {
+      (async () => {
+        const { data } = await supabase.from("videos")
+          .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+          .eq("id", deepLinkVideoId).maybeSingle();
+        if (data) handleSelectVideo(data as any);
+        onDeepLinkConsumed?.();
+      })();
+    }
+  }, [deepLinkVideoId, videos.length]);
 
   const handleSelectVideo = (video: Video) => {
     if (video.adults_only && !ageVerified) {
