@@ -212,7 +212,7 @@ const Auth = () => {
 
           <div className="mt-4 text-center">
             <a
-              href="https://crossatrix.lovable.app"
+              href="https://crossatrix.0fg.co"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#00AADD] hover:underline text-sm inline-flex items-center gap-1"
@@ -305,7 +305,7 @@ const Auth = () => {
               <div className="text-sm text-muted-foreground space-y-2">
                 <p>Step 2: Go to Crossatrix and create an account with this User ID.</p>
                 <a
-                  href="https://crossatrix.lovable.app"
+                  href="https://crossatrix.0fc.co"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#00AADD] hover:underline inline-flex items-center gap-1"
