@@ -9,6 +9,7 @@ import UserActionsMenu from "./UserActionsMenu";
 import MessageReactions from "./MessageReactions";
 import TypingIndicator from "./TypingIndicator";
 import StaffBadge from "./StaffBadge";
+import AiSummaryButton from "./AiSummaryButton";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
