@@ -517,9 +517,6 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
             {/* Comments */}
             <div className="space-y-3">
               <h3 className="font-semibold text-sm">Comments ({comments.length})</h3>
-            {/* Comments */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-sm">Comments ({comments.length})</h3>
               {replyingTo && (
                 <div className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/40 border border-border rounded text-[11px]">
                   <span className="text-muted-foreground truncate">Replying to <span className="font-medium text-foreground">{replyingTo.profiles.username}</span></span>
