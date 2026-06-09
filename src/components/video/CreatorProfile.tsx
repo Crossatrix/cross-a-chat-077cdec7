@@ -228,6 +228,12 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
                     {isFollowing ? "Unfollow" : "Follow"}
                   </Button>
                 )}
+                <OwnerBoostButton
+                  targetId={creatorId}
+                  title={`Boost ${profile?.username ?? "user"}`}
+                  options={[{ kind: "followers", label: "Add followers" }]}
+                  onBoosted={fetchAll}
+                />
                 {isAdmin && (
                   <Select value={featuredTier} onValueChange={handleSetFeatured}>
                     <SelectTrigger className="w-28 h-8 text-xs">
