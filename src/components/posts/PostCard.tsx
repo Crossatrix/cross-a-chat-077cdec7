@@ -11,6 +11,8 @@ import CreatorBadge from "@/components/video/CreatorBadge";
 import FeaturedAvatar from "@/components/video/FeaturedAvatar";
 import { formatMessageText } from "@/utils/textFormatting";
 import PostComments from "./PostComments";
+import OwnerBoostButton from "@/components/OwnerBoostButton";
+import AiSummaryButton from "@/components/AiSummaryButton";
 
 interface Post {
   id: string;
@@ -20,6 +22,7 @@ interface Post {
   video_url: string | null;
   poll_question: string | null;
   poll_options: string[] | null;
+  poll_boosts?: Record<string, number> | null;
   likes_count: number;
   dislikes_count: number;
   comments_count: number;
@@ -27,6 +30,7 @@ interface Post {
   updated_at: string;
   profiles: { username: string; avatar_url: string | null };
 }
+
 
 interface PostCardProps {
   post: Post;
@@ -62,13 +66,21 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
   };
 
   const fetchPollVotes = async () => {
-    const [{ data: votes }, { data: myVote }] = await Promise.all([
+    const [{ data: votes }, { data: myVote }, { data: freshPost }] = await Promise.all([
       supabase.from('post_poll_votes').select('option_index').eq('post_id', post.id),
       supabase.from('post_poll_votes').select('option_index').eq('post_id', post.id).eq('user_id', currentUserId).maybeSingle(),
+      (supabase as any).from('posts').select('poll_boosts').eq('id', post.id).maybeSingle(),
     ]);
     const counts: Record<number, number> = {};
     let total = 0;
     (votes || []).forEach(v => { counts[v.option_index] = (counts[v.option_index] || 0) + 1; total++; });
+    const boosts = (freshPost?.poll_boosts || post.poll_boosts || {}) as Record<string, number>;
+    Object.entries(boosts).forEach(([k, v]) => {
+      const idx = parseInt(k, 10);
+      const n = Number(v) || 0;
+      counts[idx] = (counts[idx] || 0) + n;
+      total += n;
+    });
     setPollVotes(counts);
     setTotalPollVotes(total);
     if (myVote) setMyPollVote(myVote.option_index);
@@ -262,6 +274,27 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
           <MessageCircle className="h-3.5 w-3.5" />
           {commentsCount > 0 && commentsCount}
         </Button>
+        {(post.content?.length ?? 0) > 200 && (
+          <AiSummaryButton kind="post" getText={() => post.content} iconOnly className="h-7 w-7 p-0" />
+        )}
+        <div className="ml-auto">
+          <OwnerBoostButton
+            targetId={post.id}
+            title="Boost this post"
+            iconOnly
+            className="h-7 w-7 p-0 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+            options={[
+              { kind: "post_likes", label: "Add likes" },
+              { kind: "post_dislikes", label: "Add dislikes" },
+              ...((post.poll_options || []).map((opt, i) => ({
+                kind: "poll_vote" as const,
+                pollOptionIndex: i,
+                label: `Add votes to "${opt}"`,
+              }))),
+            ]}
+            onBoosted={() => { fetchPollVotes(); onDeleted?.(); }}
+          />
+        </div>
       </div>
 
       {/* Comments */}

@@ -13,6 +13,7 @@ import FeaturedAvatar, { invalidateFeaturedCache, type FeaturedTier } from "./Fe
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import PostsFeed from "@/components/posts/PostsFeed";
+import OwnerBoostButton from "@/components/OwnerBoostButton";
 
 interface Video {
   id: string;
@@ -74,6 +75,8 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
       supabase.from("user_roles").select("role").eq("user_id", currentUserId).eq("role", "admin").maybeSingle(),
       supabase.from("featured_creators").select("tier").eq("user_id", creatorId).maybeSingle(),
     ]);
+    const { data: boostRow } = await (supabase as any).from("profiles").select("boost_followers").eq("id", creatorId).maybeSingle();
+    const boost = (boostRow?.boost_followers as number) ?? 0;
 
     if (profileData) setProfile(profileData);
     if (videosData) {
@@ -84,7 +87,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
       setTotalViews(accessibleVids.reduce((sum, v) => sum + v.views_count, 0));
       setTotalLikes(accessibleVids.reduce((sum, v) => sum + v.likes_count, 0));
     }
-    setFollowerCount(followers ?? 0);
+    setFollowerCount((followers ?? 0) + boost);
     setFollowingCount(following ?? 0);
     setIsFollowing(!!followStatus);
     setIsAdmin(!!adminRoles);
@@ -226,6 +229,12 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
                     {isFollowing ? "Unfollow" : "Follow"}
                   </Button>
                 )}
+                <OwnerBoostButton
+                  targetId={creatorId}
+                  title={`Boost ${profile?.username ?? "user"}`}
+                  options={[{ kind: "followers", label: "Add followers" }]}
+                  onBoosted={fetchAll}
+                />
                 {isAdmin && (
                   <Select value={featuredTier} onValueChange={handleSetFeatured}>
                     <SelectTrigger className="w-28 h-8 text-xs">
