@@ -179,7 +179,25 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
 
   return (
     <ScrollArea className="flex-1 p-2 md:p-4" ref={scrollRef}>
+      {messages.filter(m => !m.is_system).length >= 5 && (
+        <div className="sticky top-0 z-10 flex justify-end mb-2">
+          <div className="rounded-full bg-card/90 backdrop-blur border border-border shadow-sm">
+            <AiSummaryButton
+              kind="chat"
+              label="Summarize chat"
+              getText={() =>
+                messages
+                  .filter(m => !m.is_system && m.content)
+                  .slice(-100)
+                  .map(m => `${m.profiles?.username ?? "user"}: ${m.content}`)
+                  .join("\n")
+              }
+            />
+          </div>
+        </div>
+      )}
       <div className="space-y-2 md:space-y-4">
+
         {messages.map((message, index) => {
           const isCurrentUser = message.profiles?.username === currentUserId;
           const currentDateLabel = getDateLabel(message.created_at);
