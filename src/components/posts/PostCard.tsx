@@ -31,21 +31,6 @@ interface Post {
   profiles: { username: string; avatar_url: string | null };
 }
 
-interface Post {
-  id: string;
-  user_id: string;
-  content: string;
-  image_url: string | null;
-  video_url: string | null;
-  poll_question: string | null;
-  poll_options: string[] | null;
-  likes_count: number;
-  dislikes_count: number;
-  comments_count: number;
-  created_at: string;
-  updated_at: string;
-  profiles: { username: string; avatar_url: string | null };
-}
 
 interface PostCardProps {
   post: Post;
