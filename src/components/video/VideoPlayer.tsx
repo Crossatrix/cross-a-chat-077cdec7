@@ -177,11 +177,11 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   };
 
   const fetchFollowerCount = async () => {
-    const { count } = await supabase
-      .from("video_follows")
-      .select("*", { count: "exact", head: true })
-      .eq("following_id", video.user_id);
-    setFollowerCount(count ?? 0);
+    const [{ count }, { data: prof }] = await Promise.all([
+      supabase.from("video_follows").select("*", { count: "exact", head: true }).eq("following_id", video.user_id),
+      (supabase as any).from("profiles").select("boost_followers").eq("id", video.user_id).maybeSingle(),
+    ]);
+    setFollowerCount((count ?? 0) + (prof?.boost_followers ?? 0));
   };
 
   const handleLike = async (isLike: boolean) => {
