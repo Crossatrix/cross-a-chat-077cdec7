@@ -500,6 +500,14 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                   {isFollowing ? "Unfollow" : "Follow"}
                 </Button>
               )}
+              <OwnerBoostButton
+                targetId={video.user_id}
+                title={`Boost ${video.profiles.username}`}
+                iconOnly
+                className="h-8 w-8 p-0 border-amber-500/50 text-amber-400 hover:bg-amber-500/10 shrink-0"
+                options={[{ kind: "followers", label: "Add followers" }]}
+                onBoosted={fetchFollowerCount}
+              />
             </div>
 
             {video.description && (
