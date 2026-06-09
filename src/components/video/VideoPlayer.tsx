@@ -257,15 +257,17 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
     if (!newComment.trim()) return;
     const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
     const safe = await escapeUnauthorizedCreatorEmojis(newComment.trim(), currentUserId);
-    const { error } = await supabase.from("video_comments").insert({
+    const { error } = await (supabase as any).from("video_comments").insert({
       video_id: video.id,
       user_id: currentUserId,
       content: safe,
+      parent_id: replyingTo?.id ?? null,
     });
     if (error) {
       toast.error("Failed to post comment");
     } else {
       setNewComment("");
+      setReplyingTo(null);
     }
   };
 
