@@ -1247,6 +1247,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          parent_id: string | null
           post_id: string
           updated_at: string
           user_id: string
@@ -1255,6 +1256,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           post_id: string
           updated_at?: string
           user_id: string
@@ -1263,11 +1265,19 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           post_id?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "post_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "post_comments_post_id_fkey"
             columns: ["post_id"]
@@ -1371,6 +1381,7 @@ export type Database = {
           id: string
           image_url: string | null
           likes_count: number
+          poll_boosts: Json
           poll_options: Json | null
           poll_question: string | null
           updated_at: string
@@ -1385,6 +1396,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           likes_count?: number
+          poll_boosts?: Json
           poll_options?: Json | null
           poll_question?: string | null
           updated_at?: string
@@ -1399,6 +1411,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           likes_count?: number
+          poll_boosts?: Json
           poll_options?: Json | null
           poll_question?: string | null
           updated_at?: string
@@ -1445,6 +1458,7 @@ export type Database = {
           allow_group_invites_from_strangers: boolean
           avatar_url: string | null
           bio: string | null
+          boost_followers: number
           created_at: string
           crossatrix_user_id: string | null
           id: string
@@ -1460,6 +1474,7 @@ export type Database = {
           allow_group_invites_from_strangers?: boolean
           avatar_url?: string | null
           bio?: string | null
+          boost_followers?: number
           created_at?: string
           crossatrix_user_id?: string | null
           id: string
@@ -1475,6 +1490,7 @@ export type Database = {
           allow_group_invites_from_strangers?: boolean
           avatar_url?: string | null
           bio?: string | null
+          boost_followers?: number
           created_at?: string
           crossatrix_user_id?: string | null
           id?: string
@@ -2128,6 +2144,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          parent_id: string | null
           updated_at: string
           user_id: string
           video_id: string
@@ -2136,6 +2153,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           updated_at?: string
           user_id: string
           video_id: string
@@ -2144,11 +2162,19 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           updated_at?: string
           user_id?: string
           video_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "video_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "video_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "video_comments_user_id_fkey"
             columns: ["user_id"]
@@ -2580,6 +2606,15 @@ export type Database = {
       is_moderator_or_above: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       leave_group: { Args: { _conversation_id: string }; Returns: boolean }
+      owner_boost: {
+        Args: {
+          p_amount: number
+          p_kind: string
+          p_sub_kind?: string
+          p_target_id: string
+        }
+        Returns: boolean
+      }
       promote_to_admin: { Args: { target_user_id: string }; Returns: undefined }
       remove_group_member: {
         Args: { _conversation_id: string; _target_user_id: string }
