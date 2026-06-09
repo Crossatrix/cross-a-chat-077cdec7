@@ -517,9 +517,20 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
             {/* Comments */}
             <div className="space-y-3">
               <h3 className="font-semibold text-sm">Comments ({comments.length})</h3>
+            {/* Comments */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm">Comments ({comments.length})</h3>
+              {replyingTo && (
+                <div className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/40 border border-border rounded text-[11px]">
+                  <span className="text-muted-foreground truncate">Replying to <span className="font-medium text-foreground">{replyingTo.profiles.username}</span></span>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setReplyingTo(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
               <div className="flex gap-2">
                 <Input
-                  placeholder="Add a comment..."
+                  placeholder={replyingTo ? `Reply to ${replyingTo.profiles.username}…` : "Add a comment..."}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleComment()}
@@ -531,38 +542,56 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
               </div>
 
               <div className="space-y-3">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-2">
-                    <Avatar className="h-7 w-7 shrink-0">
-                      <AvatarImage src={comment.profiles.avatar_url || ""} />
-                      <AvatarFallback className="bg-secondary text-foreground text-[10px]">
-                        {comment.profiles.username?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <StaffBadge userId={comment.user_id} size={12} />
-                        <CreatorBadge userId={comment.user_id} size={12} />
-                        <span className="text-xs font-medium">{comment.profiles.username}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatDate(comment.created_at)}</span>
+                {(() => {
+                  const renderComment = (comment: Comment, depth = 0): JSX.Element => {
+                    const children = comments.filter(c => c.parent_id === comment.id);
+                    return (
+                      <div key={comment.id} style={{ marginLeft: depth > 0 ? Math.min(depth, 3) * 16 : 0 }}>
+                        <div className="flex gap-2">
+                          {depth > 0 && <CornerDownRight className="h-3 w-3 text-muted-foreground mt-2 shrink-0" />}
+                          <Avatar className="h-7 w-7 shrink-0">
+                            <AvatarImage src={comment.profiles.avatar_url || ""} />
+                            <AvatarFallback className="bg-secondary text-foreground text-[10px]">
+                              {comment.profiles.username?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1">
+                              <StaffBadge userId={comment.user_id} size={12} />
+                              <CreatorBadge userId={comment.user_id} size={12} />
+                              <span className="text-xs font-medium">{comment.profiles.username}</span>
+                              <span className="text-[10px] text-muted-foreground">{formatDate(comment.created_at)}</span>
+                            </div>
+                            <p className="text-sm break-words">{comment.content}</p>
+                            <button
+                              type="button"
+                              onClick={() => setReplyingTo(comment)}
+                              className="text-[10px] text-muted-foreground hover:text-primary inline-flex items-center gap-0.5 mt-0.5"
+                            >
+                              <Reply className="h-2.5 w-2.5" /> Reply
+                            </button>
+                          </div>
+                          {(comment.user_id === currentUserId || video.user_id === currentUserId) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0"
+                              onClick={() => handleDeleteComment(comment.id)}
+                            >
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
+                        {children.length > 0 && (
+                          <div className="mt-2 space-y-2">{children.map(c => renderComment(c, depth + 1))}</div>
+                        )}
                       </div>
-                      <p className="text-sm break-words">{comment.content}</p>
-                    </div>
-                    {(comment.user_id === currentUserId || video.user_id === currentUserId) && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 shrink-0"
-                        onClick={() => handleDeleteComment(comment.id)}
-                      >
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                {comments.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-4">No comments yet</p>
-                )}
+                    );
+                  };
+                  const top = comments.filter(c => !c.parent_id);
+                  if (top.length === 0) return <p className="text-xs text-muted-foreground text-center py-4">No comments yet</p>;
+                  return top.map(c => renderComment(c));
+                })()}
               </div>
             </div>
           </div>
