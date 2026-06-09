@@ -274,6 +274,27 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
           <MessageCircle className="h-3.5 w-3.5" />
           {commentsCount > 0 && commentsCount}
         </Button>
+        {(post.content?.length ?? 0) > 200 && (
+          <AiSummaryButton kind="post" getText={() => post.content} iconOnly className="h-7 w-7 p-0" />
+        )}
+        <div className="ml-auto">
+          <OwnerBoostButton
+            targetId={post.id}
+            title="Boost this post"
+            iconOnly
+            className="h-7 w-7 p-0 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+            options={[
+              { kind: "post_likes", label: "Add likes" },
+              { kind: "post_dislikes", label: "Add dislikes" },
+              ...((post.poll_options || []).map((opt, i) => ({
+                kind: "poll_vote" as const,
+                pollOptionIndex: i,
+                label: `Add votes to "${opt}"`,
+              }))),
+            ]}
+            onBoosted={() => { fetchPollVotes(); onDeleted?.(); }}
+          />
+        </div>
       </div>
 
       {/* Comments */}
