@@ -55,6 +55,7 @@ interface VideoPlayerProps {
 const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlayerProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
   const [userLike, setUserLike] = useState<boolean | null>(null);
   const [likesCount, setLikesCount] = useState(video.likes_count);
   const [dislikesCount, setDislikesCount] = useState(video.dislikes_count);
