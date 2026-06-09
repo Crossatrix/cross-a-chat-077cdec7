@@ -86,7 +86,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
       setTotalViews(accessibleVids.reduce((sum, v) => sum + v.views_count, 0));
       setTotalLikes(accessibleVids.reduce((sum, v) => sum + v.likes_count, 0));
     }
-    setFollowerCount(followers ?? 0);
+    setFollowerCount((followers ?? 0) + boost);
     setFollowingCount(following ?? 0);
     setIsFollowing(!!followStatus);
     setIsAdmin(!!adminRoles);
