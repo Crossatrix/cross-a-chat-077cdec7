@@ -13,6 +13,7 @@ import FeaturedAvatar, { invalidateFeaturedCache, type FeaturedTier } from "./Fe
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import PostsFeed from "@/components/posts/PostsFeed";
+import OwnerBoostButton from "@/components/OwnerBoostButton";
 
 interface Video {
   id: string;
