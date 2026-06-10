@@ -21,8 +21,9 @@ interface Props {
   enabled: boolean; // beta active
 }
 
-const MIN_MSGS = 1;
+const MIN_MSGS = 2;
 const MAX_MSGS = 5;
+const ANALYZE_DELAY_MS = 8000;
 const AI_BOT_ID = "00000000-0000-0000-0000-000000000000";
 const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
 
