@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const OPENROUTER_KEY = Deno.env.get("OPENROUTER_KEY")!;
-const MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const OPENROUTER_KEY = Deno.env.get("OPENROUTER_KEY");
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -14,7 +14,8 @@ serve(async (req) => {
     const { messages } = await req.json();
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(JSON.stringify({ error: "messages required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -31,38 +32,58 @@ serve(async (req) => {
       "Respond ONLY in strict JSON like: " +
       '{"scam": true|false, "confidence": 0-100, "reason": "short user-facing warning"}';
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${OPENROUTER_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://cross-a-chat.lovable.app",
-        "X-Title": "Cross Chat Beta - Scam Detector",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: `Messages from a new contact:\n${joined}` },
-        ],
-        max_tokens: 200,
-        temperature: 0.2,
-      }),
-    });
+    const body = {
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `Messages from a new contact:\n${joined}` },
+      ],
+      max_tokens: 200,
+      temperature: 0.2,
+    };
 
-    if (!res.ok) {
-      const t = await res.text();
-      console.error("openrouter error", res.status, t);
-      return new Response(JSON.stringify({ scam: false, confidence: 0, reason: "" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Primary: Lovable AI Gateway (free, reliable)
+    let raw = "";
+    if (LOVABLE_API_KEY) {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...body, model: "google/gemini-2.5-flash" }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        raw = data?.choices?.[0]?.message?.content?.trim() || "";
+      } else {
+        console.error("lovable ai error", res.status, await res.text());
+      }
     }
-    const data = await res.json();
-    const raw = data?.choices?.[0]?.message?.content?.trim() || "{}";
+
+    // Fallback: OpenRouter
+    if (!raw && OPENROUTER_KEY) {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://cross-a-chat.lovable.app",
+          "X-Title": "Cross Chat Beta - Scam Detector",
+        },
+        body: JSON.stringify({ ...body, model: "google/gemini-2.0-flash-exp:free" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        raw = data?.choices?.[0]?.message?.content?.trim() || "";
+      } else {
+        console.error("openrouter error", res.status, await res.text());
+      }
+    }
+
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     let parsed: any = { scam: false, confidence: 0, reason: "" };
     try {
-      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw || "{}");
     } catch {
       // ignore
     }
@@ -74,7 +95,8 @@ serve(async (req) => {
   } catch (e) {
     console.error(e);
     return new Response(JSON.stringify({ error: String(e) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
