@@ -353,6 +353,14 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                       ✓✓ Read by {readReceipts[message.id]}
                     </span>
                   )}
+                  {summaryAllowed && message.content && message.content.length > 80 && (
+                    <AiSummaryButton
+                      kind="chat"
+                      iconOnly
+                      className="h-5 px-1 text-[10px] text-muted-foreground hover:text-primary"
+                      getText={() => message.content}
+                    />
+                  )}
                 </div>
                 <MessageReactions
                   messageId={message.id}
