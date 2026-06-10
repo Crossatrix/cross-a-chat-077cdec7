@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { FlaskConical, Sparkles, ShieldAlert, Share2 } from "lucide-react";
+import { FlaskConical, Sparkles, ShieldAlert, Share2, FileText } from "lucide-react";
 import { getBetaLinkShareEnabled, setBetaLinkShareEnabled } from "@/utils/instantLinks";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -13,14 +13,17 @@ interface Props {
 
 const BETA_AI_KEY = "beta_feat_ai_message";
 const BETA_SCAM_KEY = "beta_feat_scam_detector";
+const BETA_SUMMARY_KEY = "beta_feat_message_summary";
 
 export const getBetaAIMessageEnabled = () => localStorage.getItem(BETA_AI_KEY) !== "0";
 export const getBetaScamEnabled = () => localStorage.getItem(BETA_SCAM_KEY) !== "0";
+export const getBetaSummaryEnabled = () => localStorage.getItem(BETA_SUMMARY_KEY) !== "0";
 
 const BetaDialog = ({ open, onOpenChange }: Props) => {
   const [aiOn, setAiOn] = useState(getBetaAIMessageEnabled());
   const [scamOn, setScamOn] = useState(getBetaScamEnabled());
   const [linkOn, setLinkOn] = useState(getBetaLinkShareEnabled());
+  const [sumOn, setSumOn] = useState(getBetaSummaryEnabled());
 
   const toggleAi = (v: boolean) => {
     setAiOn(v);
@@ -33,6 +36,10 @@ const BetaDialog = ({ open, onOpenChange }: Props) => {
   const toggleLink = (v: boolean) => {
     setLinkOn(v);
     setBetaLinkShareEnabled(v);
+  };
+  const toggleSum = (v: boolean) => {
+    setSumOn(v);
+    localStorage.setItem(BETA_SUMMARY_KEY, v ? "1" : "0");
   };
 
   return (
