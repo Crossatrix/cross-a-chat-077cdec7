@@ -43,6 +43,8 @@ interface PostCardProps {
 
 const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardProps) => {
   const [liked, setLiked] = useState<boolean | null>(null); // null = no vote, true = like, false = dislike
+  const isBeta = useBetaStatus(currentUserId);
+  const canSummarize = isBeta && getBetaSummaryEnabled();
   const [likesCount, setLikesCount] = useState(post.likes_count);
   const [dislikesCount, setDislikesCount] = useState(post.dislikes_count);
   const [commentsCount, setCommentsCount] = useState(post.comments_count);
