@@ -52,21 +52,25 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
       if (collected.current.length < MIN_MSGS) return;
       analyzed.current = true;
       try {
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/beta-scam-check`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: collected.current.slice(0, MAX_MSGS) }),
+        const { data, error } = await supabase.functions.invoke("beta-scam-check", {
+          body: { messages: collected.current.slice(0, MAX_MSGS) },
         });
-        const data = await res.json();
         if (cancelled) return;
+        if (error) { console.error("scam check failed", error); analyzed.current = false; return; }
         localStorage.setItem(doneKey, "1");
         if (data?.scam && Number(data.confidence) >= 50) {
           setWarning({ reason: data.reason || "Possible scam detected.", confidence: Number(data.confidence) });
         }
       } catch (e) {
         console.error("scam check failed", e);
+        analyzed.current = false;
       }
+    };
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleAnalyze = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { analyze(); }, ANALYZE_DELAY_MS);
     };
 
     const setup = async () => {
