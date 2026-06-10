@@ -104,6 +104,22 @@ const BetaDialog = ({ open, onOpenChange }: Props) => {
               <Switch checked={linkOn} onCheckedChange={toggleLink} />
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" /> Message Summary
+              </CardTitle>
+              <CardDescription>
+                Adds an AI summary button on individual messages, posts and videos.
+                Summarizes only the single item you click on.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Enabled</span>
+              <Switch checked={sumOn} onCheckedChange={toggleSum} />
+            </CardContent>
+          </Card>
         </div>
       </DialogContent>
     </Dialog>
