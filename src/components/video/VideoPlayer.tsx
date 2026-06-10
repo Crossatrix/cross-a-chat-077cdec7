@@ -55,6 +55,8 @@ interface VideoPlayerProps {
 }
 
 const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlayerProps) => {
+  const isBeta = useBetaStatus(currentUserId);
+  const canSummarize = isBeta && getBetaSummaryEnabled();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
