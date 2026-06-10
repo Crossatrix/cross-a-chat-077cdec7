@@ -48,6 +48,8 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [readReceipts, setReadReceipts] = useState<Record<string, number>>({});
+  const isBeta = useBetaStatus(currentUserDbId);
+  const summaryAllowed = isBeta && getBetaSummaryEnabled();
   useEmojiLoader(); // Load custom emojis for formatting
 
   useEffect(() => {
