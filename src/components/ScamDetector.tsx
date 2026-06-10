@@ -105,6 +105,9 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
         await analyze();
         return;
       }
+      if (collected.current.length >= MIN_MSGS) {
+        scheduleAnalyze();
+      }
 
       // Subscribe for more incoming messages from the other user.
       const channel = supabase
@@ -119,6 +122,7 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
             if (row.user_id === currentUserDbId) {
               localStorage.setItem(doneKey, "1");
               analyzed.current = true;
+              if (timer) clearTimeout(timer);
               supabase.removeChannel(channel);
               return;
             }
@@ -126,14 +130,18 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
             const content = String(row.content || "");
             if (content) collected.current.push(content);
             if (collected.current.length >= MAX_MSGS) {
+              if (timer) clearTimeout(timer);
               await analyze();
               supabase.removeChannel(channel);
+            } else if (collected.current.length >= MIN_MSGS) {
+              scheduleAnalyze();
             }
           }
         )
         .subscribe();
 
       return () => {
+        if (timer) clearTimeout(timer);
         supabase.removeChannel(channel);
       };
     };
@@ -146,6 +154,8 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
   }, [conversationId, currentUserDbId, otherUserId, isGroup, isAIChat, enabled]);
 
   if (!warning) return null;
+
+
 
   return (
     <AlertDialog open onOpenChange={(o) => { if (!o) setWarning(null); }}>
