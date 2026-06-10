@@ -13,6 +13,8 @@ import { formatMessageText } from "@/utils/textFormatting";
 import PostComments from "./PostComments";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
+import { getBetaSummaryEnabled } from "@/components/BetaDialog";
+import { useBetaStatus } from "@/hooks/useBetaStatus";
 
 interface Post {
   id: string;
