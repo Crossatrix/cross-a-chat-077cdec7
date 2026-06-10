@@ -278,7 +278,7 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
           <MessageCircle className="h-3.5 w-3.5" />
           {commentsCount > 0 && commentsCount}
         </Button>
-        {(post.content?.length ?? 0) > 200 && (
+        {canSummarize && (post.content?.length ?? 0) > 200 && (
           <AiSummaryButton kind="post" getText={() => post.content} iconOnly className="h-7 w-7 p-0" />
         )}
         <div className="ml-auto">
