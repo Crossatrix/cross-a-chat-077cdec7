@@ -9,6 +9,8 @@ import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Fla
 import ShareLinkButton from "@/components/ShareLinkButton";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
+import { getBetaSummaryEnabled } from "@/components/BetaDialog";
+import { useBetaStatus } from "@/hooks/useBetaStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { creditCroins, checkViewMilestone } from "@/utils/croins";
