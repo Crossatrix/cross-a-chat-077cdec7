@@ -10,6 +10,8 @@ import MessageReactions from "./MessageReactions";
 import TypingIndicator from "./TypingIndicator";
 import StaffBadge from "./StaffBadge";
 import AiSummaryButton from "./AiSummaryButton";
+import { getBetaSummaryEnabled } from "./BetaDialog";
+import { useBetaStatus } from "@/hooks/useBetaStatus";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
