@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { FlaskConical, Sparkles, ShieldAlert, Share2 } from "lucide-react";
+import { FlaskConical, Sparkles, ShieldAlert, Share2, FileText } from "lucide-react";
 import { getBetaLinkShareEnabled, setBetaLinkShareEnabled } from "@/utils/instantLinks";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -13,14 +13,17 @@ interface Props {
 
 const BETA_AI_KEY = "beta_feat_ai_message";
 const BETA_SCAM_KEY = "beta_feat_scam_detector";
+const BETA_SUMMARY_KEY = "beta_feat_message_summary";
 
 export const getBetaAIMessageEnabled = () => localStorage.getItem(BETA_AI_KEY) !== "0";
 export const getBetaScamEnabled = () => localStorage.getItem(BETA_SCAM_KEY) !== "0";
+export const getBetaSummaryEnabled = () => localStorage.getItem(BETA_SUMMARY_KEY) !== "0";
 
 const BetaDialog = ({ open, onOpenChange }: Props) => {
   const [aiOn, setAiOn] = useState(getBetaAIMessageEnabled());
   const [scamOn, setScamOn] = useState(getBetaScamEnabled());
   const [linkOn, setLinkOn] = useState(getBetaLinkShareEnabled());
+  const [sumOn, setSumOn] = useState(getBetaSummaryEnabled());
 
   const toggleAi = (v: boolean) => {
     setAiOn(v);
@@ -33,6 +36,10 @@ const BetaDialog = ({ open, onOpenChange }: Props) => {
   const toggleLink = (v: boolean) => {
     setLinkOn(v);
     setBetaLinkShareEnabled(v);
+  };
+  const toggleSum = (v: boolean) => {
+    setSumOn(v);
+    localStorage.setItem(BETA_SUMMARY_KEY, v ? "1" : "0");
   };
 
   return (
@@ -95,6 +102,22 @@ const BetaDialog = ({ open, onOpenChange }: Props) => {
             <CardContent className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Enabled</span>
               <Switch checked={linkOn} onCheckedChange={toggleLink} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" /> Message Summary
+              </CardTitle>
+              <CardDescription>
+                Adds an AI summary button on individual messages, posts and videos.
+                Summarizes only the single item you click on.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Enabled</span>
+              <Switch checked={sumOn} onCheckedChange={toggleSum} />
             </CardContent>
           </Card>
         </div>

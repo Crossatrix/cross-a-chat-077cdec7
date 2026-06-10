@@ -10,6 +10,8 @@ import MessageReactions from "./MessageReactions";
 import TypingIndicator from "./TypingIndicator";
 import StaffBadge from "./StaffBadge";
 import AiSummaryButton from "./AiSummaryButton";
+import { getBetaSummaryEnabled } from "./BetaDialog";
+import { useBetaStatus } from "@/hooks/useBetaStatus";
 import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -46,6 +48,8 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [readReceipts, setReadReceipts] = useState<Record<string, number>>({});
+  const isBeta = useBetaStatus(currentUserDbId);
+  const summaryAllowed = isBeta && getBetaSummaryEnabled();
   useEmojiLoader(); // Load custom emojis for formatting
 
   useEffect(() => {
@@ -179,24 +183,8 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
 
   return (
     <ScrollArea className="flex-1 p-2 md:p-4" ref={scrollRef}>
-      {messages.filter(m => !m.is_system).length >= 5 && (
-        <div className="sticky top-0 z-10 flex justify-end mb-2">
-          <div className="rounded-full bg-card/90 backdrop-blur border border-border shadow-sm">
-            <AiSummaryButton
-              kind="chat"
-              label="Summarize chat"
-              getText={() =>
-                messages
-                  .filter(m => !m.is_system && m.content)
-                  .slice(-100)
-                  .map(m => `${m.profiles?.username ?? "user"}: ${m.content}`)
-                  .join("\n")
-              }
-            />
-          </div>
-        </div>
-      )}
       <div className="space-y-2 md:space-y-4">
+
 
         {messages.map((message, index) => {
           const isCurrentUser = message.profiles?.username === currentUserId;
@@ -364,6 +352,14 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                     <span className="text-[10px] md:text-xs text-green-500">
                       ✓✓ Read by {readReceipts[message.id]}
                     </span>
+                  )}
+                  {summaryAllowed && message.content && message.content.length > 80 && (
+                    <AiSummaryButton
+                      kind="chat"
+                      iconOnly
+                      className="h-5 px-1 text-[10px] text-muted-foreground hover:text-primary"
+                      getText={() => message.content}
+                    />
                   )}
                 </div>
                 <MessageReactions

@@ -13,6 +13,8 @@ import { formatMessageText } from "@/utils/textFormatting";
 import PostComments from "./PostComments";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
+import { getBetaSummaryEnabled } from "@/components/BetaDialog";
+import { useBetaStatus } from "@/hooks/useBetaStatus";
 
 interface Post {
   id: string;
@@ -41,6 +43,8 @@ interface PostCardProps {
 
 const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardProps) => {
   const [liked, setLiked] = useState<boolean | null>(null); // null = no vote, true = like, false = dislike
+  const isBeta = useBetaStatus(currentUserId);
+  const canSummarize = isBeta && getBetaSummaryEnabled();
   const [likesCount, setLikesCount] = useState(post.likes_count);
   const [dislikesCount, setDislikesCount] = useState(post.dislikes_count);
   const [commentsCount, setCommentsCount] = useState(post.comments_count);
@@ -274,7 +278,7 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
           <MessageCircle className="h-3.5 w-3.5" />
           {commentsCount > 0 && commentsCount}
         </Button>
-        {(post.content?.length ?? 0) > 200 && (
+        {canSummarize && (post.content?.length ?? 0) > 200 && (
           <AiSummaryButton kind="post" getText={() => post.content} iconOnly className="h-7 w-7 p-0" />
         )}
         <div className="ml-auto">

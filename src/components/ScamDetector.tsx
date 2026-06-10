@@ -21,8 +21,9 @@ interface Props {
   enabled: boolean; // beta active
 }
 
-const MIN_MSGS = 1;
+const MIN_MSGS = 2;
 const MAX_MSGS = 5;
+const ANALYZE_DELAY_MS = 8000;
 const AI_BOT_ID = "00000000-0000-0000-0000-000000000000";
 const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -51,21 +52,25 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
       if (collected.current.length < MIN_MSGS) return;
       analyzed.current = true;
       try {
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/beta-scam-check`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: collected.current.slice(0, MAX_MSGS) }),
+        const { data, error } = await supabase.functions.invoke("beta-scam-check", {
+          body: { messages: collected.current.slice(0, MAX_MSGS) },
         });
-        const data = await res.json();
         if (cancelled) return;
+        if (error) { console.error("scam check failed", error); analyzed.current = false; return; }
         localStorage.setItem(doneKey, "1");
         if (data?.scam && Number(data.confidence) >= 50) {
           setWarning({ reason: data.reason || "Possible scam detected.", confidence: Number(data.confidence) });
         }
       } catch (e) {
         console.error("scam check failed", e);
+        analyzed.current = false;
       }
+    };
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleAnalyze = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { analyze(); }, ANALYZE_DELAY_MS);
     };
 
     const setup = async () => {
@@ -100,6 +105,9 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
         await analyze();
         return;
       }
+      if (collected.current.length >= MIN_MSGS) {
+        scheduleAnalyze();
+      }
 
       // Subscribe for more incoming messages from the other user.
       const channel = supabase
@@ -114,6 +122,7 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
             if (row.user_id === currentUserDbId) {
               localStorage.setItem(doneKey, "1");
               analyzed.current = true;
+              if (timer) clearTimeout(timer);
               supabase.removeChannel(channel);
               return;
             }
@@ -121,14 +130,18 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
             const content = String(row.content || "");
             if (content) collected.current.push(content);
             if (collected.current.length >= MAX_MSGS) {
+              if (timer) clearTimeout(timer);
               await analyze();
               supabase.removeChannel(channel);
+            } else if (collected.current.length >= MIN_MSGS) {
+              scheduleAnalyze();
             }
           }
         )
         .subscribe();
 
       return () => {
+        if (timer) clearTimeout(timer);
         supabase.removeChannel(channel);
       };
     };
@@ -141,6 +154,8 @@ const ScamDetector = ({ conversationId, currentUserDbId, otherUserId, isGroup, i
   }, [conversationId, currentUserDbId, otherUserId, isGroup, isAIChat, enabled]);
 
   if (!warning) return null;
+
+
 
   return (
     <AlertDialog open onOpenChange={(o) => { if (!o) setWarning(null); }}>
