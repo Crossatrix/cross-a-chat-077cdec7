@@ -388,7 +388,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                 <ThumbsDown className="h-4 w-4" /> {dislikesCount}
               </Button>
               <ShareLinkButton action="video" id={video.id} />
-              {video.description && video.description.length > 200 && (
+              {canSummarize && video.description && video.description.length > 200 && (
                 <AiSummaryButton kind="video" getText={() => `${video.title}\n\n${video.description}`} label="Summary" />
               )}
               <OwnerBoostButton
