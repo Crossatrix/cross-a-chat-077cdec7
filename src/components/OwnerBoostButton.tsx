@@ -13,12 +13,25 @@ let cachedIsOwner: boolean | null = null;
 export const useIsOwner = () => {
   const [isOwner, setIsOwner] = useState<boolean>(cachedIsOwner ?? false);
   useEffect(() => {
-    if (cachedIsOwner !== null) return;
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email?.toLowerCase();
-      cachedIsOwner = !!email && OWNER_EMAILS.includes(email);
+    if (cachedIsOwner !== null) {
       setIsOwner(cachedIsOwner);
-    });
+      return;
+    }
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) { cachedIsOwner = false; setIsOwner(false); return; }
+      // Primary check: auth email matches an owner email
+      const email = user.email?.toLowerCase();
+      let owner = !!email && OWNER_EMAILS.includes(email);
+      // Fallback: server-side is_app_owner RPC (handles non-standard auth)
+      if (!owner) {
+        const { data, error } = await (supabase as any).rpc("is_app_owner", { _user_id: user.id });
+        if (!error) owner = !!data;
+      }
+      cachedIsOwner = owner;
+      setIsOwner(owner);
+    })();
   }, []);
   return isOwner;
 };
