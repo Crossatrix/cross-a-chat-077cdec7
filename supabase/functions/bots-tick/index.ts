@@ -141,6 +141,17 @@ async function runBot(bot: any) {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Restrict to authorized invokers: scheduled cron + admin panel must
+  // pass the service role key as Bearer token. Random internet callers
+  // cannot trigger bot work / burn AI credits.
+  const authHeader = req.headers.get("authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  if (token !== SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const { data: bots } = await sb.from("bots").select("*").eq("active", true);
     const all = bots || [];

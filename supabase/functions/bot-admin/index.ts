@@ -90,9 +90,15 @@ serve(async (req) => {
     }
 
     if (action === "run_now") {
-      // Trigger one tick immediately
+      // Trigger one tick immediately, authenticated with the service role key
       const url = `${SUPABASE_URL}/functions/v1/bots-tick`;
-      fetch(url, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => {});
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+      }).catch(() => {});
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 

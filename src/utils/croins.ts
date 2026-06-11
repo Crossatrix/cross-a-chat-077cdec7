@@ -5,9 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 const CROINS_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/croins-proxy`;
 
 async function callCroins(body: Record<string, unknown>): Promise<any> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { ok: false, data: {} };
   const res = await fetch(CROINS_PROXY_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
     body: JSON.stringify(body),
   });
   return { ok: res.ok, data: await res.json().catch(() => ({})) };
