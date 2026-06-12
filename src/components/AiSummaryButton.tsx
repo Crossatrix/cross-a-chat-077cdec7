@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatMessageText, useEmojiLoader } from "@/utils/textFormatting";
 
 interface Props {
   /** Function returning the text to summarize (called lazily on click). */
@@ -19,6 +20,7 @@ const AiSummaryButton = ({ getText, kind, label = "Summarize", iconOnly, classNa
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState<string>("");
+  useEmojiLoader(); // Ensure custom emojis are loaded for rendering
 
   const run = async () => {
     setOpen(true);
@@ -69,7 +71,7 @@ const AiSummaryButton = ({ getText, kind, label = "Summarize", iconOnly, classNa
                 <Loader2 className="h-4 w-4 animate-spin" /> Generating…
               </div>
             ) : (
-              summary
+              formatMessageText(summary)
             )}
           </div>
           <DialogFooter>
