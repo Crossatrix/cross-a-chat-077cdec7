@@ -355,8 +355,9 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                   )}
                   {summaryAllowed && message.content && message.content.length > 80 && (
                     <AiSummaryButton
-                      kind="chat"
+                      kind={"message" as any}
                       iconOnly
+                      label="Summarize this message"
                       className="h-5 px-1 text-[10px] text-muted-foreground hover:text-primary"
                       getText={() => message.content}
                     />

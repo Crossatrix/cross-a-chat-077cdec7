@@ -20,8 +20,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const sys = `You produce concise, plain-language summaries. Output 2-4 sentences capturing the key points of the ${kind || "content"}. No greetings or meta commentary.`;
-    const userMsg = `Summarize the following:\n\n${text.slice(0, 12000)}`;
+    const sys = `You summarize a SINGLE ${kind || "item"} provided by the user. Output 1-3 short sentences capturing only the key points of the exact text given. Do not invent context, do not assume there are other messages, do not reference a conversation as a whole. No greetings or meta commentary.`;
+    const userMsg = `Summarize ONLY this single ${kind || "item"} (treat it as standalone, ignore any imagined surrounding context):\n\n"""\n${text.slice(0, 12000)}\n"""`;
 
     const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
