@@ -1372,6 +1372,51 @@ export type Database = {
           },
         ]
       }
+      post_reports: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string | null
+          reason: string
+          reporter_id: string
+          status: string
+          subcross_post_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          reason: string
+          reporter_id: string
+          status?: string
+          subcross_post_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          reason?: string
+          reporter_id?: string
+          status?: string
+          subcross_post_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_reports_subcross_post_id_fkey"
+            columns: ["subcross_post_id"]
+            isOneToOne: false
+            referencedRelation: "subcross_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           comments_count: number
@@ -1963,6 +2008,30 @@ export type Database = {
           id?: string
           last_seen_changelog_id?: string
           seen_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_content_blocks: {
+        Row: {
+          blocked_by: string | null
+          created_at: string
+          expires_at: string | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          blocked_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          blocked_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          reason?: string | null
           user_id?: string
         }
         Relationships: []
@@ -2587,6 +2656,7 @@ export type Database = {
       }
       is_app_admin: { Args: { _user_id: string }; Returns: boolean }
       is_app_owner: { Args: { _user_id: string }; Returns: boolean }
+      is_content_blocked: { Args: { _user_id: string }; Returns: boolean }
       is_conversation_member: {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean

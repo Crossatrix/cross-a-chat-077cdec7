@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Send, Reply, CornerDownRight, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { assertNotBlocked } from "@/utils/contentBlock";
 
 interface Comment {
   id: string;
@@ -44,6 +45,7 @@ const PostComments = ({ postId, currentUserId, onCommentsCountChange, onCreatorC
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
+    if (await assertNotBlocked(currentUserId)) return;
     const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
     const safe = await escapeUnauthorizedCreatorEmojis(newComment.trim(), currentUserId);
     const { error } = await (supabase as any).from('post_comments').insert({

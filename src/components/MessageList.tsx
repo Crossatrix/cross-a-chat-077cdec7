@@ -52,6 +52,14 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
   const summaryAllowed = isBeta && getBetaSummaryEnabled();
   useEmojiLoader(); // Load custom emojis for formatting
 
+  // Jump straight to the bottom whenever we open a different chat
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const el = scrollRef.current;
+    requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+  }, [conversationId]);
+
+  // Keep pinned to bottom as new messages / typing indicators arrive
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

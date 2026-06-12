@@ -10,6 +10,7 @@ import { Radio, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
+import { assertNotBlocked } from "@/utils/contentBlock";
 
 interface Props {
   userId: string;
@@ -28,6 +29,7 @@ const GoLiveDialog = ({ userId, onLiveStart, trigger }: Props) => {
 
   const handleStart = async () => {
     if (!title.trim()) { toast.error("Title required"); return; }
+    if (await assertNotBlocked(userId)) return;
     setStarting(true);
     try {
       const { data, error } = await supabase.from("livestreams").insert({
