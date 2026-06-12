@@ -71,7 +71,7 @@ const AiSummaryButton = ({ getText, kind, label = "Summarize", iconOnly, classNa
                 <Loader2 className="h-4 w-4 animate-spin" /> Generating…
               </div>
             ) : (
-              summary
+              formatMessageText(summary)
             )}
           </div>
           <DialogFooter>
