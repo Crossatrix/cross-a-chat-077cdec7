@@ -630,6 +630,8 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
           </div>
         )}
       </ScrollArea>
+      </>
+      )}
       <AgeVerificationDialog
         open={ageVerifyOpen}
         onOpenChange={(open) => {
