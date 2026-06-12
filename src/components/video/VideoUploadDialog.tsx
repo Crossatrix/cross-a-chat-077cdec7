@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, X, Image, ShieldAlert, Loader2, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { assertNotBlocked } from "@/utils/contentBlock";
 import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
 import GoLiveDialog from "@/components/live/GoLiveDialog";
 import LiveBroadcaster from "@/components/live/LiveBroadcaster";
@@ -77,6 +78,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
       toast.error("Title and video file are required");
       return;
     }
+    if (await assertNotBlocked(userId)) return;
 
     setUploading(true);
     try {

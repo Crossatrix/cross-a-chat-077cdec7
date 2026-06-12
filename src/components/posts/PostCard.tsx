@@ -13,6 +13,7 @@ import { formatMessageText } from "@/utils/textFormatting";
 import PostComments from "./PostComments";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
+import ReportPostButton from "@/components/ReportPostButton";
 import { getBetaSummaryEnabled } from "@/components/BetaDialog";
 import { useBetaStatus } from "@/hooks/useBetaStatus";
 
@@ -280,6 +281,9 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
         </Button>
         {canSummarize && (post.content?.length ?? 0) > 200 && (
           <AiSummaryButton kind="post" getText={() => post.content} iconOnly className="h-7 w-7 p-0" />
+        )}
+        {post.user_id !== currentUserId && (
+          <ReportPostButton postId={post.id} currentUserId={currentUserId} iconOnly className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive" />
         )}
         <div className="ml-auto">
           <OwnerBoostButton

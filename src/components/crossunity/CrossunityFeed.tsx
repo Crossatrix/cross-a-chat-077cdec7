@@ -304,6 +304,19 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
           </div>
         ) : (
           <div className="space-y-3 p-3">
+            {view === "home" && globalPosts.length > 0 && (
+              <div className="space-y-3">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                  <FileText className="h-3 w-3" /> c/posts
+                </div>
+                {globalPosts.slice(0, 8).map((gp: any) => (
+                  <PostCard key={`gp-${gp.id}`} post={gp} currentUserId={currentUserId} onCreatorClick={onCreatorClick} onDeleted={loadHome} />
+                ))}
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                  <Users className="h-3 w-3" /> Subcrosses
+                </div>
+              </div>
+            )}
             {posts.map(p => (
               <div key={p.id} className="rounded-xl border border-border bg-card p-3 hover:border-primary/40 transition-colors">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1.5">
@@ -333,6 +346,18 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
                     onClick={() => { setActivePost(p); setView("post"); }}>
                     <MessageSquare className="h-3.5 w-3.5 mr-1" />{p.comments_count}
                   </Button>
+                  <ReportPostButton subcrossPostId={p.id} currentUserId={currentUserId} className="h-7 px-2 text-muted-foreground hover:text-destructive" iconOnly />
+                  <OwnerBoostButton
+                    targetId={p.id}
+                    title="Boost this post"
+                    iconOnly
+                    className="h-7 w-7 p-0 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                    options={[
+                      { kind: "subcross_post_likes" as any, label: "Add likes" },
+                      { kind: "subcross_post_dislikes" as any, label: "Add dislikes" },
+                    ]}
+                    onBoosted={loadHome}
+                  />
                   {p.user_id === currentUserId && (
                     <Button variant="ghost" size="sm" className="h-7 px-2 ml-auto" onClick={() => deletePost(p.id)}>
                       <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
@@ -384,6 +409,7 @@ const PostDetail = ({ post, currentUserId, onBack, onCreatorClick, onDelete, onV
 
   const submit = async () => {
     if (!text.trim()) return;
+    if (await assertNotBlocked(currentUserId)) return;
     const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
     const safe = await escapeUnauthorizedCreatorEmojis(text.trim(), currentUserId);
     const { error } = await sb.from("subcross_comments").insert({
@@ -577,6 +603,7 @@ const CreatePostDialog = ({ open, onOpenChange, currentUserId, subcrosses, preSe
   const submit = async () => {
     if (!subId) { toast.error("Pick a subcross"); return; }
     if (!title.trim()) { toast.error("Title required"); return; }
+    if (await assertNotBlocked(currentUserId)) return;
     setBusy(true);
     let image_url: string | null = null;
     if (imageFile) {

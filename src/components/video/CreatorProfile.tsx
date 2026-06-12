@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import PostsFeed from "@/components/posts/PostsFeed";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
+import BlockUserButton from "@/components/admin/BlockUserButton";
 
 interface Video {
   id: string;
@@ -235,6 +236,9 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
                   options={[{ kind: "followers", label: "Add followers" }]}
                   onBoosted={fetchAll}
                 />
+                {creatorId !== currentUserId && (
+                  <BlockUserButton targetUserId={creatorId} targetUsername={profile?.username} />
+                )}
                 {isAdmin && (
                   <Select value={featuredTier} onValueChange={handleSetFeatured}>
                     <SelectTrigger className="w-28 h-8 text-xs">

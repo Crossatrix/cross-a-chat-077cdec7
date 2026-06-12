@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Image, Video, BarChart3, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { assertNotBlocked } from "@/utils/contentBlock";
 
 interface CreatePostDialogProps {
   currentUserId: string;
@@ -61,6 +62,7 @@ const CreatePostDialog = ({ currentUserId, onPostCreated }: CreatePostDialogProp
       return;
     }
 
+    if (await assertNotBlocked(currentUserId)) return;
     setSubmitting(true);
     try {
       let imageUrl: string | null = null;
