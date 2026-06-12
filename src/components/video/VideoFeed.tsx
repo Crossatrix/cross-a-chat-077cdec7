@@ -376,7 +376,26 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-3 border-b border-border bg-card shrink-0">
-        <h2 className="text-lg font-bold text-primary">Videos</h2>
+        <div className="flex items-center gap-1.5 rounded-lg border border-border p-0.5 bg-muted/40">
+          <button
+            onClick={() => setMode("videos")}
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+              mode === "videos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+            aria-pressed={mode === "videos"}
+          >
+            <Play className="h-3.5 w-3.5" /> Videos
+          </button>
+          <button
+            onClick={() => setMode("shorts")}
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+              mode === "shorts" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+            aria-pressed={mode === "shorts"}
+          >
+            <Zap className="h-3.5 w-3.5" /> Shorts
+          </button>
+        </div>
         <div className="flex items-center gap-2">
           {pendingCount > 0 && (
             <Badge variant="outline" className="gap-1 text-xs border-amber-500/50 text-amber-500">
@@ -393,6 +412,14 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
           <VideoUploadDialog userId={currentUserId} onUploaded={() => { fetchVideos(); fetchStruckCount(); fetchPendingVideos(); }} />
         </div>
       </div>
+
+      {mode === "shorts" ? (
+        <div className="flex-1 min-h-0">
+          <ShortsFeed currentUserId={currentUserId} onCreatorClick={(id) => setSelectedCreatorId(id)} />
+        </div>
+      ) : (
+      <>
+
 
       <div className="px-3 pt-2 pb-1 shrink-0 space-y-2">
         <div className="relative">
