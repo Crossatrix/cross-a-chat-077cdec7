@@ -5,6 +5,7 @@ import { consumePendingInstantLink } from "@/utils/instantLinks";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe, FlaskConical } from "lucide-react";
+import ContentBlockBanner from "@/components/ContentBlockBanner";
 import { useBetaStatus } from "@/hooks/useBetaStatus";
 import BetaDialog from "@/components/BetaDialog";
 import ScamDetector from "@/components/ScamDetector";
@@ -1051,6 +1052,7 @@ return (
       />
       
       <div className="flex flex-col h-screen bg-background overflow-hidden">
+      <ContentBlockBanner userId={user?.id} />
       {/* Bottom navigation bar */}
       <div className="order-last md:order-none flex border-t md:border-t-0 md:border-b border-border bg-card shrink-0 z-10">
         <button
@@ -1080,15 +1082,7 @@ return (
           <Sparkles className="h-5 w-5" />
           <span>For You</span>
         </button>
-        <button
-          onClick={() => { setActiveTab("shorts"); setSelectedConversationId(null); }}
-          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
-            activeTab === "shorts" ? "text-primary" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Zap className="h-5 w-5" />
-          <span>Shorts</span>
-        </button>
+        {/* Shorts now live inside the Videos tab */}
         <button
           onClick={() => { setActiveTab("crossunity"); setSelectedConversationId(null); }}
           className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
