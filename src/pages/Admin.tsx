@@ -135,6 +135,7 @@ const Admin = () => {
       promises.push(fetchReports());
       promises.push(fetchVideoReports());
       promises.push(fetchStruckAppeals());
+      promises.push(fetchPostReports());
     }
     if (CAN.readFeedback(staffRole)) {
       promises.push(fetchFeedback());
@@ -169,6 +170,12 @@ const Admin = () => {
       fileStructure.push({
         id: "struck-appeals",
         name: "Struck Appeals",
+        type: "folder",
+        children: results[idx++],
+      });
+      fileStructure.push({
+        id: "post-reports",
+        name: "Post Reports",
         type: "folder",
         children: results[idx++],
       });
@@ -371,6 +378,53 @@ const Admin = () => {
       },
     }));
   };
+
+  const fetchPostReports = async (): Promise<FileItem[]> => {
+    const { data } = await (supabase as any).from("post_reports").select("*").order("created_at", { ascending: false });
+    if (!data || data.length === 0) return [];
+    const reporterIds = [...new Set(data.map((r: any) => r.reporter_id).filter(Boolean))] as string[];
+    const postIds = [...new Set(data.map((r: any) => r.post_id).filter(Boolean))] as string[];
+    const subIds = [...new Set(data.map((r: any) => r.subcross_post_id).filter(Boolean))] as string[];
+
+    const [{ data: profs }, { data: regular }, { data: subPosts }] = await Promise.all([
+      reporterIds.length ? supabase.from("profiles").select("id, username").in("id", reporterIds) : { data: [] },
+      postIds.length ? (supabase as any).from("posts").select("id, user_id, content, image_url").in("id", postIds) : { data: [] },
+      subIds.length ? (supabase as any).from("subcross_posts").select("id, user_id, title, content, image_url").in("id", subIds) : { data: [] },
+    ]);
+    const profMap = new Map<string, string>(); (profs || []).forEach((p: any) => profMap.set(p.id, p.username));
+    const postMap = new Map<string, any>(); (regular || []).forEach((p: any) => postMap.set(p.id, p));
+    const subMap = new Map<string, any>(); (subPosts || []).forEach((p: any) => subMap.set(p.id, p));
+
+    const authorIds = [
+      ...Array.from(postMap.values()).map((p: any) => p.user_id),
+      ...Array.from(subMap.values()).map((p: any) => p.user_id),
+    ];
+    let authorMap = new Map<string, string>();
+    if (authorIds.length) {
+      const { data: authors } = await supabase.from("profiles").select("id, username").in("id", authorIds);
+      (authors || []).forEach((a: any) => authorMap.set(a.id, a.username));
+    }
+
+    return data.map((r: any) => {
+      const post = r.post_id ? postMap.get(r.post_id) : subMap.get(r.subcross_post_id);
+      const authorId = post?.user_id;
+      return {
+        id: `post-report-${r.id}`,
+        name: `post_report_${(profMap.get(r.reporter_id) || "anon")}_${new Date(r.created_at).toISOString().split("T")[0]}`,
+        type: "file" as const,
+        extension: "txt",
+        data: {
+          ...r,
+          type: "post_report",
+          reporter_username: profMap.get(r.reporter_id) || "Unknown",
+          author_id: authorId,
+          author_username: authorId ? (authorMap.get(authorId) || "Unknown") : "Deleted user",
+          post_kind: r.post_id ? "post" : "subcross_post",
+          post_preview: post?.title ? `${post.title}\n${post.content || ""}` : (post?.content || "(media-only post)"),
+          post_image: post?.image_url || null,
+        },
+      };
+    });
 
   const fetchUsers = async (): Promise<FileItem[]> => {
     const { data: profiles } = await supabase
