@@ -20,6 +20,7 @@ const AiSummaryButton = ({ getText, kind, label = "Summarize", iconOnly, classNa
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState<string>("");
+  useEmojiLoader(); // Ensure custom emojis are loaded for rendering
 
   const run = async () => {
     setOpen(true);
