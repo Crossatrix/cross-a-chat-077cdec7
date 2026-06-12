@@ -13,7 +13,11 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PostsFeed from "@/components/posts/PostsFeed";
+import PostCard from "@/components/posts/PostCard";
 import ShareLinkButton from "@/components/ShareLinkButton";
+import ReportPostButton from "@/components/ReportPostButton";
+import OwnerBoostButton from "@/components/OwnerBoostButton";
+import { assertNotBlocked } from "@/utils/contentBlock";
 
 interface Subcross {
   id: string;
@@ -72,6 +76,7 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
   const [view, setView] = useState<"home" | "subcross" | "post" | "posts">("home");
   const [subcrosses, setSubcrosses] = useState<Subcross[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [globalPosts, setGlobalPosts] = useState<any[]>([]);
   const [activeSub, setActiveSub] = useState<Subcross | null>(null);
   const [activePost, setActivePost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,16 +88,19 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
 
   const loadHome = async () => {
     setLoading(true);
-    const [{ data: subs }, { data: ps }, { data: mems }, { data: pv }] = await Promise.all([
+    const [{ data: subs }, { data: ps }, { data: mems }, { data: pv }, { data: gp }] = await Promise.all([
       sb.from("subcrosses").select("*").order("members_count", { ascending: false }).limit(50),
       sb.from("subcross_posts")
         .select("*, profiles(username, avatar_url), subcrosses(name, display_name)")
         .order("created_at", { ascending: false }).limit(100),
       sb.from("subcross_members").select("subcross_id").eq("user_id", currentUserId),
       sb.from("subcross_post_votes").select("post_id, is_like").eq("user_id", currentUserId),
+      sb.from("posts").select("*, profiles(username, avatar_url)")
+        .order("created_at", { ascending: false }).limit(50),
     ]);
     setSubcrosses(subs || []);
     setPosts(ps || []);
+    setGlobalPosts(gp || []);
     setMemberOf(new Set((mems || []).map((m: any) => m.subcross_id)));
     const v: Record<string, boolean> = {};
     (pv || []).forEach((x: any) => { v[`p:${x.post_id}`] = x.is_like; });
