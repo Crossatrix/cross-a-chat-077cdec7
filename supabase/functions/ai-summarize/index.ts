@@ -1,6 +1,6 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
-const MODEL = "poolside/laguna-m.1:free";
+const MODEL = "openrouter/owl-alpha";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
