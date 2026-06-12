@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle, ShieldAlert, AlertTriangle, Loader2 } from "lucide-react";
+import { Play, Eye, ThumbsUp, Search, X, CheckCircle, ShieldCheck, Star, XCircle, ShieldAlert, AlertTriangle, Loader2, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import AgeVerificationDialog from "./AgeVerificationDialog";
 import FeaturedAvatar from "./FeaturedAvatar";
 import StruckVideosDialog from "./StruckVideosDialog";
 import LiveFeed from "@/components/live/LiveFeed";
+import ShortsFeed from "./ShortsFeed";
 
 interface Video {
   id: string;
@@ -61,6 +62,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
   const [struckCount, setStruckCount] = useState(0);
   const [pendingVideos, setPendingVideos] = useState<Video[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [mode, setMode] = useState<"videos" | "shorts">("videos");
 
   useEffect(() => {
     fetchVideos();
