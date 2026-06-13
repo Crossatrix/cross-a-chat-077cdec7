@@ -425,6 +425,7 @@ const Admin = () => {
         },
       };
     });
+  };
 
   const fetchUsers = async (): Promise<FileItem[]> => {
     const { data: profiles } = await supabase
