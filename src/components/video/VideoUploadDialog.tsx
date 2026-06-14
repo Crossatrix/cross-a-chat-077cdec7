@@ -125,6 +125,15 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
 
       if (insertError) throw insertError;
 
+      // Fire-and-forget: submit to Crossi Search using the video title as filename
+      supabase.functions.invoke("crossi-submit", {
+        body: {
+          videoUrl: videoUrlData.publicUrl,
+          filename: title.trim(),
+          mimeType: videoFile.type || "video/mp4",
+        },
+      }).catch((err) => console.error("Crossi submit failed:", err));
+
       // Notify followers (fire-and-forget) - only if approved immediately
       if (!needsAnalysis) {
         supabase.functions.invoke("notify-followers", {
