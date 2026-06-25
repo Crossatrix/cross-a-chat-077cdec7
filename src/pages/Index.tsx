@@ -33,7 +33,7 @@ import { CallInterface } from "@/components/CallInterface";
 import { IncomingCallHandler } from "@/components/IncomingCallHandler";
 import { NewChatDialog } from "@/components/NewChatDialog";
 import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
-import { requestNotificationPermission, registerServiceWorker, showNotification } from "@/utils/notifications";
+import { requestNotificationPermission, registerServiceWorker, showNotification, setActiveConversation, showMessageNotification, showCallNotification } from "@/utils/notifications";
 import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
 import ForYouFeed from "@/components/video/ForYouFeed";
@@ -79,7 +79,7 @@ const Index = () => {
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
   const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [showClearChatDialog, setShowClearChatDialog] = useState(false);
-const [aiCredits, setAiCredits] = useState<number>(15);
+  const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
   const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity">("chats");
@@ -101,7 +101,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       .maybeSingle();
     
     if (data) {
-      // Check if reset is needed (new day)
       const today = new Date().toISOString().split('T')[0];
       if (data.last_reset_date < today) {
         setAiCredits(15);
@@ -109,7 +108,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         setAiCredits(Number(data.credits_remaining));
       }
     } else {
-      setAiCredits(15); // Default for new users
+      setAiCredits(15);
     }
   };
 
@@ -146,6 +145,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
           setSelectedUserId(pending.id);
           setIsGroup(false);
           setActiveTab("chats");
+          setActiveConversation(data as string);
         } else if (pending.action === "video") {
           setActiveTab("videos");
           setInstantVideoId(pending.id);
@@ -163,7 +163,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   }, [user?.id]);
 
   useEffect(() => {
-    // Set up auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -172,7 +171,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       setLoading(false);
     });
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -187,9 +185,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     if (!user) return;
 
     const presenceChannel = supabase.channel('online-users')
-      .on('presence', { event: 'sync' }, () => {
-        // Presence state synced
-      })
+      .on('presence', { event: 'sync' }, () => {})
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await presenceChannel.track({
@@ -199,7 +195,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         }
       });
 
-    // Update last_seen every 30 seconds while online
     const lastSeenInterval = setInterval(async () => {
       await supabase
         .from('profiles')
@@ -207,7 +202,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         .eq('id', user.id);
     }, 30000);
 
-    // Update last_seen on page unload
     const updateLastSeenOnUnload = async () => {
       await supabase
         .from('profiles')
@@ -222,7 +216,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       window.removeEventListener('beforeunload', updateLastSeenOnUnload);
       presenceChannel.untrack();
       supabase.removeChannel(presenceChannel);
-      // Update last_seen on cleanup
       supabase
         .from('profiles')
         .update({ last_seen: new Date().toISOString() })
@@ -247,9 +240,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         async (payload) => {
           const signal = payload.new;
           
-          // Only show notification for offer signals (new calls)
           if (signal.signal_type === 'offer') {
-            // Get caller's profile
             const { data: callerProfile } = await supabase
               .from('profiles')
               .select('username')
@@ -257,15 +248,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
               .single();
             
             const callerName = callerProfile?.username || 'Someone';
-            
-            showNotification(
-              '📞 Incoming Call',
-              `${callerName} is calling you`,
-              {
-                tag: `call-${signal.conversation_id}`,
-                requireInteraction: true,
-              }
-            );
+            showCallNotification(callerName, signal.conversation_id);
           }
         }
       )
@@ -277,7 +260,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   }, [user]);
 
   useEffect(() => {
-    // Don't redirect while still loading auth state
     if (loading) return;
     
     if (!user) {
@@ -285,7 +267,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       return;
     }
 
-    // Check if user is banned
     const checkBan = async () => {
       const { data: ban } = await supabase
         .from("user_bans")
@@ -294,13 +275,10 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         .maybeSingle();
 
       if (ban) {
-        // Check if ban has expired
         if (ban.expires_at && new Date(ban.expires_at) < new Date()) {
-          // Ban has expired, remove it
           await supabase.from("user_bans").delete().eq("id", ban.id);
           return true;
         } else {
-          // Ban is still active, redirect to banned page
           navigate("/banned");
           return false;
         }
@@ -308,7 +286,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       return true;
     };
 
-    // Fetch username and check admin status
     const fetchUserData = async () => {
       const notBanned = await checkBan();
       if (!notBanned) return;
@@ -334,10 +311,8 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       const modRoles = ['moderator', 'elder_moderator', 'admin'];
       setIsModerator((roles || []).some(r => modRoles.includes(r.role)));
 
-      // Fetch AI credits
       fetchAiCredits();
 
-      // Fetch Croin balance using Crossatrix user ID
       const crossatrixId = localStorage.getItem("crossatrix_user_id") || user.id;
       getCroinBalance(crossatrixId).then(b => setCroinBalance(b));
     };
@@ -361,7 +336,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
     fetchPendingInvites();
 
-    // Subscribe to invite changes
     const channel = supabase
       .channel('group-invites-count')
       .on(
@@ -386,7 +360,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   useEffect(() => {
     if (!user || !selectedConversationId) return;
 
-    // Fetch initial messages for the selected conversation
     const fetchMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
@@ -395,7 +368,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         .order("created_at", { ascending: true });
 
       if (error) {
-        // Check if error is due to RLS (kicked from group)
         if (error.code === 'PGRST116' || error.message.includes('permission')) {
           setIsKickedFromGroup(true);
           return;
@@ -413,7 +385,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
     fetchMessages();
 
-    // Subscribe to new messages, updates, and typing indicators in this conversation
     const channel = supabase
       .channel(`conversation-${selectedConversationId}`)
       .on(
@@ -425,7 +396,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
           filter: `conversation_id=eq.${selectedConversationId}`,
         },
         async (payload) => {
-          // Fetch the complete message with profile data
           const { data } = await supabase
             .from("messages")
             .select("*, profiles(username, avatar_url)")
@@ -435,15 +405,14 @@ const [aiCredits, setAiCredits] = useState<number>(15);
           if (data) {
             setMessages((prev) => [...prev, data]);
             
-            // Remove typing indicator for the user who sent the message
             setTypingUsers((prev) => prev.filter((u) => u.userId !== data.user_id));
             
-            // Show notification for messages from other users
-            if (data.user_id !== user.id) {
-              showNotification(
-                `New message from ${data.profiles?.username || 'Someone'}`,
+            // Show notification for messages from other users when not viewing this conversation
+            if (data.user_id !== user.id && activeConvId !== selectedConversationId) {
+              showMessageNotification(
+                data.profiles?.username || 'Someone',
                 data.content || 'Sent a media file',
-                { tag: `message-${selectedConversationId}` }
+                selectedConversationId
               );
             }
           }
@@ -458,7 +427,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
           filter: `conversation_id=eq.${selectedConversationId}`,
         },
         async (payload) => {
-          // Update the message in state
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === payload.new.id
@@ -478,7 +446,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
             return prev;
           });
 
-          // Remove typing indicator after 3 seconds
           setTimeout(() => {
             setTypingUsers((prev) => prev.filter((u) => u.userId !== payload.userId));
           }, 3000);
@@ -501,7 +468,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
   const handleDeleteMessage = async (messageId: string, imageUrl?: string, voiceUrl?: string, videoUrl?: string) => {
     try {
-      // Delete the message from database
       const { error: deleteError } = await supabase
         .from("messages")
         .delete()
@@ -509,7 +475,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
       if (deleteError) throw deleteError;
 
-      // Delete associated files from storage
       if (imageUrl) {
         const imagePath = imageUrl.split('/').slice(-2).join('/');
         await supabase.storage.from('chat-images').remove([imagePath]);
@@ -525,7 +490,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         await supabase.storage.from('chat-videos').remove([videoPath]);
       }
 
-      // Update local state
       setMessages(prev => prev.filter(m => m.id !== messageId));
       toast.success("Message deleted");
     } catch (error) {
@@ -547,7 +511,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     let voiceUrl: string | null = null;
     let videoUrl: string | null = null;
 
-    // Upload image if present
     if (imageFile) {
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -571,7 +534,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       imageUrl = publicUrl;
     }
 
-    // Upload voice message if present
     if (voiceBlob) {
       const fileName = `${user.id}/${Date.now()}.webm`;
       
@@ -596,7 +558,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       voiceUrl = publicUrl;
     }
 
-    // Upload video if present
     if (videoFile) {
       const fileExt = videoFile.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -649,10 +610,8 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
     setIsSendingMessage(false);
 
-    // If this is an AI chat, call the AI edge function
     if (isAIChat) {
       try {
-        // Add AI to typing users
         setTypingUsers((prev) => [...prev, { userId: AI_BOT_ID, username: 'CrossChatAI' }]);
 
         const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-chat', {
@@ -664,15 +623,12 @@ const [aiCredits, setAiCredits] = useState<number>(15);
           }
         });
 
-        // Remove AI from typing users
         setTypingUsers((prev) => prev.filter((u) => u.userId !== AI_BOT_ID));
 
-        // Refresh credits after AI call
         fetchAiCredits();
 
         if (aiError) {
           console.error('AI chat error:', aiError);
-          // Check if it's a credits error
           if (aiError.message?.includes('credits') || aiError.message?.includes('402')) {
             toast.error('Not enough AI credits. Credits reset daily.');
           } else {
@@ -681,14 +637,12 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         }
       } catch (aiError: any) {
         console.error('AI chat error:', aiError);
-        // Refresh credits to show current state
         fetchAiCredits();
         if (aiError?.message?.includes('credits')) {
           toast.error('Not enough AI credits. Credits reset daily.');
         } else {
           toast.error('AI response failed. Please try again.');
         }
-        // Remove AI from typing users on error
         setTypingUsers((prev) => prev.filter((u) => u.userId !== AI_BOT_ID));
       }
     }
@@ -697,9 +651,9 @@ const [aiCredits, setAiCredits] = useState<number>(15);
   const handleSelectConversation = async (conversationId: string, displayName: string, isGroupChat: boolean) => {
     const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
     
-    // Handle special "ai-chat" placeholder ID
+    setActiveConversation(conversationId);
+
     if (conversationId === 'ai-chat') {
-      // Find existing AI conversations for this user
       const { data: aiConversations } = await supabase
         .from('conversation_participants')
         .select(`
@@ -711,7 +665,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         .order('conversations.updated_at', { ascending: false });
 
       if (aiConversations && aiConversations.length > 0) {
-        // Use the most recent AI conversation
         const mostRecentAI = aiConversations[0];
         const aiConv = mostRecentAI.conversations as any;
         setSelectedConversationId(mostRecentAI.conversation_id);
@@ -719,9 +672,8 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         setSelectedUserId(AI_BOT_ID);
         setIsGroup(false);
         setMessages([]);
+        setActiveConversation(mostRecentAI.conversation_id);
       } else {
-        // No AI conversations exist, create one automatically
-        console.log('Creating new AI chat for user:', user?.id);
         const { data: newConversation, error: convError } = await supabase
           .from('conversations')
           .insert({
@@ -738,10 +690,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
           toast.error(`Failed to create AI chat: ${convError.message}`);
           return;
         }
-
-        console.log('AI conversation created:', newConversation.id);
         
-        // Add current user as participant
         const { error: participantError } = await supabase
           .from('conversation_participants')
           .insert({
@@ -754,15 +703,13 @@ const [aiCredits, setAiCredits] = useState<number>(15);
           toast.error(`Failed to add participant: ${participantError.message}`);
           return;
         }
-
-        console.log('Participant added successfully');
         
-        // Select the newly created AI chat
         setSelectedConversationId(newConversation.id);
         setSelectedUsername('AI Chat');
         setSelectedUserId(AI_BOT_ID);
         setIsGroup(false);
         setMessages([]);
+        setActiveConversation(newConversation.id);
         toast.success('AI chat created');
       }
       return;
@@ -775,14 +722,12 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     setGroupImageUrl(undefined);
     setIsKickedFromGroup(false);
 
-    // Check if this is an AI conversation and fetch group image if applicable
     const { data: conversation } = await supabase
       .from("conversations")
       .select("is_ai_chat, group_image_url")
       .eq("id", conversationId)
       .single();
 
-    // Check if user is kicked from group
     if (isGroupChat) {
       const { data: participant } = await supabase
         .from("conversation_participants")
@@ -797,10 +742,8 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     }
 
     if (conversation?.is_ai_chat) {
-      // This is an AI chat, set the AI bot ID
       setSelectedUserId(AI_BOT_ID);
     } else if (!isGroupChat) {
-      // For 1-on-1 chats, fetch the other user's ID
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")
@@ -812,7 +755,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       }
     } else {
       setSelectedUserId("");
-      // Set group image if available
       if (conversation?.group_image_url) {
         setGroupImageUrl(conversation.group_image_url);
       }
@@ -827,7 +769,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
       if (error) throw error;
 
-      // Fetch the other user's username
       const { data: profile } = await supabase
         .from("profiles")
         .select("username")
@@ -839,6 +780,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         setSelectedUsername(profile.username);
         setSelectedUserId(otherUserId);
         setMessages([]);
+        setActiveConversation(data);
       }
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -857,7 +799,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     if (!selectedConversationId) return;
 
     try {
-      // Delete all messages and their associated media files for this AI chat
       const { data: messages } = await supabase
         .from("messages")
         .select("id, image_url, voice_url, video_url")
@@ -865,21 +806,18 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
       if (messages) {
         for (const msg of messages) {
-          // Delete image if exists
           if (msg.image_url) {
             const imagePath = msg.image_url.split("/").pop();
             if (imagePath) {
               await supabase.storage.from("chat-images").remove([`${selectedConversationId}/${imagePath}`]);
             }
           }
-          // Delete voice if exists
           if (msg.voice_url) {
             const voicePath = msg.voice_url.split("/").pop();
             if (voicePath) {
               await supabase.storage.from("voice-messages").remove([`${selectedConversationId}/${voicePath}`]);
             }
           }
-          // Delete video if exists
           if (msg.video_url) {
             const videoPath = msg.video_url.split("/").pop();
             if (videoPath) {
@@ -889,13 +827,8 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         }
       }
 
-      // Delete all messages
       await supabase.from("messages").delete().eq("conversation_id", selectedConversationId);
-
-      // Delete all participants
       await supabase.from("conversation_participants").delete().eq("conversation_id", selectedConversationId);
-
-      // Delete the conversation
       const { error } = await supabase.from("conversations").delete().eq("id", selectedConversationId);
 
       if (error) throw error;
@@ -903,11 +836,11 @@ const [aiCredits, setAiCredits] = useState<number>(15);
       toast.success("AI chat deleted successfully");
       setShowClearChatDialog(false);
       
-      // Clear UI state
       setSelectedConversationId(null);
       setSelectedUsername("");
       setSelectedUserId("");
       setMessages([]);
+      setActiveConversation(null);
     } catch (error) {
       console.error("Error clearing AI chat:", error);
       toast.error("Failed to delete chat");
@@ -916,7 +849,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
   const handleDeleteConversation = async (conversationId: string) => {
     try {
-      // Check if user is kicked from this conversation
       const { data: participant } = await supabase
         .from("conversation_participants")
         .select("kicked_at")
@@ -924,7 +856,6 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         .eq("user_id", user?.id)
         .single();
 
-      // If user is kicked, just delete their participant record
       if (participant?.kicked_at) {
         const { error } = await supabase
           .from("conversation_participants")
@@ -936,18 +867,17 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
         toast.success("Chat removed from your list");
         
-        // Clear selected conversation if it was the deleted one
         if (selectedConversationId === conversationId) {
           setSelectedConversationId(null);
           setSelectedUsername("");
           setSelectedUserId("");
           setMessages([]);
           setIsKickedFromGroup(false);
+          setActiveConversation(null);
         }
         return;
       }
 
-      // Delete all messages and their associated media files
       const { data: messages } = await supabase
         .from("messages")
         .select("id, image_url, voice_url, video_url")
@@ -955,21 +885,18 @@ const [aiCredits, setAiCredits] = useState<number>(15);
 
       if (messages) {
         for (const msg of messages) {
-          // Delete image if exists
           if (msg.image_url) {
             const imagePath = msg.image_url.split("/").pop();
             if (imagePath) {
               await supabase.storage.from("chat-images").remove([`${conversationId}/${imagePath}`]);
             }
           }
-          // Delete voice if exists
           if (msg.voice_url) {
             const voicePath = msg.voice_url.split("/").pop();
             if (voicePath) {
               await supabase.storage.from("voice-messages").remove([`${conversationId}/${voicePath}`]);
             }
           }
-          // Delete video if exists
           if (msg.video_url) {
             const videoPath = msg.video_url.split("/").pop();
             if (videoPath) {
@@ -979,20 +906,14 @@ const [aiCredits, setAiCredits] = useState<number>(15);
         }
       }
 
-      // Delete all messages
       await supabase.from("messages").delete().eq("conversation_id", conversationId);
-
-      // Delete all participants
       await supabase.from("conversation_participants").delete().eq("conversation_id", conversationId);
-
-      // Delete the conversation
       const { error } = await supabase.from("conversations").delete().eq("id", conversationId);
 
       if (error) throw error;
 
       toast.success("Chat deleted successfully");
       
-      // Clear selected conversation if it was the deleted one
       if (selectedConversationId === conversationId) {
         setSelectedConversationId(null);
         setSelectedUsername("");
@@ -1005,7 +926,7 @@ const [aiCredits, setAiCredits] = useState<number>(15);
     }
   };
 
-const startCall = () => {
+  const startCall = () => {
     if (isGroup) {
       toast.error("Group calls are not supported yet");
       return;
@@ -1024,6 +945,7 @@ const startCall = () => {
   const handleAcceptIncomingCall = (conversationId: string, callerId: string) => {
     setSelectedConversationId(conversationId);
     setSelectedUserId(callerId);
+    setActiveConversation(conversationId);
     setIsInCall(true);
   };
 
@@ -1031,7 +953,6 @@ const startCall = () => {
     return null;
   }
 
-  // Show call interface if in call
   if (isInCall && selectedConversationId && selectedUserId) {
     return (
       <CallInterface
@@ -1045,7 +966,6 @@ const startCall = () => {
 
 return (
     <>
-      {/* Incoming call handler - polls every 10 seconds */}
       <IncomingCallHandler 
         userId={user.id} 
         onAcceptCall={handleAcceptIncomingCall} 
@@ -1053,7 +973,6 @@ return (
       
       <div className="flex flex-col h-screen bg-background overflow-hidden">
       <ContentBlockBanner userId={user?.id} />
-      {/* Bottom navigation bar */}
       <div className="order-last md:order-none flex border-t md:border-t-0 md:border-b border-border bg-card shrink-0 z-10">
         <button
           onClick={() => { setActiveTab("chats"); }}
@@ -1065,7 +984,7 @@ return (
           <span>Chats</span>
         </button>
         <button
-          onClick={() => { setActiveTab("videos"); setSelectedConversationId(null); }}
+          onClick={() => { setActiveTab("videos"); setSelectedConversationId(null); setActiveConversation(null); }}
           className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
             activeTab === "videos" ? "text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
@@ -1074,7 +993,7 @@ return (
           <span>Videos</span>
         </button>
         <button
-          onClick={() => { setActiveTab("foryou"); setSelectedConversationId(null); }}
+          onClick={() => { setActiveTab("foryou"); setSelectedConversationId(null); setActiveConversation(null); }}
           className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
             activeTab === "foryou" ? "text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
@@ -1082,9 +1001,8 @@ return (
           <Sparkles className="h-5 w-5" />
           <span>For You</span>
         </button>
-        {/* Shorts now live inside the Videos tab */}
         <button
-          onClick={() => { setActiveTab("crossunity"); setSelectedConversationId(null); }}
+          onClick={() => { setActiveTab("crossunity"); setSelectedConversationId(null); setActiveConversation(null); }}
           className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
             activeTab === "crossunity" ? "text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
@@ -1093,7 +1011,7 @@ return (
           <span>Crossunity</span>
         </button>
         <button
-          onClick={() => { setActiveTab("music"); setSelectedConversationId(null); }}
+          onClick={() => { setActiveTab("music"); setSelectedConversationId(null); setActiveConversation(null); }}
           className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
             activeTab === "music" ? "text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
@@ -1215,6 +1133,7 @@ return (
                   setSelectedConversationId(null);
                   setSelectedUsername("");
                   setSelectedUserId("");
+                  setActiveConversation(null);
                 }}
               >
                 ← Back
@@ -1245,7 +1164,6 @@ return (
                     groupImageUrl={groupImageUrl}
                     currentUserId={user.id}
                     onGroupUpdated={async () => {
-                      // Refetch conversation details
                       const { data } = await supabase
                         .from("conversations")
                         .select("name, group_image_url")
@@ -1263,6 +1181,7 @@ return (
                       setIsGroup(false);
                       setMessages([]);
                       setGroupImageUrl(undefined);
+                      setActiveConversation(null);
                     }}
                     onGroupLeft={() => {
                       setSelectedConversationId(null);
@@ -1271,6 +1190,7 @@ return (
                       setIsGroup(false);
                       setMessages([]);
                       setGroupImageUrl(undefined);
+                      setActiveConversation(null);
                     }}
                   />
                 ) : (
@@ -1346,6 +1266,7 @@ return (
                     setIsGroup(false);
                     setIsKickedFromGroup(false);
                     setMessages([]);
+                    setActiveConversation(null);
                   }}
                 >
                   <Trash2 className="h-5 w-5" />
@@ -1377,16 +1298,13 @@ return (
                 onTyping={() => {
                   if (!selectedConversationId || !user?.id) return;
                   
-                  // Don't broadcast typing to AI chats
                   const AI_BOT_ID = '00000000-0000-0000-0000-000000000000';
                   if (selectedUserId === AI_BOT_ID) return;
                   
-                  // Clear existing timeout
                   if (typingTimeout) {
                     clearTimeout(typingTimeout);
                   }
 
-                  // Broadcast typing event
                   const channel = supabase.channel(`conversation-${selectedConversationId}`);
                   channel.send({
                     type: 'broadcast',
@@ -1394,7 +1312,6 @@ return (
                     payload: { userId: user.id, username }
                   });
 
-                  // Set timeout to stop broadcasting
                   const timeout = setTimeout(() => {
                     setTypingTimeout(null);
                   }, 3000);
