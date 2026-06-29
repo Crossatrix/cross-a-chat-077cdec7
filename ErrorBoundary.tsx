@@ -13,7 +13,7 @@ const ErrorBoundary = ({ error, resetErrorBoundary }) => {
         onClick={() => {
           const title = encodeURIComponent(`Error Report: ${error.message}`);
           const body = encodeURIComponent(`Error Code: ${error.code}\n\nMessage: ${error.message}\n\nStack Trace: ${error.stack}`);
-          const url = `https://github.com/Crossatrix/cross-a-chat/issues/new?title=${title}&body=${body}`;
+          const url = `https://github.com/Crossatrix/cross-a-chat-077cdec7/issues/new?title=${title}&body=${body}`;
           window.open(url, '_blank');
         }}
       >
