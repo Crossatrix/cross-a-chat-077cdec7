@@ -1505,6 +1505,7 @@ export type Database = {
           bio: string | null
           boost_followers: number
           created_at: string
+          creator_username: string | null
           crossatrix_user_id: string | null
           id: string
           last_seen: string | null
@@ -1521,6 +1522,7 @@ export type Database = {
           bio?: string | null
           boost_followers?: number
           created_at?: string
+          creator_username?: string | null
           crossatrix_user_id?: string | null
           id: string
           last_seen?: string | null
@@ -1537,6 +1539,7 @@ export type Database = {
           bio?: string | null
           boost_followers?: number
           created_at?: string
+          creator_username?: string | null
           crossatrix_user_id?: string | null
           id?: string
           last_seen?: string | null
