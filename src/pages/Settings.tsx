@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban, Crown, FlaskConical } from "lucide-react";
+import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban, Crown, FlaskConical, Palette, LayoutDashboard } from "lucide-react";
 import ShareLinkButton from "@/components/ShareLinkButton";
 import { checkProStatus, purchasePro } from "@/utils/proSubscription";
 import { checkBetaStatus, purchaseBeta, BETA_PRICE } from "@/utils/betaSubscription";
