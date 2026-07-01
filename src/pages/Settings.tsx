@@ -628,6 +628,60 @@ const Settings = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="creator" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-primary" />
+                Creator
+              </CardTitle>
+              <CardDescription>
+                Set a separate name shown on your videos, posts, and creator profile.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="creator-username">Creator Username</Label>
+                <Input
+                  id="creator-username"
+                  value={creatorUsername}
+                  onChange={(e) => setCreatorUsername(e.target.value)}
+                  placeholder={username ? `Defaults to @${username}` : "Enter creator name"}
+                  maxLength={40}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use your normal username.
+                </p>
+              </div>
+              <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
+                {saving ? "Saving..." : t("settings.save")}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LayoutDashboard className="h-5 w-5 text-primary" />
+                Creator Dashboard
+              </CardTitle>
+              <CardDescription>
+                See all your videos, music, posts and memberships with detailed stats — edit or delete them.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate("/creator-dashboard")} className="w-full gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                Open Creator Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* placeholder replaced */}
+        <TabsContent value="__unused_placeholder" className="hidden">
+
+
         <TabsContent value="privacy" className="space-y-4">
           <Card>
             <CardHeader>
