@@ -447,8 +447,12 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="profile">{t("settings.profile")}</TabsTrigger>
+          <TabsTrigger value="creator" className="gap-1">
+            <Palette className="h-3 w-3 hidden sm:inline text-primary" />
+            Creator
+          </TabsTrigger>
           <TabsTrigger value="pro" className="gap-1">
             <Crown className="h-3 w-3 hidden sm:inline text-yellow-500" />
             Pro
