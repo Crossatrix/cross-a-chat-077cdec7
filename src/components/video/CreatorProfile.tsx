@@ -205,7 +205,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
               <FeaturedAvatar
                 userId={creatorId}
                 avatarUrl={profile.avatar_url}
-                username={profile.username}
+                username={(profile as any).creator_username || profile.username}
               />
             </div>
             <div className="flex-1 min-w-0">
