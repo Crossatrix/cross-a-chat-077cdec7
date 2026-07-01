@@ -62,11 +62,15 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
         .eq("status", "live").order("started_at", { ascending: false }).limit(10),
       supabase.from("music_tracks")
         .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url)")
-        .order("created_at", { ascending: false }).limit(15),
+        .order("created_at", { ascending: false }).limit(30),
     ]);
-    setLiveStreams((liveRes.data || []) as unknown as Livestream[]);
-    setMusicTracks((musicRes.data || []) as unknown as MusicTrack[]);
+    const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
+    const liveFiltered = await filterAccessibleMembersOnly((liveRes.data || []) as any, currentUserId);
+    const musicFiltered = await filterAccessibleMembersOnly((musicRes.data || []) as any, currentUserId);
+    setLiveStreams(liveFiltered as unknown as Livestream[]);
+    setMusicTracks((musicFiltered as unknown as MusicTrack[]).slice(0, 15));
   };
+
 
   const checkAgeVerification = async () => {
     const { data } = await supabase
