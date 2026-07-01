@@ -408,7 +408,7 @@ const Index = () => {
             setTypingUsers((prev) => prev.filter((u) => u.userId !== data.user_id));
             
             // Show notification for messages from other users when not viewing this conversation
-            if (data.user_id !== user.id && activeConvId !== selectedConversationId) {
+            if (data.user_id !== user.id && getActiveConversation() !== selectedConversationId) {
               showMessageNotification(
                 data.profiles?.username || 'Someone',
                 data.content || 'Sent a media file',
