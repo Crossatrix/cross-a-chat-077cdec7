@@ -409,7 +409,8 @@ const Settings = () => {
           text_lightness: theme.textLightness,
           show_online_status: showOnlineStatus,
           allow_group_invites_from_strangers: allowGroupInvitesFromStrangers,
-        })
+          creator_username: creatorUsername.trim() || null,
+        } as any)
         .eq("id", user.id);
 
       if (error) throw error;
