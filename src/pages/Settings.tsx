@@ -81,7 +81,7 @@ const Settings = () => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("username, bio, avatar_url, text_hue, text_saturation, text_lightness, show_online_status, allow_group_invites_from_strangers")
+        .select("username, bio, avatar_url, text_hue, text_saturation, text_lightness, show_online_status, allow_group_invites_from_strangers, creator_username")
         .eq("id", user.id)
         .single();
 
@@ -91,6 +91,7 @@ const Settings = () => {
         setAvatarUrl(profile.avatar_url || "");
         setShowOnlineStatus(profile.show_online_status ?? true);
         setAllowGroupInvitesFromStrangers(profile.allow_group_invites_from_strangers ?? true);
+        setCreatorUsername((profile as any).creator_username || "");
         
         // Load saved text color settings
         if (profile.text_hue !== null && profile.text_saturation !== null && profile.text_lightness !== null) {
