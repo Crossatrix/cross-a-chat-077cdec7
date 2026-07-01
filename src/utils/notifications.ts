@@ -109,3 +109,14 @@ export const showMessageNotification = (senderName: string, content: string, con
     }
   );
 };
+
+// Tracks which conversation the user is currently viewing so we can suppress
+// in-app message notifications for that conversation.
+let _activeConversationId: string | null = null;
+
+export const setActiveConversation = (conversationId: string | null) => {
+  _activeConversationId = conversationId;
+};
+
+export const getActiveConversation = (): string | null => _activeConversationId;
+
