@@ -31,6 +31,7 @@ const Settings = () => {
   const [username, setUsername] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [bio, setBio] = useState("");
+  const [creatorUsername, setCreatorUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showOnlineStatus, setShowOnlineStatus] = useState(true);
