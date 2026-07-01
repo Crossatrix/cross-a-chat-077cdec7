@@ -169,7 +169,7 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
         <FeaturedAvatar
           userId={post.user_id}
           avatarUrl={post.profiles.avatar_url}
-          username={post.profiles.username}
+          username={(post.profiles.creator_username || post.profiles.username)}
           avatarClassName="h-9 w-9"
           fallbackClassName="bg-secondary text-foreground text-sm"
           className="shrink-0 cursor-pointer"
@@ -180,7 +180,7 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
             <StaffBadge userId={post.user_id} size={14} />
             <CreatorBadge userId={post.user_id} size={14} />
             <span className="text-sm font-semibold truncate cursor-pointer hover:underline" onClick={() => onCreatorClick?.(post.user_id)}>
-              {post.profiles.username}
+              {(post.profiles.creator_username || post.profiles.username)}
             </span>
           </div>
           <div className="flex items-center gap-1">
