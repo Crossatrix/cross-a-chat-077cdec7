@@ -142,7 +142,7 @@ const MusicCard = ({ track, currentUserId, onCreatorClick, onDeleted }: Props) =
             <FeaturedAvatar
               userId={track.user_id}
               avatarUrl={track.profiles.avatar_url}
-              username={(track.profiles.creator_username || track.profiles.username)}
+              username={((track.profiles as any)?.creator_username || track.profiles.username)}
               avatarClassName="h-5 w-5"
               fallbackClassName="bg-secondary text-foreground text-[10px]"
               className="cursor-pointer"
@@ -152,7 +152,7 @@ const MusicCard = ({ track, currentUserId, onCreatorClick, onDeleted }: Props) =
             <CreatorBadge userId={track.user_id} size={12} />
             <span className="text-xs text-muted-foreground truncate cursor-pointer hover:underline"
               onClick={() => onCreatorClick?.(track.user_id)}>
-              {(track.profiles.creator_username || track.profiles.username)}
+              {((track.profiles as any)?.creator_username || track.profiles.username)}
             </span>
           </div>
           {track.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{track.description}</p>}

@@ -479,7 +479,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
               <FeaturedAvatar
                 userId={video.user_id}
                 avatarUrl={video.profiles.avatar_url}
-                username={(video.profiles.creator_username || video.profiles.username)}
+                username={((video.profiles as any)?.creator_username || video.profiles.username)}
                 avatarClassName="h-10 w-10"
                 fallbackClassName="bg-secondary text-foreground"
                 className="cursor-pointer"
@@ -489,7 +489,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                 <div className="flex items-center gap-1">
                   <StaffBadge userId={video.user_id} size={16} />
                   <CreatorBadge userId={video.user_id} size={16} />
-                  <span className="font-medium text-sm truncate hover:underline">{(video.profiles.creator_username || video.profiles.username)}</span>
+                  <span className="font-medium text-sm truncate hover:underline">{((video.profiles as any)?.creator_username || video.profiles.username)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">{followerCount} {followerCount === 1 ? 'follower' : 'followers'}</p>
               </div>
@@ -506,7 +506,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
               )}
               <OwnerBoostButton
                 targetId={video.user_id}
-                title={`Boost ${(video.profiles.creator_username || video.profiles.username)}`}
+                title={`Boost ${((video.profiles as any)?.creator_username || video.profiles.username)}`}
                 iconOnly
                 className="h-8 w-8 p-0 border-amber-500/50 text-amber-400 hover:bg-amber-500/10 shrink-0"
                 options={[{ kind: "followers", label: "Add followers" }]}
@@ -523,7 +523,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
               <h3 className="font-semibold text-sm">Comments ({comments.length})</h3>
               {replyingTo && (
                 <div className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/40 border border-border rounded text-[11px]">
-                  <span className="text-muted-foreground truncate">Replying to <span className="font-medium text-foreground">{(replyingTo.profiles.creator_username || replyingTo.profiles.username)}</span></span>
+                  <span className="text-muted-foreground truncate">Replying to <span className="font-medium text-foreground">{((replyingTo.profiles as any)?.creator_username || replyingTo.profiles.username)}</span></span>
                   <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setReplyingTo(null)}>
                     <X className="h-3 w-3" />
                   </Button>
@@ -531,7 +531,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
               )}
               <div className="flex gap-2">
                 <Input
-                  placeholder={replyingTo ? `Reply to ${(replyingTo.profiles.creator_username || replyingTo.profiles.username)}…` : "Add a comment..."}
+                  placeholder={replyingTo ? `Reply to ${((replyingTo.profiles as any)?.creator_username || replyingTo.profiles.username)}…` : "Add a comment..."}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleComment()}
@@ -560,7 +560,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                             <div className="flex items-center gap-1">
                               <StaffBadge userId={comment.user_id} size={12} />
                               <CreatorBadge userId={comment.user_id} size={12} />
-                              <span className="text-xs font-medium">{(comment.profiles.creator_username || comment.profiles.username)}</span>
+                              <span className="text-xs font-medium">{((comment.profiles as any)?.creator_username || comment.profiles.username)}</span>
                               <span className="text-[10px] text-muted-foreground">{formatDate(comment.created_at)}</span>
                             </div>
                             <p className="text-sm break-words">{comment.content}</p>
