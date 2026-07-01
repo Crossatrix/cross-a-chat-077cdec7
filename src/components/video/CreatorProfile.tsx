@@ -212,7 +212,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
               <div className="flex items-center gap-1.5 flex-wrap">
                 <StaffBadge userId={creatorId} size={18} />
                 <CreatorBadge userId={creatorId} size={18} />
-                <h1 className="text-lg font-bold truncate">{profile.username}</h1>
+                <h1 className="text-lg font-bold truncate">{(profile as any).creator_username || profile.username}</h1>
               </div>
               <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
                 <Calendar className="h-3 w-3" />
