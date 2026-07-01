@@ -134,6 +134,15 @@ const AnimatedRoutes = () => {
               </PageTransition>
             }
           />
+          <Route
+            path="/creator-dashboard"
+            element={
+              <PageTransition>
+                <CreatorDashboard />
+              </PageTransition>
+            }
+          />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route
             path="*"
