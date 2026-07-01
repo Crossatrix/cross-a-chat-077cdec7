@@ -33,7 +33,7 @@ import { CallInterface } from "@/components/CallInterface";
 import { IncomingCallHandler } from "@/components/IncomingCallHandler";
 import { NewChatDialog } from "@/components/NewChatDialog";
 import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
-import { requestNotificationPermission, registerServiceWorker, showNotification, setActiveConversation, showMessageNotification, showCallNotification } from "@/utils/notifications";
+import { requestNotificationPermission, registerServiceWorker, showNotification, setActiveConversation, getActiveConversation, showMessageNotification, showCallNotification } from "@/utils/notifications";
 import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
 import ForYouFeed from "@/components/video/ForYouFeed";
