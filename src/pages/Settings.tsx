@@ -678,8 +678,6 @@ const Settings = () => {
           </Card>
         </TabsContent>
 
-        {/* placeholder replaced */}
-        <TabsContent value="__unused_placeholder" className="hidden">
 
 
         <TabsContent value="privacy" className="space-y-4">
