@@ -194,7 +194,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
         <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-sm font-semibold truncate flex-1">{profile.username}</h2>
+        <h2 className="text-sm font-semibold truncate flex-1">{(profile as any).creator_username || profile.username}</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-visible">
