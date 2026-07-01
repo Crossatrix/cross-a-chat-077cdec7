@@ -104,7 +104,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
   const fetchPendingVideos = async () => {
     const { data } = await (supabase
       .from("videos")
-      .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+      .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
       .eq("user_id", currentUserId)
       .order("created_at", { ascending: false }) as any).eq("moderation_status", "pending");
     const pending = (data || []) as unknown as Video[];
@@ -129,7 +129,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
     const [{ data }, { data: blockedCatsData }] = await Promise.all([
       (supabase
         .from("videos")
-        .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+        .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
         .order("created_at", { ascending: false }) as any).eq("moderation_status", "approved"),
       supabase
         .from("blocked_categories" as any)
@@ -262,7 +262,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
       const q = searchQuery.toLowerCase();
       result = result.filter(v =>
         v.title.toLowerCase().includes(q) ||
-        v.profiles.username.toLowerCase().includes(q)
+        ((v.profiles as any)?.creator_username || v.profiles.username).toLowerCase().includes(q)
       );
     }
 
@@ -289,7 +289,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
     } else {
       (async () => {
         const { data } = await supabase.from("videos")
-          .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+          .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
           .eq("id", deepLinkVideoId).maybeSingle();
         if (data) handleSelectVideo(data as any);
         onDeepLinkConsumed?.();
@@ -509,7 +509,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
                   <FeaturedAvatar
                     userId={video.user_id}
                     avatarUrl={video.profiles.avatar_url}
-                    username={video.profiles.username}
+                    username={((video.profiles as any)?.creator_username || video.profiles.username)}
                     avatarClassName="h-8 w-8 shrink-0"
                     fallbackClassName="bg-secondary text-foreground text-xs"
                     className="shrink-0 mt-0.5"
@@ -569,7 +569,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
                   <FeaturedAvatar
                     userId={video.user_id}
                     avatarUrl={video.profiles.avatar_url}
-                    username={video.profiles.username}
+                    username={((video.profiles as any)?.creator_username || video.profiles.username)}
                     avatarClassName="h-8 w-8 shrink-0"
                     fallbackClassName="bg-secondary text-foreground text-xs"
                     className="shrink-0 mt-0.5 cursor-pointer"
@@ -580,7 +580,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
                     <div className="flex items-center gap-1 mt-1">
                       <StaffBadge userId={video.user_id} size={12} />
                       <CreatorBadge userId={video.user_id} size={12} />
-                      <span className="text-xs text-muted-foreground truncate cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}>{video.profiles.username}</span>
+                      <span className="text-xs text-muted-foreground truncate cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}>{((video.profiles as any)?.creator_username || video.profiles.username)}</span>
                       {isStaff && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

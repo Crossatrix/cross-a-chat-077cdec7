@@ -33,7 +33,7 @@ import { CallInterface } from "@/components/CallInterface";
 import { IncomingCallHandler } from "@/components/IncomingCallHandler";
 import { NewChatDialog } from "@/components/NewChatDialog";
 import { GroupSettingsDialog } from "@/components/GroupSettingsDialog";
-import { requestNotificationPermission, registerServiceWorker, showNotification, setActiveConversation, showMessageNotification, showCallNotification } from "@/utils/notifications";
+import { requestNotificationPermission, registerServiceWorker, showNotification, setActiveConversation, getActiveConversation, showMessageNotification, showCallNotification } from "@/utils/notifications";
 import VideoFeed from "@/components/video/VideoFeed";
 import ShortsFeed from "@/components/video/ShortsFeed";
 import ForYouFeed from "@/components/video/ForYouFeed";
@@ -408,7 +408,7 @@ const Index = () => {
             setTypingUsers((prev) => prev.filter((u) => u.userId !== data.user_id));
             
             // Show notification for messages from other users when not viewing this conversation
-            if (data.user_id !== user.id && activeConvId !== selectedConversationId) {
+            if (data.user_id !== user.id && getActiveConversation() !== selectedConversationId) {
               showMessageNotification(
                 data.profiles?.username || 'Someone',
                 data.content || 'Sent a media file',

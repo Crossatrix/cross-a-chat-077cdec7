@@ -58,15 +58,19 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   const fetchLiveAndMusic = async () => {
     const [liveRes, musicRes] = await Promise.all([
       supabase.from("livestreams")
-        .select("*, profiles!livestreams_user_id_fkey(username, avatar_url)")
+        .select("*, profiles!livestreams_user_id_fkey(username, avatar_url, creator_username)")
         .eq("status", "live").order("started_at", { ascending: false }).limit(10),
       supabase.from("music_tracks")
-        .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url)")
-        .order("created_at", { ascending: false }).limit(15),
+        .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url, creator_username)")
+        .order("created_at", { ascending: false }).limit(30),
     ]);
-    setLiveStreams((liveRes.data || []) as unknown as Livestream[]);
-    setMusicTracks((musicRes.data || []) as unknown as MusicTrack[]);
+    const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
+    const liveFiltered = await filterAccessibleMembersOnly((liveRes.data || []) as any, currentUserId);
+    const musicFiltered = await filterAccessibleMembersOnly((musicRes.data || []) as any, currentUserId);
+    setLiveStreams(liveFiltered as unknown as Livestream[]);
+    setMusicTracks((musicFiltered as unknown as MusicTrack[]).slice(0, 15));
   };
+
 
   const checkAgeVerification = async () => {
     const { data } = await supabase
@@ -86,7 +90,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     if (followedIds.length === 0) return;
     const { data } = await supabase
       .from('posts')
-      .select('*, profiles(username, avatar_url)')
+      .select('*, profiles(username, avatar_url, creator_username)')
       .in('user_id', followedIds)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -158,7 +162,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     // Fetch all videos (we score client-side)
     const { data } = await (supabase
       .from("videos")
-      .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+      .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
       .order("created_at", { ascending: false })
       .limit(200) as any).eq("moderation_status", "approved");
 
@@ -352,7 +356,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
                         </span>
                       </div>
                       <div className="p-2 text-sm font-semibold line-clamp-1">{s.title}</div>
-                      <div className="px-2 pb-2 text-xs text-muted-foreground truncate">{s.profiles.username}</div>
+                      <div className="px-2 pb-2 text-xs text-muted-foreground truncate">{((s.profiles as any)?.creator_username || s.profiles.username)}</div>
                     </button>
                   ))}
                 </div>
@@ -424,7 +428,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
                   <FeaturedAvatar
                     userId={video.user_id}
                     avatarUrl={video.profiles.avatar_url}
-                    username={video.profiles.username}
+                    username={((video.profiles as any)?.creator_username || video.profiles.username)}
                     avatarClassName="h-8 w-8 shrink-0"
                     fallbackClassName="bg-secondary text-foreground text-xs"
                     className="shrink-0 mt-0.5 cursor-pointer"
@@ -435,7 +439,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
                     <div className="flex items-center gap-1 mt-1">
                       <StaffBadge userId={video.user_id} size={12} />
                       <CreatorBadge userId={video.user_id} size={12} />
-                      <span className="text-xs text-muted-foreground truncate cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); onCreatorClick?.(video.user_id); }}>{video.profiles.username}</span>
+                      <span className="text-xs text-muted-foreground truncate cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); onCreatorClick?.(video.user_id); }}>{((video.profiles as any)?.creator_username || video.profiles.username)}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
                       <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" /> {video.views_count}</span>

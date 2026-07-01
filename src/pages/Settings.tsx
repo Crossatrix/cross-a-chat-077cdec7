@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban, Crown, FlaskConical } from "lucide-react";
+import { ArrowLeft, Upload, Shield, UsersRound, X, EyeOff, Play, Trash2, Ban, Crown, FlaskConical, Palette, LayoutDashboard } from "lucide-react";
 import ShareLinkButton from "@/components/ShareLinkButton";
 import { checkProStatus, purchasePro } from "@/utils/proSubscription";
 import { checkBetaStatus, purchaseBeta, BETA_PRICE } from "@/utils/betaSubscription";
@@ -31,6 +31,7 @@ const Settings = () => {
   const [username, setUsername] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [bio, setBio] = useState("");
+  const [creatorUsername, setCreatorUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showOnlineStatus, setShowOnlineStatus] = useState(true);
@@ -80,7 +81,7 @@ const Settings = () => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("username, bio, avatar_url, text_hue, text_saturation, text_lightness, show_online_status, allow_group_invites_from_strangers")
+        .select("username, bio, avatar_url, text_hue, text_saturation, text_lightness, show_online_status, allow_group_invites_from_strangers, creator_username")
         .eq("id", user.id)
         .single();
 
@@ -90,6 +91,7 @@ const Settings = () => {
         setAvatarUrl(profile.avatar_url || "");
         setShowOnlineStatus(profile.show_online_status ?? true);
         setAllowGroupInvitesFromStrangers(profile.allow_group_invites_from_strangers ?? true);
+        setCreatorUsername((profile as any).creator_username || "");
         
         // Load saved text color settings
         if (profile.text_hue !== null && profile.text_saturation !== null && profile.text_lightness !== null) {
@@ -407,7 +409,8 @@ const Settings = () => {
           text_lightness: theme.textLightness,
           show_online_status: showOnlineStatus,
           allow_group_invites_from_strangers: allowGroupInvitesFromStrangers,
-        })
+          creator_username: creatorUsername.trim() || null,
+        } as any)
         .eq("id", user.id);
 
       if (error) throw error;
@@ -444,8 +447,12 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="profile">{t("settings.profile")}</TabsTrigger>
+          <TabsTrigger value="creator" className="gap-1">
+            <Palette className="h-3 w-3 hidden sm:inline text-primary" />
+            Creator
+          </TabsTrigger>
           <TabsTrigger value="pro" className="gap-1">
             <Crown className="h-3 w-3 hidden sm:inline text-yellow-500" />
             Pro
@@ -620,6 +627,58 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="creator" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-primary" />
+                Creator
+              </CardTitle>
+              <CardDescription>
+                Set a separate name shown on your videos, posts, and creator profile.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="creator-username">Creator Username</Label>
+                <Input
+                  id="creator-username"
+                  value={creatorUsername}
+                  onChange={(e) => setCreatorUsername(e.target.value)}
+                  placeholder={username ? `Defaults to @${username}` : "Enter creator name"}
+                  maxLength={40}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use your normal username.
+                </p>
+              </div>
+              <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
+                {saving ? "Saving..." : t("settings.save")}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LayoutDashboard className="h-5 w-5 text-primary" />
+                Creator Dashboard
+              </CardTitle>
+              <CardDescription>
+                See all your videos, music, posts and memberships with detailed stats — edit or delete them.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate("/creator-dashboard")} className="w-full gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                Open Creator Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+
 
         <TabsContent value="privacy" className="space-y-4">
           <Card>

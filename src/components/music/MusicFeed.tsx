@@ -35,7 +35,7 @@ const MusicFeed = ({ currentUserId, onCreatorClick, deepLinkTrackId, onDeepLinkC
     setLoading(true);
     const { data } = await supabase
       .from("music_tracks")
-      .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url)")
+      .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url, creator_username)")
       .order("created_at", { ascending: false })
       .limit(100);
     const { filterAccessibleMembersOnly } = await import("@/utils/memberships");

@@ -94,7 +94,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
     setLoading(true);
     const { data } = await (supabase
       .from("videos")
-      .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+      .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
       .or("duration.lte.180,duration.is.null")
       .order("created_at", { ascending: false }) as any).eq("moderation_status", "approved");
 
@@ -297,7 +297,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const fetchComments = async (videoId: string) => {
     const { data } = await supabase
       .from("video_comments")
-      .select("*, profiles(username, avatar_url)")
+      .select("*, profiles(username, avatar_url, creator_username)")
       .eq("video_id", videoId)
       .order("created_at", { ascending: true });
     if (data) setComments(data as unknown as Comment[]);
@@ -589,7 +589,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
               <FeaturedAvatar
                 userId={short.user_id}
                 avatarUrl={short.profiles.avatar_url}
-                username={short.profiles.username}
+                username={((short.profiles as any)?.creator_username || short.profiles.username)}
                 avatarClassName="h-8 w-8 border-2 border-white"
                 fallbackClassName="bg-secondary text-foreground text-xs"
                 className="cursor-pointer"
@@ -599,7 +599,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
                 <div className="flex items-center gap-1">
                   <StaffBadge userId={short.user_id} size={14} />
                   <CreatorBadge userId={short.user_id} size={14} />
-                  <span className="font-semibold text-sm hover:underline">{short.profiles.username}</span>
+                  <span className="font-semibold text-sm hover:underline">{((short.profiles as any)?.creator_username || short.profiles.username)}</span>
                 </div>
                 <span className="text-[10px] opacity-70">{followerCounts[short.user_id] || 0} followers</span>
               </div>
@@ -632,7 +632,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
                     <div className="flex items-center gap-1">
                       <StaffBadge userId={comment.user_id} size={12} />
                       <CreatorBadge userId={comment.user_id} size={12} />
-                      <span className="text-xs font-medium">{comment.profiles.username}</span>
+                      <span className="text-xs font-medium">{((comment.profiles as any)?.creator_username || comment.profiles.username)}</span>
                       <span className="text-[10px] text-muted-foreground">{formatDate(comment.created_at)}</span>
                     </div>
                     <p className="text-sm break-words">{comment.content}</p>

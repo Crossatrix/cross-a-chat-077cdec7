@@ -26,7 +26,7 @@ const LiveFeed = ({ currentUserId, onCreatorClick }: Props) => {
     setLoading(true);
     const { data } = await supabase
       .from("livestreams")
-      .select("*, profiles!livestreams_user_id_fkey(username, avatar_url)")
+      .select("*, profiles!livestreams_user_id_fkey(username, avatar_url, creator_username)")
       .eq("status", "live")
       .order("started_at", { ascending: false })
       .limit(50);
@@ -80,7 +80,7 @@ const LiveFeed = ({ currentUserId, onCreatorClick }: Props) => {
                   </span>
                 </div>
                 <div className="p-2.5 flex gap-2">
-                  <FeaturedAvatar userId={s.user_id} avatarUrl={s.profiles.avatar_url} username={s.profiles.username}
+                  <FeaturedAvatar userId={s.user_id} avatarUrl={s.profiles.avatar_url} username={((s.profiles as any)?.creator_username || s.profiles.username)}
                     avatarClassName="h-8 w-8 shrink-0" fallbackClassName="bg-secondary text-foreground text-xs"
                     className="shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
@@ -88,7 +88,7 @@ const LiveFeed = ({ currentUserId, onCreatorClick }: Props) => {
                     <div className="flex items-center gap-1 mt-1">
                       <StaffBadge userId={s.user_id} size={12} />
                       <CreatorBadge userId={s.user_id} size={12} />
-                      <span className="text-xs text-muted-foreground truncate">{s.profiles.username}</span>
+                      <span className="text-xs text-muted-foreground truncate">{((s.profiles as any)?.creator_username || s.profiles.username)}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
                       <span className="flex items-center gap-0.5"><ThumbsUp className="h-3 w-3" />{s.likes_count}</span>

@@ -49,12 +49,12 @@ const PublicPosts = () => {
     const [postsRes, subRes] = await Promise.all([
       supabase
         .from("posts")
-        .select("id, user_id, content, image_url, video_url, likes_count, dislikes_count, comments_count, created_at, profiles(username, avatar_url)")
+        .select("id, user_id, content, image_url, video_url, likes_count, dislikes_count, comments_count, created_at, profiles(username, avatar_url, creator_username)")
         .order("created_at", { ascending: false })
         .limit(100),
       (supabase as any)
         .from("subcross_posts")
-        .select("id, user_id, title, content, image_url, likes_count, dislikes_count, comments_count, created_at, profiles(username, avatar_url), subcrosses(name, display_name)")
+        .select("id, user_id, title, content, image_url, likes_count, dislikes_count, comments_count, created_at, profiles(username, avatar_url, creator_username), subcrosses(name, display_name)")
         .order("created_at", { ascending: false })
         .limit(100),
     ]);

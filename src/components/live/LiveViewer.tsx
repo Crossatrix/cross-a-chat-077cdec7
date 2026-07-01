@@ -218,7 +218,7 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
           <FeaturedAvatar
             userId={stream.user_id}
             avatarUrl={stream.profiles.avatar_url}
-            username={stream.profiles.username}
+            username={((stream.profiles as any)?.creator_username || stream.profiles.username)}
             avatarClassName="h-7 w-7"
             fallbackClassName="bg-secondary text-foreground text-xs"
             className="cursor-pointer"
@@ -228,7 +228,7 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
           <CreatorBadge userId={stream.user_id} size={14} />
           <span className="text-sm font-medium cursor-pointer hover:underline"
             onClick={() => onCreatorClick?.(stream.user_id)}>
-            {stream.profiles.username}
+            {((stream.profiles as any)?.creator_username || stream.profiles.username)}
           </span>
           <div className="flex items-center gap-2 ml-auto">
             <Button variant={liked === true ? "default" : "outline"} size="sm" className="gap-1" onClick={() => vote(true)}>

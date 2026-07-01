@@ -46,7 +46,7 @@ const PostsFeed = ({ currentUserId, onCreatorClick, filterUserId, showFollowed, 
       // Show only this user's posts
       const { data } = await supabase
         .from('posts')
-        .select('*, profiles(username, avatar_url)')
+        .select('*, profiles(username, avatar_url, creator_username)')
         .eq('user_id', filterUserId)
         .order('created_at', { ascending: false })
         .limit(100);
@@ -63,7 +63,7 @@ const PostsFeed = ({ currentUserId, onCreatorClick, filterUserId, showFollowed, 
 
       const { data } = await supabase
         .from('posts')
-        .select('*, profiles(username, avatar_url)')
+        .select('*, profiles(username, avatar_url, creator_username)')
         .in('user_id', allIds)
         .order('created_at', { ascending: false })
         .limit(100);
@@ -72,7 +72,7 @@ const PostsFeed = ({ currentUserId, onCreatorClick, filterUserId, showFollowed, 
       // Show all posts (explore)
       const { data } = await supabase
         .from('posts')
-        .select('*, profiles(username, avatar_url)')
+        .select('*, profiles(username, avatar_url, creator_username)')
         .order('created_at', { ascending: false })
         .limit(100);
       setPosts((data || []) as unknown as Post[]);

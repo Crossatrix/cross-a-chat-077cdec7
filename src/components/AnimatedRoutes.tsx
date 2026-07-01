@@ -19,6 +19,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const Maintenance = lazy(() => import("@/pages/Maintenance"));
 const InstantLink = lazy(() => import("@/pages/InstantLink"));
 const PublicPosts = lazy(() => import("@/pages/PublicPosts"));
+const CreatorDashboard = lazy(() => import("@/pages/CreatorDashboard"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -133,6 +134,15 @@ const AnimatedRoutes = () => {
               </PageTransition>
             }
           />
+          <Route
+            path="/creator-dashboard"
+            element={
+              <PageTransition>
+                <CreatorDashboard />
+              </PageTransition>
+            }
+          />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route
             path="*"

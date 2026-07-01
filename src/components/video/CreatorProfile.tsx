@@ -68,8 +68,8 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
       { data: adminRoles },
       { data: featuredData },
     ] = await Promise.all([
-      supabase.from("profiles").select("username, avatar_url, bio, created_at").eq("id", creatorId).single(),
-      supabase.from("videos").select("*, profiles!videos_user_id_fkey(username, avatar_url)").eq("user_id", creatorId).order("created_at", { ascending: false }),
+      supabase.from("profiles").select("username, avatar_url, bio, created_at, creator_username").eq("id", creatorId).single(),
+      supabase.from("videos").select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)").eq("user_id", creatorId).order("created_at", { ascending: false }),
       supabase.from("video_follows").select("*", { count: "exact", head: true }).eq("following_id", creatorId),
       supabase.from("video_follows").select("*", { count: "exact", head: true }).eq("follower_id", creatorId),
       supabase.from("video_follows").select("id").eq("follower_id", currentUserId).eq("following_id", creatorId).maybeSingle(),
@@ -194,7 +194,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
         <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-sm font-semibold truncate flex-1">{profile.username}</h2>
+        <h2 className="text-sm font-semibold truncate flex-1">{(profile as any).creator_username || profile.username}</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-visible">
@@ -205,14 +205,14 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
               <FeaturedAvatar
                 userId={creatorId}
                 avatarUrl={profile.avatar_url}
-                username={profile.username}
+                username={(profile as any).creator_username || profile.username}
               />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <StaffBadge userId={creatorId} size={18} />
                 <CreatorBadge userId={creatorId} size={18} />
-                <h1 className="text-lg font-bold truncate">{profile.username}</h1>
+                <h1 className="text-lg font-bold truncate">{(profile as any).creator_username || profile.username}</h1>
               </div>
               <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
                 <Calendar className="h-3 w-3" />
