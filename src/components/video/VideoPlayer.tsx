@@ -154,7 +154,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const fetchComments = async () => {
     const { data } = await supabase
       .from("video_comments")
-      .select("*, profiles(username, avatar_url)")
+      .select("*, profiles(username, avatar_url, creator_username)")
       .eq("video_id", video.id)
       .order("created_at", { ascending: true });
     if (data) setComments(data as unknown as Comment[]);

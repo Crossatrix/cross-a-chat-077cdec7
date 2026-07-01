@@ -58,10 +58,10 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
   const fetchLiveAndMusic = async () => {
     const [liveRes, musicRes] = await Promise.all([
       supabase.from("livestreams")
-        .select("*, profiles!livestreams_user_id_fkey(username, avatar_url)")
+        .select("*, profiles!livestreams_user_id_fkey(username, avatar_url, creator_username)")
         .eq("status", "live").order("started_at", { ascending: false }).limit(10),
       supabase.from("music_tracks")
-        .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url)")
+        .select("*, profiles!music_tracks_user_id_fkey(username, avatar_url, creator_username)")
         .order("created_at", { ascending: false }).limit(30),
     ]);
     const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
@@ -90,7 +90,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     if (followedIds.length === 0) return;
     const { data } = await supabase
       .from('posts')
-      .select('*, profiles(username, avatar_url)')
+      .select('*, profiles(username, avatar_url, creator_username)')
       .in('user_id', followedIds)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -162,7 +162,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     // Fetch all videos (we score client-side)
     const { data } = await (supabase
       .from("videos")
-      .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+      .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
       .order("created_at", { ascending: false })
       .limit(200) as any).eq("moderation_status", "approved");
 

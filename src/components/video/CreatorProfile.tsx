@@ -69,7 +69,7 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
       { data: featuredData },
     ] = await Promise.all([
       supabase.from("profiles").select("username, avatar_url, bio, created_at").eq("id", creatorId).single(),
-      supabase.from("videos").select("*, profiles!videos_user_id_fkey(username, avatar_url)").eq("user_id", creatorId).order("created_at", { ascending: false }),
+      supabase.from("videos").select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)").eq("user_id", creatorId).order("created_at", { ascending: false }),
       supabase.from("video_follows").select("*", { count: "exact", head: true }).eq("following_id", creatorId),
       supabase.from("video_follows").select("*", { count: "exact", head: true }).eq("follower_id", creatorId),
       supabase.from("video_follows").select("id").eq("follower_id", currentUserId).eq("following_id", creatorId).maybeSingle(),

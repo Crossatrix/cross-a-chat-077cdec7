@@ -94,7 +94,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
     setLoading(true);
     const { data } = await (supabase
       .from("videos")
-      .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+      .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
       .or("duration.lte.180,duration.is.null")
       .order("created_at", { ascending: false }) as any).eq("moderation_status", "approved");
 
@@ -297,7 +297,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
   const fetchComments = async (videoId: string) => {
     const { data } = await supabase
       .from("video_comments")
-      .select("*, profiles(username, avatar_url)")
+      .select("*, profiles(username, avatar_url, creator_username)")
       .eq("video_id", videoId)
       .order("created_at", { ascending: true });
     if (data) setComments(data as unknown as Comment[]);

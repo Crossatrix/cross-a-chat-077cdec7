@@ -26,7 +26,7 @@ const LiveFeed = ({ currentUserId, onCreatorClick }: Props) => {
     setLoading(true);
     const { data } = await supabase
       .from("livestreams")
-      .select("*, profiles!livestreams_user_id_fkey(username, avatar_url)")
+      .select("*, profiles!livestreams_user_id_fkey(username, avatar_url, creator_username)")
       .eq("status", "live")
       .order("started_at", { ascending: false })
       .limit(50);

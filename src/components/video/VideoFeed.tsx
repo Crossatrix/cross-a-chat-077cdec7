@@ -104,7 +104,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
   const fetchPendingVideos = async () => {
     const { data } = await (supabase
       .from("videos")
-      .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+      .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
       .eq("user_id", currentUserId)
       .order("created_at", { ascending: false }) as any).eq("moderation_status", "pending");
     const pending = (data || []) as unknown as Video[];
@@ -129,7 +129,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
     const [{ data }, { data: blockedCatsData }] = await Promise.all([
       (supabase
         .from("videos")
-        .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+        .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
         .order("created_at", { ascending: false }) as any).eq("moderation_status", "approved"),
       supabase
         .from("blocked_categories" as any)
@@ -289,7 +289,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
     } else {
       (async () => {
         const { data } = await supabase.from("videos")
-          .select("*, profiles!videos_user_id_fkey(username, avatar_url)")
+          .select("*, profiles!videos_user_id_fkey(username, avatar_url, creator_username)")
           .eq("id", deepLinkVideoId).maybeSingle();
         if (data) handleSelectVideo(data as any);
         onDeepLinkConsumed?.();

@@ -91,11 +91,11 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
     const [{ data: subs }, { data: ps }, { data: mems }, { data: pv }, { data: gp }] = await Promise.all([
       sb.from("subcrosses").select("*").order("members_count", { ascending: false }).limit(50),
       sb.from("subcross_posts")
-        .select("*, profiles(username, avatar_url), subcrosses(name, display_name)")
+        .select("*, profiles(username, avatar_url, creator_username), subcrosses(name, display_name)")
         .order("created_at", { ascending: false }).limit(100),
       sb.from("subcross_members").select("subcross_id").eq("user_id", currentUserId),
       sb.from("subcross_post_votes").select("post_id, is_like").eq("user_id", currentUserId),
-      sb.from("posts").select("*, profiles(username, avatar_url)")
+      sb.from("posts").select("*, profiles(username, avatar_url, creator_username)")
         .order("created_at", { ascending: false }).limit(50),
     ]);
     setSubcrosses(subs || []);
@@ -127,7 +127,7 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
     setActiveSub(sub);
     setView("subcross");
     const { data } = await sb.from("subcross_posts")
-      .select("*, profiles(username, avatar_url), subcrosses(name, display_name)")
+      .select("*, profiles(username, avatar_url, creator_username), subcrosses(name, display_name)")
       .eq("subcross_id", sub.id).order("created_at", { ascending: false }).limit(100);
     setPosts(data || []);
   };
@@ -395,7 +395,7 @@ const PostDetail = ({ post, currentUserId, onBack, onCreatorClick, onDelete, onV
   const load = async () => {
     setLoading(true);
     const [{ data: cs }, { data: cv }] = await Promise.all([
-      sb.from("subcross_comments").select("*, profiles(username, avatar_url)")
+      sb.from("subcross_comments").select("*, profiles(username, avatar_url, creator_username)")
         .eq("post_id", post.id).order("created_at", { ascending: true }),
       sb.from("subcross_comment_votes").select("comment_id, is_like").eq("user_id", currentUserId),
     ]);
