@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { StaffRole } from "@/utils/roleConfig";
-import adminIcon from "@/assets/roles/admin.jpeg";
-import elderModIcon from "@/assets/roles/elder_moderator.jpeg";
-import moderatorIcon from "@/assets/roles/moderator.jpeg";
-import modLiteIcon from "@/assets/roles/moderator_lite.jpeg";
+import adminIcon from "@/assets/roles/admin.png";
+import elderModIcon from "@/assets/roles/elder_moderator.png";
+import moderatorIcon from "@/assets/roles/moderator.png";
+import modLiteIcon from "@/assets/roles/moderator_lite.png";
 import officialIcon from "@/assets/roles/official_notifications.png";
 import proBadgeIcon from "@/assets/pro-badge.png";
 
