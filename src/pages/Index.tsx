@@ -8,6 +8,7 @@ import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Za
 import ContentBlockBanner from "@/components/ContentBlockBanner";
 import { useBetaStatus } from "@/hooks/useBetaStatus";
 import BetaDialog from "@/components/BetaDialog";
+import ModStoreDialog from "@/components/ModStoreDialog";
 import ScamDetector from "@/components/ScamDetector";
 import { getBalance as getCroinBalance } from "@/utils/croins";
 import croinIcon from "@/assets/croin.png";
@@ -86,6 +87,7 @@ const Index = () => {
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const [croinBalance, setCroinBalance] = useState<number>(0);
   const [betaDialogOpen, setBetaDialogOpen] = useState(false);
+  const [modStoreOpen, setModStoreOpen] = useState(false);
   const [instantVideoId, setInstantVideoId] = useState<string | null>(null);
   const [instantMusicId, setInstantMusicId] = useState<string | null>(null);
   const [instantSubcrossId, setInstantSubcrossId] = useState<string | null>(null);
