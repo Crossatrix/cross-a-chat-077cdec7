@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { consumePendingInstantLink } from "@/utils/instantLinks";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe, FlaskConical } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe, FlaskConical, Package } from "lucide-react";
 import ContentBlockBanner from "@/components/ContentBlockBanner";
 import { useBetaStatus } from "@/hooks/useBetaStatus";
 import BetaDialog from "@/components/BetaDialog";
+import ModStoreDialog from "@/components/ModStoreDialog";
 import ScamDetector from "@/components/ScamDetector";
 import { getBalance as getCroinBalance } from "@/utils/croins";
 import croinIcon from "@/assets/croin.png";
@@ -86,6 +87,7 @@ const Index = () => {
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const [croinBalance, setCroinBalance] = useState<number>(0);
   const [betaDialogOpen, setBetaDialogOpen] = useState(false);
+  const [modStoreOpen, setModStoreOpen] = useState(false);
   const [instantVideoId, setInstantVideoId] = useState<string | null>(null);
   const [instantMusicId, setInstantMusicId] = useState<string | null>(null);
   const [instantSubcrossId, setInstantSubcrossId] = useState<string | null>(null);
@@ -1109,6 +1111,9 @@ return (
                 <FlaskConical className="h-3.5 w-3.5 text-primary" />
               </Button>
             )}
+            <Button onClick={() => setModStoreOpen(true)} variant="secondary" size="icon" className="h-8 w-8" aria-label="Mod Store" title="Mod Store">
+              <Package className="h-3.5 w-3.5 text-primary" />
+            </Button>
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5" />
             </Button>
@@ -1241,6 +1246,10 @@ return (
                 <span className="hidden md:inline md:ml-2">Beta</span>
               </Button>
             )}
+            <Button onClick={() => setModStoreOpen(true)} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Mod Store" title="Mod Store">
+              <Package className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+              <span className="hidden md:inline md:ml-2">Mods</span>
+            </Button>
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden md:inline md:ml-2">Logout</span>
@@ -1351,6 +1360,7 @@ return (
         </AlertDialogContent>
       </AlertDialog>
       <BetaDialog open={betaDialogOpen} onOpenChange={setBetaDialogOpen} />
+      <ModStoreDialog open={modStoreOpen} onOpenChange={setModStoreOpen} currentUserId={user?.id} />
       <ScamDetector
         conversationId={selectedConversationId}
         currentUserDbId={user?.id}

@@ -1,5 +1,6 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getModEmojis, onModsUpdated } from '@/utils/mods';
 
 interface CustomEmoji {
   name: string;
@@ -9,8 +10,18 @@ interface CustomEmoji {
 let cachedEmojis: CustomEmoji[] = [];
 let emojisFetched = false;
 
+const withModEmojis = (base: CustomEmoji[]): CustomEmoji[] => {
+  const map = new Map<string, CustomEmoji>();
+  base.forEach(e => map.set(e.name, e));
+  // Mod emojis override existing ones with the same name
+  for (const m of getModEmojis()) {
+    map.set(m.name, { name: m.name, image_url: m.dataUrl });
+  }
+  return Array.from(map.values());
+};
+
 export const fetchEmojisForFormatting = async () => {
-  if (emojisFetched) return cachedEmojis;
+  if (emojisFetched) return withModEmojis(cachedEmojis);
 
   const [{ data: custom }, { data: creator }] = await Promise.all([
     supabase.from('custom_emojis').select('name, image_url'),
@@ -26,8 +37,13 @@ export const fetchEmojisForFormatting = async () => {
   }
   cachedEmojis = merged;
   emojisFetched = true;
-  return cachedEmojis;
+  return withModEmojis(cachedEmojis);
 };
+
+// Refresh in-memory cache when mods change so :emoji: rendering picks them up
+onModsUpdated(() => {
+  cachedEmojis = withModEmojis(cachedEmojis.filter(e => !getModEmojis().some(m => m.name === e.name)));
+});
 
 // Subscribe to emoji changes
 supabase
@@ -392,7 +408,10 @@ export const formatMessageText = (text: string): JSX.Element => {
 
         while ((emojiMatch = emojiRegex.exec(iPart)) !== null) {
           const emojiName = emojiMatch[1];
-          const emoji = cachedEmojis.find(e => e.name === emojiName);
+          const modEmoji = getModEmojis().find(m => m.name === emojiName);
+          const emoji = modEmoji
+            ? { name: modEmoji.name, image_url: modEmoji.dataUrl }
+            : cachedEmojis.find(e => e.name === emojiName);
 
           if (emojiMatch.index > lastEmojiIndex) {
             emojiParts.push(iPart.substring(lastEmojiIndex, emojiMatch.index));
