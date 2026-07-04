@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { consumePendingInstantLink } from "@/utils/instantLinks";
 import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe, FlaskConical } from "lucide-react";
+import { LogOut, Shield, Settings, Phone, Trash2, Users, MessageCircle, Play, Zap, Sparkles, FileText, Coins, Music, Radio, Globe, FlaskConical, Package } from "lucide-react";
 import ContentBlockBanner from "@/components/ContentBlockBanner";
 import { useBetaStatus } from "@/hooks/useBetaStatus";
 import BetaDialog from "@/components/BetaDialog";
@@ -1111,6 +1111,9 @@ return (
                 <FlaskConical className="h-3.5 w-3.5 text-primary" />
               </Button>
             )}
+            <Button onClick={() => setModStoreOpen(true)} variant="secondary" size="icon" className="h-8 w-8" aria-label="Mod Store" title="Mod Store">
+              <Package className="h-3.5 w-3.5 text-primary" />
+            </Button>
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5" />
             </Button>
