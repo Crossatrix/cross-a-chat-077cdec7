@@ -408,7 +408,10 @@ export const formatMessageText = (text: string): JSX.Element => {
 
         while ((emojiMatch = emojiRegex.exec(iPart)) !== null) {
           const emojiName = emojiMatch[1];
-          const emoji = cachedEmojis.find(e => e.name === emojiName);
+          const modEmoji = getModEmojis().find(m => m.name === emojiName);
+          const emoji = modEmoji
+            ? { name: modEmoji.name, image_url: modEmoji.dataUrl }
+            : cachedEmojis.find(e => e.name === emojiName);
 
           if (emojiMatch.index > lastEmojiIndex) {
             emojiParts.push(iPart.substring(lastEmojiIndex, emojiMatch.index));
