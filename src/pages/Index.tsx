@@ -1246,6 +1246,10 @@ return (
                 <span className="hidden md:inline md:ml-2">Beta</span>
               </Button>
             )}
+            <Button onClick={() => setModStoreOpen(true)} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Mod Store" title="Mod Store">
+              <Package className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+              <span className="hidden md:inline md:ml-2">Mods</span>
+            </Button>
             <Button onClick={handleLogout} variant="secondary" size="icon" className="h-8 w-8 md:h-9 md:w-auto md:px-3" aria-label="Logout">
               <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden md:inline md:ml-2">Logout</span>
@@ -1356,6 +1360,7 @@ return (
         </AlertDialogContent>
       </AlertDialog>
       <BetaDialog open={betaDialogOpen} onOpenChange={setBetaDialogOpen} />
+      <ModStoreDialog open={modStoreOpen} onOpenChange={setModStoreOpen} currentUserId={user?.id} />
       <ScamDetector
         conversationId={selectedConversationId}
         currentUserDbId={user?.id}
