@@ -1,32 +1,40 @@
-## Plan
 
-### 1. Chat opens at the bottom
-- `MessageList.tsx` — after messages load and on conversation change, scroll the container to the bottom instantly (no smooth) so the latest message is in view on open.
+## Mod Store
 
-### 2. Boost button on every Crossunity post
-- `src/components/crossunity/CrossunityFeed.tsx` — render `OwnerBoostButton` on each subcross post (likes/dislikes; per-poll-option if applicable). Visible only to app owners (component already checks).
+Add a **Mods** button next to the existing Beta button that opens a new **Mod Store** dialog where anyone can upload and install `.ccmod` files (renamed `.zip`).
 
-### 3. Crossunity home shows c/posts
-- Treat `posts` (the global Posts feed) as a virtual subcross "c/posts" on the Crossunity home feed. Merge them into the home listing alongside subcross posts (sorted by created_at). Clicking opens the same PostCard UI inline.
+### What a .ccmod contains
+A zip with:
+- `mod.json` — array like `[{"name":"example"},{"description":"..."}]` (parsed by merging objects)
+- `emojis/` — optional. Each image file adds a new emoji (filename = emoji name). If the filename matches an existing custom emoji name, it overrides it.
+- `textures/` — optional. Mirrors `src/assets/` paths (e.g. `textures/roles/admin.jpeg` overrides `src/assets/roles/admin.jpeg`) at runtime.
 
-### 4. Report a post → staff inbox
-- New table `public.post_reports` (post_id, reporter_id, reason, status, created_at). RLS: reporter inserts own, staff (`is_staff`) selects/updates/deletes.
-- "Report" button in `PostCard.tsx` (and subcross post card) opens a small reason dialog → inserts row.
-- Admin panel new section `PostReportsList.tsx` (mounted in `src/pages/Admin.tsx`) for every staff member: list reports with post preview; actions "Delete post" and "Block poster" (opens block dialog from #5).
+### Database (Lovable Cloud)
+New table `mods`:
+- `name`, `description`, `author_id`, `file_url` (storage), `downloads`, `created_at`
+- Public read; authenticated insert (own rows); author can delete own; staff can delete any.
 
-### 5. User blocks (separate from bans)
-- New table `public.user_content_blocks` (user_id PK, blocked_by, reason, expires_at nullable=permanent, created_at). RLS: user reads own; staff manages.
-- Helper RPC `public.is_content_blocked(_user_id uuid) returns boolean` (security definer).
-- `UserInfoDialog.tsx` / profile: admins/owners see "Block user" button → dialog choosing Permanent or duration (1d/7d/30d/custom) + reason.
-- Enforce in posting flows: videos upload, livestream start, posts create, subcross post create, comments (video_comments, post_comments, subcross_comments). Each insert path checks `is_content_blocked` first and shows toast "You are blocked from posting until …".
-- A banner appears at the top of the app when current user is blocked.
+New storage bucket `mods` (public read) for the `.ccmod` files.
 
-### 6. Move Shorts into Videos tab
-- Remove standalone Shorts tab from `Index.tsx` bottom nav.
-- Inside `VideoFeed.tsx`, add a sub-toggle: "Videos" (current ForYou/long feed) vs "Shorts" (mounts existing `ShortsFeed`). Default: Videos.
+### Install flow (client-side)
+- User clicks **Install** on a mod → download `.ccmod` → unzip in browser with `jszip` (needs adding).
+- Parse `mod.json` for metadata.
+- **Emojis**: for each file in `emojis/`, save `{name, dataUrl}` into `localStorage` under `installed_mod_emojis`. Emoji picker + message renderer read this list first as an override, then fall back to DB emojis.
+- **Textures**: for each file in `textures/<path>`, save `{path: "src/assets/<path>", dataUrl}` into `localStorage` under `installed_mod_textures`. A small runtime helper `resolveTexture(originalUrl)` returns the override data URL if present.
+- Track installed mods in `localStorage` under `installed_mods` so they can be listed/uninstalled.
 
-### Tech details
-- Migrations create `post_reports` and `user_content_blocks` with proper GRANTs and RLS, plus `is_content_blocked` function.
-- `useContentBlock()` hook fetches block status on auth load; reused by banner and posting components.
-- All UI uses existing design tokens (no hardcoded colors).
-- Responsive: works on mobile (411px) and desktop.
+### UI
+- `ModsButton.tsx` next to the Beta button (same location in `Index.tsx`).
+- `ModStoreDialog.tsx`:
+  - **Browse** tab: list all mods from DB with name, description, author, install button.
+  - **Upload** tab: file picker (accept `.ccmod`), validates presence of `mod.json`, uploads to storage, inserts DB row.
+  - **Installed** tab: locally installed mods with Uninstall.
+
+### Files
+- New: `src/components/ModsButton.tsx`, `src/components/ModStoreDialog.tsx`, `src/utils/mods.ts` (install/uninstall/parse + `resolveTexture`, `getModEmojis`).
+- Edit: `src/pages/Index.tsx` (place Mods button next to Beta button), `src/components/EmojiPicker.tsx` + `src/utils/textFormatting.tsx` (merge mod emojis), a few key image imports use `resolveTexture` (e.g. role badges in `StaffBadge.tsx`).
+- Add dep: `jszip`.
+- Migration: `mods` table + `mods` storage bucket + policies.
+
+### Limitations to call out
+Because Vite bundles `src/assets/*` at build time, texture overrides only work for images loaded through the `resolveTexture` helper. I'll wire it into the most visible surfaces (role/staff badges, avatars fallback). Non-wired assets will still show originals.
