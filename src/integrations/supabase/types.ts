@@ -1123,6 +1123,39 @@ export type Database = {
           },
         ]
       }
+      mods: {
+        Row: {
+          author_id: string
+          created_at: string
+          description: string | null
+          downloads: number
+          file_url: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          description?: string | null
+          downloads?: number
+          file_url: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          description?: string | null
+          downloads?: number
+          file_url?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       music_likes: {
         Row: {
           created_at: string
