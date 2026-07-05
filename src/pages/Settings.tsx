@@ -61,6 +61,7 @@ const Settings = () => {
   const [buyingBeta, setBuyingBeta] = useState(false);
 
   useEffect(() => {
+    import("@/utils/modEvents").then(m => m.emitModEvent("openedsettings"));
     loadProfile();
     loadGroupBlockedUsers();
     loadNotInterested();
