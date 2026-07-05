@@ -58,6 +58,7 @@ const CreatorDashboard = () => {
   const [confirmDel, setConfirmDel] = useState<{ kind: Kind; id: string } | null>(null);
 
   useEffect(() => {
+    import("@/utils/modEvents").then(m => m.emitModEvent("openedcreatordashboard"));
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }

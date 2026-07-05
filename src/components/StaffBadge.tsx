@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import ModImg from "@/components/ModImg";
 import type { StaffRole } from "@/utils/roleConfig";
 import adminIcon from "@/assets/roles/admin.png";
 import elderModIcon from "@/assets/roles/elder_moderator.png";
@@ -103,7 +104,7 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
   return (
     <span className="inline-flex items-center gap-0.5">
       {badges.map((badge) => (
-        <img
+        <ModImg
           key={badge}
           src={ROLE_ICONS[badge]}
           alt={badge === "official" ? "Official" : badge === "pro" ? "Pro" : badge}

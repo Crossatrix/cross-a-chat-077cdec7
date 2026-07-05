@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import ModImg from "@/components/ModImg";
 import creatorIcon from "@/assets/roles/creator.png";
 import verifiedCreatorIcon from "@/assets/roles/verified_creator.png";
 import verifiedCreatorPlusIcon from "@/assets/roles/verified_creator_plus.png";
@@ -56,7 +57,7 @@ const CreatorBadge = ({ userId, size = 16 }: CreatorBadgeProps) => {
   if (!loaded || !status) return null;
 
   return (
-    <img
+    <ModImg
       src={STATUS_ICONS[status]}
       alt={STATUS_LABELS[status]}
       width={size}

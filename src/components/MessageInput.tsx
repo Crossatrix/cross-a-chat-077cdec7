@@ -133,6 +133,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
 
     // Send with empty string if no text (media only)
     onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined, generateImage, pendingSystemMessage);
+    import("@/utils/modEvents").then(m => m.emitModEvent("messagesend"));
     setMessage("");
     setSelectedImage(null);
     setSelectedVideo(null);

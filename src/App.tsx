@@ -10,8 +10,10 @@ import LoadingScreen from "@/components/LoadingScreen";
 import AnimatedRoutes from "@/components/AnimatedRoutes";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import BetaPaywall from "@/components/BetaPaywall";
+import ModUIHost from "@/components/ModUIHost";
 import { supabase } from "@/integrations/supabase/client";
 import { checkBetaStatus, isPreviewDomain } from "@/utils/betaSubscription";
+import { emitModEvent } from "@/utils/modEvents";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +23,7 @@ const App = () => {
   const [needsBetaCheck, setNeedsBetaCheck] = useState(false);
 
   useEffect(() => {
+    emitModEvent("reload");
     if (!isPreviewDomain()) {
       setBetaUnlocked(true);
       return;
@@ -36,7 +39,8 @@ const App = () => {
       setNeedsBetaCheck(!ok);
     };
     supabase.auth.getSession().then(({ data }) => evaluate(data.session?.user?.id));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((e, session) => {
+      if (e === "SIGNED_IN") emitModEvent("login", { userId: session?.user?.id });
       evaluate(session?.user?.id);
     });
     return () => sub.subscription.unsubscribe();
@@ -54,6 +58,7 @@ const App = () => {
                 <Sonner />
                 <BrowserRouter>
                   <AnimatedRoutes />
+                  <ModUIHost />
                   {needsBetaCheck && !betaUnlocked && (
                     <BetaPaywall onUnlocked={() => { setBetaUnlocked(true); setNeedsBetaCheck(false); }} />
                   )}

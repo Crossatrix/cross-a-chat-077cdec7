@@ -22,6 +22,7 @@ import VideoStarRating from "./VideoStarRating";
 import { getCategoryLabel } from "@/utils/videoCategories";
 import { getStaffRole, isAtLeast } from "@/utils/roleConfig";
 import AdPlayer, { pickRandomAd } from "./AdPlayer";
+import { emitModEvent } from "@/utils/modEvents";
 
 interface Video {
   id: string;
@@ -75,6 +76,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const [adChecked, setAdChecked] = useState(false);
 
   useEffect(() => {
+    emitModEvent("watchvideo", { videoId: video.id });
     fetchComments();
     fetchUserLike();
     fetchFollowStatus();
@@ -189,6 +191,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   };
 
   const handleLike = async (isLike: boolean) => {
+    emitModEvent(isLike ? "like" : "dislike", { videoId: video.id });
     const prevLike = userLike;
 
     if (prevLike === isLike) {
@@ -246,6 +249,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   };
 
   const handleFollow = async () => {
+    emitModEvent(isFollowing ? "unfollow" : "follow", { targetId: video.user_id });
     if (isFollowing) {
       await supabase.from("video_follows").delete().eq("follower_id", currentUserId).eq("following_id", video.user_id);
       setIsFollowing(false);
