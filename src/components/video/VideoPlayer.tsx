@@ -76,6 +76,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const [adChecked, setAdChecked] = useState(false);
 
   useEffect(() => {
+    emitModEvent("watchvideo", { videoId: video.id });
     fetchComments();
     fetchUserLike();
     fetchFollowStatus();
