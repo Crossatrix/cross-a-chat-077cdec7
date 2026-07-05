@@ -175,7 +175,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                       <p className="font-medium truncate">{m.name}</p>
                       {m.description && <p className="text-sm text-muted-foreground line-clamp-2">{m.description}</p>}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {m.emojis.length} emoji(s), {m.textures.length} texture(s)
+                        {m.emojis.length} emoji · {m.textures.length} texture · {m.ui.length} UI · {m.scripts.length} script · {m.triggers} trigger
                       </p>
                     </div>
                     <Button size="sm" variant="destructive" onClick={() => handleUninstall(m.id, m.name)}>
@@ -190,7 +190,8 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
           <TabsContent value="upload" className="space-y-3">
             <p className="text-sm text-muted-foreground">
               Upload a <code>.ccmod</code> file (a zip with <code>mod.json</code> and optional
-              <code> emojis/</code> and <code>textures/</code> folders).
+              <code> emojis/</code>, <code>textures/</code>, <code>UI/</code>, <code>scripts/</code> folders and
+              a root <code>event.cctrigger</code> file).
             </p>
             <Input
               placeholder="Mod name"
