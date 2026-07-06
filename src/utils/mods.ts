@@ -7,6 +7,7 @@ const UI_KEY = "installed_mod_ui";
 const SCRIPT_KEY = "installed_mod_scripts";
 const TRIGGER_KEY = "installed_mod_triggers";
 const MODS_KEY = "installed_mods";
+const DISABLED_KEY = "installed_mod_disabled";
 const EVT = "mods-updated";
 
 export const SUPPORTED_EVENTS = [
