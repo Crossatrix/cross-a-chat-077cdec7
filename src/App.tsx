@@ -39,9 +39,16 @@ const App = () => {
       setBetaUnlocked(ok);
       setNeedsBetaCheck(!ok);
     };
-    supabase.auth.getSession().then(({ data }) => evaluate(data.session?.user?.id));
+    supabase.auth.getSession().then(({ data }) => {
+      const uid = data.session?.user?.id;
+      evaluate(uid);
+      if (uid) syncInstalledModsFromAccount(uid);
+    });
     const { data: sub } = supabase.auth.onAuthStateChange((e, session) => {
-      if (e === "SIGNED_IN") emitModEvent("login", { userId: session?.user?.id });
+      if (e === "SIGNED_IN") {
+        emitModEvent("login", { userId: session?.user?.id });
+        if (session?.user?.id) syncInstalledModsFromAccount(session.user.id);
+      }
       evaluate(session?.user?.id);
     });
     return () => sub.subscription.unsubscribe();
