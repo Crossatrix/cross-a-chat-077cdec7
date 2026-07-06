@@ -7,7 +7,7 @@ import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const OWNER_EMAILS = ["cross.a.trix.owner@hotmail.com", "moritz.loeseke7@gmail.com"];
+const OWNER_EMAILS = ["cross.a.trix.owner@hotmail.com", "moritz.loeseke7@gmail.com", "ben.froehleke@gmx.de"];
 
 let cachedIsOwner: boolean | null = null;
 export const useIsOwner = () => {
