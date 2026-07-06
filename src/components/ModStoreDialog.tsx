@@ -28,6 +28,7 @@ interface ModRow {
   file_url: string;
   downloads: number;
   created_at: string;
+  author_username?: string;
 }
 
 interface Props {
@@ -53,8 +54,24 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
       .from("mods")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) toast.error("Failed to load mods");
-    else setMods(data || []);
+    if (error) {
+      toast.error("Failed to load mods");
+      setLoading(false);
+      return;
+    }
+    const modRows: ModRow[] = data || [];
+    const authorIds = Array.from(new Set(modRows.map((m) => m.author_id).filter(Boolean)));
+    if (authorIds.length > 0) {
+      const { data: profiles } = await (supabase as any)
+        .from("profiles")
+        .select("id, username")
+        .in("id", authorIds);
+      const usernameMap = new Map((profiles || []).map((p: any) => [p.id, p.username]));
+      modRows.forEach((m) => {
+        m.author_username = usernameMap.get(m.author_id) || "Unknown";
+      });
+    }
+    setMods(modRows);
     setLoading(false);
   };
 
@@ -147,7 +164,9 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                         {m.description && (
                           <p className="text-sm text-muted-foreground line-clamp-2">{m.description}</p>
                         )}
-                        <p className="text-xs text-muted-foreground mt-1">{m.downloads} downloads</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          by {m.author_username || "Unknown"} · {m.downloads} downloads
+                        </p>
                       </div>
                       <Button
                         size="sm"
