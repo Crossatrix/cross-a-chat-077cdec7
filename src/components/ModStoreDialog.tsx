@@ -41,6 +41,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
   const [mods, setMods] = useState<ModRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [installed, setInstalled] = useState(getInstalledMods() || []);
   const [uploadName, setUploadName] = useState("");
   const [uploadDesc, setUploadDesc] = useState("");
@@ -98,6 +99,21 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
   const handleUninstall = async (id: string, name: string) => {
     await uninstallMod(id);
     toast.success(`Uninstalled ${name}`);
+  };
+
+  const handleDelete = async (mod: ModRow) => {
+    if (!confirm(`Delete "${mod.name}"? This cannot be undone.`)) return;
+    setDeleting(mod.id);
+    try {
+      const { error } = await (supabase as any).from("mods").delete().eq("id", mod.id);
+      if (error) throw error;
+      toast.success(`Deleted ${mod.name}`);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Delete failed");
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const handleUpload = async () => {
@@ -168,18 +184,34 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                           by {m.author_username || "Unknown"} · {m.downloads} downloads
                         </p>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleInstall(m)}
-                        disabled={installing === m.id}
-                        variant={isInstalled ? "secondary" : "default"}
-                      >
-                        {installing === m.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <><Download className="h-4 w-4 mr-1" /> {isInstalled ? "Reinstall" : "Install"}</>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleInstall(m)}
+                          disabled={installing === m.id}
+                          variant={isInstalled ? "secondary" : "default"}
+                        >
+                          {installing === m.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <><Download className="h-4 w-4 mr-1" /> {isInstalled ? "Reinstall" : "Install"}</>
+                          )}
+                        </Button>
+                        {currentUserId && m.author_id === currentUserId && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(m)}
+                            disabled={deleting === m.id}
+                          >
+                            {deleting === m.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
                         )}
-                      </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 );
