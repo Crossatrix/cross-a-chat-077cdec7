@@ -7,6 +7,7 @@ const UI_KEY = "installed_mod_ui";
 const SCRIPT_KEY = "installed_mod_scripts";
 const TRIGGER_KEY = "installed_mod_triggers";
 const MODS_KEY = "installed_mods";
+const DISABLED_KEY = "installed_mod_disabled";
 const EVT = "mods-updated";
 
 export const SUPPORTED_EVENTS = [
@@ -43,11 +44,22 @@ const write = (key: string, val: unknown) => {
 };
 
 export const getInstalledMods = (): InstalledMod[] => read(MODS_KEY, []);
-export const getModEmojis = (): ModEmoji[] => read(EMOJI_KEY, []);
-export const getModTextures = (): ModTexture[] => read(TEXTURE_KEY, []);
-export const getModUI = (): ModUI[] => read(UI_KEY, []);
-export const getModScripts = (): ModScript[] => read(SCRIPT_KEY, []);
-export const getModTriggers = (): ModTrigger[] => read(TRIGGER_KEY, []);
+const getDisabledIds = (): string[] => read<string[]>(DISABLED_KEY, []);
+export const isModEnabled = (modId: string): boolean => !getDisabledIds().includes(modId);
+export const setModEnabled = (modId: string, enabled: boolean) => {
+  const disabled = new Set(getDisabledIds());
+  if (enabled) disabled.delete(modId); else disabled.add(modId);
+  write(DISABLED_KEY, Array.from(disabled));
+};
+const enabledFilter = <T extends { modId: string }>(items: T[]): T[] => {
+  const disabled = new Set(getDisabledIds());
+  return items.filter(i => !disabled.has(i.modId));
+};
+export const getModEmojis = (): ModEmoji[] => enabledFilter(read<ModEmoji[]>(EMOJI_KEY, []));
+export const getModTextures = (): ModTexture[] => enabledFilter(read<ModTexture[]>(TEXTURE_KEY, []));
+export const getModUI = (): ModUI[] => enabledFilter(read<ModUI[]>(UI_KEY, []));
+export const getModScripts = (): ModScript[] => enabledFilter(read<ModScript[]>(SCRIPT_KEY, []));
+export const getModTriggers = (): ModTrigger[] => enabledFilter(read<ModTrigger[]>(TRIGGER_KEY, []));
 
 export const onModsUpdated = (cb: () => void) => {
   window.addEventListener(EVT, cb);
@@ -148,15 +160,17 @@ export const installMod = async (modId: string, file: Blob) => {
   await uninstallMod(modId, { silent: true });
 
   const emojiMap = new Map<string, ModEmoji>();
-  [...getModEmojis(), ...parsed.emojis.map(e => ({ ...e, modId }))].forEach(e => emojiMap.set(e.name, e));
+  [...read<ModEmoji[]>(EMOJI_KEY, []), ...parsed.emojis.map(e => ({ ...e, modId }))].forEach(e => emojiMap.set(e.name, e));
   const textureMap = new Map<string, ModTexture>();
-  [...getModTextures(), ...parsed.textures.map(t => ({ ...t, modId }))].forEach(t => textureMap.set(t.path, t));
+  [...read<ModTexture[]>(TEXTURE_KEY, []), ...parsed.textures.map(t => ({ ...t, modId }))].forEach(t => textureMap.set(t.path, t));
 
   write(EMOJI_KEY, Array.from(emojiMap.values()));
   write(TEXTURE_KEY, Array.from(textureMap.values()));
-  write(UI_KEY, [...getModUI(), ...parsed.ui.map(u => ({ ...u, modId }))]);
-  write(SCRIPT_KEY, [...getModScripts(), ...parsed.scripts.map(s => ({ ...s, modId }))]);
-  write(TRIGGER_KEY, [...getModTriggers(), ...parsed.triggers.map(t => ({ ...t, modId }))]);
+  write(UI_KEY, [...read<ModUI[]>(UI_KEY, []), ...parsed.ui.map(u => ({ ...u, modId }))]);
+  write(SCRIPT_KEY, [...read<ModScript[]>(SCRIPT_KEY, []), ...parsed.scripts.map(s => ({ ...s, modId }))]);
+  write(TRIGGER_KEY, [...read<ModTrigger[]>(TRIGGER_KEY, []), ...parsed.triggers.map(t => ({ ...t, modId }))]);
+  // Re-enable on (re)install
+  write(DISABLED_KEY, getDisabledIds().filter(id => id !== modId));
   write(MODS_KEY, [
     ...getInstalledMods(),
     {
@@ -175,11 +189,12 @@ export const installMod = async (modId: string, file: Blob) => {
 
 export const uninstallMod = async (modId: string, opts?: { silent?: boolean }) => {
   write(MODS_KEY, getInstalledMods().filter(m => m.id !== modId));
-  write(EMOJI_KEY, getModEmojis().filter(e => e.modId !== modId));
-  write(TEXTURE_KEY, getModTextures().filter(t => t.modId !== modId));
-  write(UI_KEY, getModUI().filter(u => u.modId !== modId));
-  write(SCRIPT_KEY, getModScripts().filter(s => s.modId !== modId));
-  write(TRIGGER_KEY, getModTriggers().filter(t => t.modId !== modId));
+  write(EMOJI_KEY, read<ModEmoji[]>(EMOJI_KEY, []).filter(e => e.modId !== modId));
+  write(TEXTURE_KEY, read<ModTexture[]>(TEXTURE_KEY, []).filter(t => t.modId !== modId));
+  write(UI_KEY, read<ModUI[]>(UI_KEY, []).filter(u => u.modId !== modId));
+  write(SCRIPT_KEY, read<ModScript[]>(SCRIPT_KEY, []).filter(s => s.modId !== modId));
+  write(TRIGGER_KEY, read<ModTrigger[]>(TRIGGER_KEY, []).filter(t => t.modId !== modId));
+  write(DISABLED_KEY, getDisabledIds().filter(id => id !== modId));
   if (opts?.silent) return;
 };
 

@@ -14,7 +14,11 @@ import {
   uninstallMod,
   downloadAndInstallMod,
   uploadModFile,
+  isModEnabled,
+  setModEnabled,
 } from "@/utils/mods";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface ModRow {
   id: string;
@@ -168,22 +172,37 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
             {installed.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No mods installed</p>
             ) : (
-              installed.map((m) => (
-                <Card key={m.id}>
-                  <CardContent className="p-3 flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{m.name}</p>
-                      {m.description && <p className="text-sm text-muted-foreground line-clamp-2">{m.description}</p>}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {m.emojis.length} emoji · {m.textures.length} texture · {m.ui.length} UI · {m.scripts.length} script · {m.triggers} trigger
-                      </p>
-                    </div>
-                    <Button size="sm" variant="destructive" onClick={() => handleUninstall(m.id, m.name)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))
+              installed.map((m) => {
+                const enabled = isModEnabled(m.id);
+                return (
+                  <Card key={m.id} className={enabled ? "" : "opacity-60"}>
+                    <CardContent className="p-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{m.name}</p>
+                        {m.description && <p className="text-sm text-muted-foreground line-clamp-2">{m.description}</p>}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {m.emojis.length} emoji · {m.textures.length} texture · {m.ui.length} UI · {m.scripts.length} script · {m.triggers} trigger
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`mod-${m.id}`} className="text-xs">
+                            {enabled ? "Enabled" : "Disabled"}
+                          </Label>
+                          <Switch
+                            id={`mod-${m.id}`}
+                            checked={enabled}
+                            onCheckedChange={(v) => setModEnabled(m.id, v)}
+                          />
+                        </div>
+                        <Button size="sm" variant="destructive" onClick={() => handleUninstall(m.id, m.name)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </TabsContent>
 
