@@ -40,7 +40,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
   const [mods, setMods] = useState<ModRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
-  const [installed, setInstalled] = useState(getInstalledMods());
+  const [installed, setInstalled] = useState(getInstalledMods() || []);
   const [uploadName, setUploadName] = useState("");
   const [uploadDesc, setUploadDesc] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -62,7 +62,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
     if (open) load();
   }, [open]);
 
-  useEffect(() => onModsUpdated(() => setInstalled(getInstalledMods())), []);
+  useEffect(() => onModsUpdated(() => setInstalled(getInstalledMods() || [])), []);
 
   const handleInstall = async (mod: ModRow) => {
     setInstalling(mod.id);
@@ -181,7 +181,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                         <p className="font-medium truncate">{m.name}</p>
                         {m.description && <p className="text-sm text-muted-foreground line-clamp-2">{m.description}</p>}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {m.emojis.length} emoji · {m.textures.length} texture · {m.ui.length} UI · {m.scripts.length} script · {m.triggers} trigger
+                          {m.emojis?.length ?? 0} emoji · {m.textures?.length ?? 0} texture · {m.ui?.length ?? 0} UI · {m.scripts?.length ?? 0} script · {m.triggers ?? 0} trigger
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
