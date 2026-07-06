@@ -30,21 +30,9 @@ export const useIsOwner = () => {
         return;
       }
 
-      // Primary check: auth email matches an owner email (trimmed + lowercased)
+      // Owner check: auth email matches an owner email (trimmed + lowercased)
       const email = user.email?.trim().toLowerCase();
-      let owner = !!email && OWNER_EMAILS.includes(email);
-
-      // Fallback: server-side is_app_owner RPC (handles non-standard auth)
-      if (!owner) {
-        const { data, error } = await (supabase as any).rpc("is_app_owner", { _user_id: user.id });
-        if (!error) owner = !!data;
-        else console.warn("is_app_owner RPC error:", error.message);
-      }
-
-      if (!owner) {
-        // Helps diagnose "email X doesn't work" cases quickly in devtools
-        console.warn("[useIsOwner] Not recognized as owner. email:", email, "userId:", user.id);
-      }
+      const owner = !!email && OWNER_EMAILS.includes(email);
 
       cachedIsOwner = owner;
       cachedUserId = user.id;
