@@ -206,12 +206,38 @@ export const uninstallMod = async (modId: string, opts?: { silent?: boolean }) =
   write(TRIGGER_KEY, read<ModTrigger[]>(TRIGGER_KEY, []).filter(t => t.modId !== modId));
   write(DISABLED_KEY, getDisabledIds().filter(id => id !== modId));
   if (opts?.silent) return;
+  // Remove from account (best-effort)
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      await (supabase as any)
+        .from("user_installed_mods")
+        .delete()
+        .eq("user_id", uid)
+        .eq("mod_id", modId);
+    }
+  } catch {}
 };
 
 export const downloadAndInstallMod = async (mod: { id: string; file_url: string }) => {
   const { data, error } = await supabase.storage.from("mods").download(mod.file_url);
   if (error || !data) throw error || new Error("Download failed");
-  return installMod(mod.id, data);
+  const meta = await installMod(mod.id, data);
+  // Persist to account (best-effort)
+  try {
+    const { data: u } = await supabase.auth.getUser();
+    const uid = u.user?.id;
+    if (uid) {
+      await (supabase as any)
+        .from("user_installed_mods")
+        .upsert(
+          { user_id: uid, mod_id: mod.id, enabled: true },
+          { onConflict: "user_id,mod_id" }
+        );
+    }
+  } catch {}
+  return meta;
 };
 
 export const uploadModFile = async (userId: string, file: File) => {
@@ -221,3 +247,60 @@ export const uploadModFile = async (userId: string, file: File) => {
   if (error) throw error;
   return { path, meta: parsed.meta };
 };
+
+/**
+ * Sync installed mods from the user's account. Downloads and installs any mods
+ * the user has installed on other devices but that are missing locally, and
+ * applies the enabled/disabled state from the account.
+ */
+export const syncInstalledModsFromAccount = async (userId: string) => {
+  try {
+    const { data: rows, error } = await (supabase as any)
+      .from("user_installed_mods")
+      .select("mod_id, enabled")
+      .eq("user_id", userId);
+    if (error || !rows) return;
+
+    const localIds = new Set(getInstalledMods().map(m => m.id));
+    const remoteIds = rows.map((r: any) => r.mod_id as string);
+    const missing = remoteIds.filter((id: string) => !localIds.has(id));
+
+    if (missing.length) {
+      const { data: mods } = await (supabase as any)
+        .from("mods")
+        .select("id, file_url")
+        .in("id", missing);
+      for (const m of mods || []) {
+        try {
+          const { data: blob, error: dlErr } = await supabase.storage.from("mods").download(m.file_url);
+          if (dlErr || !blob) continue;
+          await installMod(m.id, blob);
+        } catch (e) {
+          console.warn("[mod sync] install failed", m.id, e);
+        }
+      }
+    }
+
+    // Apply enabled/disabled state from account
+    const disabled = new Set(getDisabledIds());
+    for (const r of rows as { mod_id: string; enabled: boolean }[]) {
+      if (r.enabled) disabled.delete(r.mod_id);
+      else disabled.add(r.mod_id);
+    }
+    write(DISABLED_KEY, Array.from(disabled));
+
+    // Push any locally-installed-but-not-remote mods up to the account
+    const remoteSet = new Set(remoteIds);
+    const toUpload = getInstalledMods()
+      .filter(m => !remoteSet.has(m.id))
+      .map(m => ({ user_id: userId, mod_id: m.id, enabled: !getDisabledIds().includes(m.id) }));
+    if (toUpload.length) {
+      await (supabase as any)
+        .from("user_installed_mods")
+        .upsert(toUpload, { onConflict: "user_id,mod_id" });
+    }
+  } catch (e) {
+    console.warn("[mod sync] failed", e);
+  }
+};
+
