@@ -7,29 +7,47 @@ import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const OWNER_EMAILS = ["cross.a.trix.owner@hotmail.com", "moritz.loeseke7@gmail.com", "ben.froehleke@gmx.de"];
+const OWNER_EMAILS = [
+  "cross.a.trix.owner@hotmail.com",
+  "moritz.loeseke7@gmail.com",
+  "ben.froehleke@gmx.de",
+].map((e) => e.trim().toLowerCase());
 
 let cachedIsOwner: boolean | null = null;
+let cachedUserId: string | null = null;
+
 export const useIsOwner = () => {
   const [isOwner, setIsOwner] = useState<boolean>(cachedIsOwner ?? false);
   useEffect(() => {
-    if (cachedIsOwner !== null) {
-      setIsOwner(cachedIsOwner);
-      return;
-    }
     (async () => {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
-      if (!user) { cachedIsOwner = false; setIsOwner(false); return; }
-      // Primary check: auth email matches an owner email
-      const email = user.email?.toLowerCase();
+      if (!user) { cachedIsOwner = false; cachedUserId = null; setIsOwner(false); return; }
+
+      // Invalidate cache if the logged-in user changed (fixes stale cache across accounts)
+      if (cachedIsOwner !== null && cachedUserId === user.id) {
+        setIsOwner(cachedIsOwner);
+        return;
+      }
+
+      // Primary check: auth email matches an owner email (trimmed + lowercased)
+      const email = user.email?.trim().toLowerCase();
       let owner = !!email && OWNER_EMAILS.includes(email);
+
       // Fallback: server-side is_app_owner RPC (handles non-standard auth)
       if (!owner) {
         const { data, error } = await (supabase as any).rpc("is_app_owner", { _user_id: user.id });
         if (!error) owner = !!data;
+        else console.warn("is_app_owner RPC error:", error.message);
       }
+
+      if (!owner) {
+        // Helps diagnose "email X doesn't work" cases quickly in devtools
+        console.warn("[useIsOwner] Not recognized as owner. email:", email, "userId:", user.id);
+      }
+
       cachedIsOwner = owner;
+      cachedUserId = user.id;
       setIsOwner(owner);
     })();
   }, []);
