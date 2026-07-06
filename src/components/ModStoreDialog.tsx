@@ -14,7 +14,11 @@ import {
   uninstallMod,
   downloadAndInstallMod,
   uploadModFile,
+  isModEnabled,
+  setModEnabled,
 } from "@/utils/mods";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface ModRow {
   id: string;
