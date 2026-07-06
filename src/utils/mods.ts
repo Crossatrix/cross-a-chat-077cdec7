@@ -44,11 +44,22 @@ const write = (key: string, val: unknown) => {
 };
 
 export const getInstalledMods = (): InstalledMod[] => read(MODS_KEY, []);
-export const getModEmojis = (): ModEmoji[] => read(EMOJI_KEY, []);
-export const getModTextures = (): ModTexture[] => read(TEXTURE_KEY, []);
-export const getModUI = (): ModUI[] => read(UI_KEY, []);
-export const getModScripts = (): ModScript[] => read(SCRIPT_KEY, []);
-export const getModTriggers = (): ModTrigger[] => read(TRIGGER_KEY, []);
+const getDisabledIds = (): string[] => read<string[]>(DISABLED_KEY, []);
+export const isModEnabled = (modId: string): boolean => !getDisabledIds().includes(modId);
+export const setModEnabled = (modId: string, enabled: boolean) => {
+  const disabled = new Set(getDisabledIds());
+  if (enabled) disabled.delete(modId); else disabled.add(modId);
+  write(DISABLED_KEY, Array.from(disabled));
+};
+const enabledFilter = <T extends { modId: string }>(items: T[]): T[] => {
+  const disabled = new Set(getDisabledIds());
+  return items.filter(i => !disabled.has(i.modId));
+};
+export const getModEmojis = (): ModEmoji[] => enabledFilter(read<ModEmoji[]>(EMOJI_KEY, []));
+export const getModTextures = (): ModTexture[] => enabledFilter(read<ModTexture[]>(TEXTURE_KEY, []));
+export const getModUI = (): ModUI[] => enabledFilter(read<ModUI[]>(UI_KEY, []));
+export const getModScripts = (): ModScript[] => enabledFilter(read<ModScript[]>(SCRIPT_KEY, []));
+export const getModTriggers = (): ModTrigger[] => enabledFilter(read<ModTrigger[]>(TRIGGER_KEY, []));
 
 export const onModsUpdated = (cb: () => void) => {
   window.addEventListener(EVT, cb);
