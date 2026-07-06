@@ -2072,6 +2072,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_installed_mods: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          mod_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          mod_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          mod_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_reports: {
         Row: {
           ai_reason: string | null
