@@ -50,6 +50,16 @@ export const setModEnabled = (modId: string, enabled: boolean) => {
   const disabled = new Set(getDisabledIds());
   if (enabled) disabled.delete(modId); else disabled.add(modId);
   write(DISABLED_KEY, Array.from(disabled));
+  // Sync to account (best-effort)
+  supabase.auth.getUser().then(({ data }) => {
+    const uid = data.user?.id;
+    if (!uid) return;
+    (supabase as any)
+      .from("user_installed_mods")
+      .update({ enabled })
+      .eq("user_id", uid)
+      .eq("mod_id", modId);
+  });
 };
 const enabledFilter = <T extends { modId: string }>(items: T[]): T[] => {
   const disabled = new Set(getDisabledIds());
