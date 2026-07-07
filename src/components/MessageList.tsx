@@ -41,9 +41,12 @@ interface MessageListProps {
   onUpdateMessage?: (messageId: string, newContent: string) => void;
   typingUsers?: { userId: string; username: string }[];
   conversationId: string | null;
+  hasMoreMessages?: boolean;
+  loadingOlderMessages?: boolean;
+  onLoadOlderMessages?: () => void;
 }
 
-const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage, onUpdateMessage, typingUsers = [], conversationId }: MessageListProps) => {
+const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage, onUpdateMessage, typingUsers = [], conversationId, hasMoreMessages = false, loadingOlderMessages = false, onLoadOlderMessages }: MessageListProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
@@ -61,24 +64,78 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
     return root.querySelector<HTMLDivElement>('[data-radix-scroll-area-viewport]');
   };
 
-  // Jump straight to the bottom whenever we open a different chat
-  useEffect(() => {
-    const el = getViewport();
-    if (!el) return;
-    // Run after the new messages have rendered
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        el.scrollTop = el.scrollHeight;
-      });
-    });
-  }, [conversationId]);
-
-  // Keep pinned to bottom as new messages / typing indicators arrive
-  useEffect(() => {
+  const scrollToBottom = () => {
     const el = getViewport();
     if (el) {
       el.scrollTop = el.scrollHeight;
     }
+  };
+
+  // Jump straight to the bottom whenever we open a different chat.
+  // Images/avatars/video posters can load after the initial paint and
+  // increase scrollHeight, so keep re-applying for a bit rather than
+  // trusting a single rAF pass.
+  useEffect(() => {
+    const el = getViewport();
+    if (!el) return;
+
+    scrollToBottom();
+    requestAnimationFrame(scrollToBottom);
+
+    const timeouts = [50, 150, 300, 600, 1000].map((delay) =>
+      setTimeout(scrollToBottom, delay)
+    );
+
+    return () => timeouts.forEach(clearTimeout);
+  }, [conversationId]);
+
+  // Track the previous first-message id and message count so we can tell
+  // "older messages were prepended" apart from "a new message arrived".
+  const prevFirstIdRef = useRef<string | null>(null);
+  const prevCountRef = useRef<number>(0);
+  const prependAdjustRef = useRef<{ prevScrollHeight: number; prevScrollTop: number } | null>(null);
+
+  // Before the DOM updates for a prepend, capture current scroll metrics
+  // so we can restore the user's viewport position afterwards instead of
+  // snapping to the bottom.
+  if (
+    messages.length > prevCountRef.current &&
+    prevFirstIdRef.current &&
+    messages[0]?.id !== prevFirstIdRef.current
+  ) {
+    const el = getViewport();
+    if (el) {
+      prependAdjustRef.current = {
+        prevScrollHeight: el.scrollHeight,
+        prevScrollTop: el.scrollTop,
+      };
+    }
+  }
+
+  useEffect(() => {
+    const isPrepend = prependAdjustRef.current !== null;
+    const el = getViewport();
+
+    if (isPrepend) {
+      if (el) {
+        const { prevScrollHeight, prevScrollTop } = prependAdjustRef.current!;
+        // Keep the same content in view by offsetting for the height
+        // that was just added above it.
+        el.scrollTop = el.scrollHeight - prevScrollHeight + prevScrollTop;
+      }
+      prependAdjustRef.current = null;
+    } else {
+      // New message appended (or first load) — pin to bottom.
+      scrollToBottom();
+      requestAnimationFrame(scrollToBottom);
+      const t = setTimeout(scrollToBottom, 150);
+      prevFirstIdRef.current = messages[0]?.id ?? null;
+      prevCountRef.current = messages.length;
+      return () => clearTimeout(t);
+    }
+
+    prevFirstIdRef.current = messages[0]?.id ?? null;
+    prevCountRef.current = messages.length;
   }, [messages, typingUsers]);
 
   // Mark messages as read when viewing
@@ -207,7 +264,19 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
   return (
     <ScrollArea className="flex-1 p-2 md:p-4" ref={scrollRef}>
       <div className="space-y-2 md:space-y-4">
-
+        {hasMoreMessages && onLoadOlderMessages && (
+          <div className="flex justify-center mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onLoadOlderMessages}
+              disabled={loadingOlderMessages}
+              className="text-xs md:text-sm"
+            >
+              {loadingOlderMessages ? "Loading..." : "Load older messages"}
+            </Button>
+          </div>
+        )}
 
         {messages.map((message, index) => {
           const isCurrentUser = message.profiles?.username === currentUserId;
