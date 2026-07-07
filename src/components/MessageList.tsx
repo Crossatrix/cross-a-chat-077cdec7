@@ -52,17 +52,32 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
   const summaryAllowed = isBeta && getBetaSummaryEnabled();
   useEmojiLoader(); // Load custom emojis for formatting
 
+  // ScrollArea (Radix) renders the actual scrollable element as a child
+  // viewport, not on the Root node the ref is attached to. Grab that
+  // viewport so we can actually control scroll position.
+  const getViewport = () => {
+    const root = scrollRef.current;
+    if (!root) return null;
+    return root.querySelector<HTMLDivElement>('[data-radix-scroll-area-viewport]');
+  };
+
   // Jump straight to the bottom whenever we open a different chat
   useEffect(() => {
-    if (!scrollRef.current) return;
-    const el = scrollRef.current;
-    requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    const el = getViewport();
+    if (!el) return;
+    // Run after the new messages have rendered
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+      });
+    });
   }, [conversationId]);
 
   // Keep pinned to bottom as new messages / typing indicators arrive
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = getViewport();
+    if (el) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [messages, typingUsers]);
 
