@@ -246,11 +246,6 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
             )}
           </div>
 
-          {!isVerifiedCreator && !adultsOnly && (
-            <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
-              <p>📋 Your video will be automatically analyzed by AI for content compliance before publishing. This may take a moment.</p>
-            </div>
-          )}
 
           <div>
             <input
