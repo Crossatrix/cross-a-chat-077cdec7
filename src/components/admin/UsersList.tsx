@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Ban, Shield, Award } from "lucide-react";
 import officialIcon from "@/assets/roles/official_notifications.png";
+import ModImg from "@/components/ModImg";
 import { z } from "zod";
 
 const banReasonSchema = z.string().trim().min(10, "Please provide more details (min 10 characters)").max(1000, "Reason too long (max 1000 characters)");
@@ -192,7 +193,7 @@ const UsersList = () => {
                 {user.isAdmin && <Badge variant="default">Admin</Badge>}
                 {user.isOfficial && (
                   <Badge variant="outline" className="gap-1">
-                    <img src={officialIcon} alt="Official" className="h-3.5 w-3.5 rounded-full" />
+                    <ModImg src={officialIcon} alt="Official" className="h-3.5 w-3.5 rounded-full" />
                     Official
                   </Badge>
                 )}
