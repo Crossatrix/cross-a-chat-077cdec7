@@ -32,7 +32,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
+  
   const [creatorStatus, setCreatorStatus] = useState<string | null>(null);
   const [broadcastingId, setBroadcastingId] = useState<string | null>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -107,9 +107,6 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         thumbnailUrl = thumbUrlData.publicUrl;
       }
 
-      // Determine initial moderation status
-      const needsAnalysis = !isVerifiedCreator && !adultsOnly;
-
       const { data: insertedVideo, error: insertError } = await supabase.from("videos").insert({
         user_id: userId,
         title: title.trim(),
@@ -120,7 +117,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         adults_only: adultsOnly,
         members_only: membersOnly,
         allowed_membership_ids: membersOnly ? allowedTierIds : [],
-        moderation_status: needsAnalysis ? 'pending' : 'approved',
+        moderation_status: 'approved',
       } as any).select().single();
 
       if (insertError) throw insertError;
@@ -134,53 +131,13 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         },
       }).catch((err) => console.error("Crossi submit failed:", err));
 
-      // Notify followers (fire-and-forget) - only if approved immediately
-      if (!needsAnalysis) {
-        supabase.functions.invoke("notify-followers", {
-          body: { creatorId: userId, videoTitle: title.trim() },
-        }).catch((err) => console.error("Failed to notify followers:", err));
-      }
+      // Notify followers (fire-and-forget)
+      supabase.functions.invoke("notify-followers", {
+        body: { creatorId: userId, videoTitle: title.trim() },
+      }).catch((err) => console.error("Failed to notify followers:", err));
 
-      // Trigger AI analysis for unverified creators with non-18+ videos
-      if (needsAnalysis && insertedVideo) {
-        setUploading(false);
-        setAnalyzing(true);
-        toast.info("🔍 Your video is being analyzed for content compliance...", { duration: 10000 });
+      toast.success("Video uploaded!");
 
-        try {
-          const { data: analyzerResult, error: analyzerError } = await supabase.functions.invoke("video-content-analyzer", {
-            body: { videoId: (insertedVideo as any).id },
-          });
-
-          if (analyzerError) {
-            console.error("Analyzer error:", analyzerError);
-            toast.warning("Content analysis couldn't complete. Your video has been published.");
-          } else if (analyzerResult?.struck) {
-            toast.error(
-              `⚠️ Your video has been struck for: ${analyzerResult.violations?.join(', ')}. You can appeal this decision from your video list.`,
-              { duration: 15000 }
-            );
-          } else if (analyzerResult?.autoMarked18Plus) {
-            toast.warning("Your video was auto-marked as 18+ content based on AI analysis.", { duration: 8000 });
-            // Notify followers now that it's approved
-            supabase.functions.invoke("notify-followers", {
-              body: { creatorId: userId, videoTitle: title.trim() },
-            }).catch((err) => console.error("Failed to notify followers:", err));
-          } else {
-            toast.success("✅ Video approved and published!");
-            // Notify followers
-            supabase.functions.invoke("notify-followers", {
-              body: { creatorId: userId, videoTitle: title.trim() },
-            }).catch((err) => console.error("Failed to notify followers:", err));
-          }
-        } catch (err) {
-          console.error("Analyzer invocation error:", err);
-          toast.warning("Content analysis couldn't complete. Your video has been published.");
-        }
-        setAnalyzing(false);
-      } else {
-        toast.success("Video uploaded!");
-      }
 
       setTitle("");
       setDescription("");
@@ -196,7 +153,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
       toast.error("Upload failed: " + err.message);
     } finally {
       setUploading(false);
-      setAnalyzing(false);
+      
     }
   };
 
@@ -289,11 +246,6 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
             )}
           </div>
 
-          {!isVerifiedCreator && !adultsOnly && (
-            <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
-              <p>📋 Your video will be automatically analyzed by AI for content compliance before publishing. This may take a moment.</p>
-            </div>
-          )}
 
           <div>
             <input
@@ -347,15 +299,14 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
               </div>
             )}
           </div>
-          <Button onClick={handleUpload} disabled={uploading || analyzing || !title.trim() || !videoFile} className="w-full">
-            {analyzing ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Analyzing content...</>
-            ) : uploading ? (
+          <Button onClick={handleUpload} disabled={uploading || !title.trim() || !videoFile} className="w-full">
+            {uploading ? (
               "Uploading..."
             ) : (
               "Upload Video"
             )}
           </Button>
+
         </div>
       </DialogContent>
     </Dialog>
