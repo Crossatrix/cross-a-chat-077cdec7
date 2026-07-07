@@ -107,9 +107,6 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         thumbnailUrl = thumbUrlData.publicUrl;
       }
 
-      // Determine initial moderation status
-      const needsAnalysis = !isVerifiedCreator && !adultsOnly;
-
       const { data: insertedVideo, error: insertError } = await supabase.from("videos").insert({
         user_id: userId,
         title: title.trim(),
@@ -120,7 +117,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         adults_only: adultsOnly,
         members_only: membersOnly,
         allowed_membership_ids: membersOnly ? allowedTierIds : [],
-        moderation_status: needsAnalysis ? 'pending' : 'approved',
+        moderation_status: 'approved',
       } as any).select().single();
 
       if (insertError) throw insertError;
@@ -134,53 +131,13 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
         },
       }).catch((err) => console.error("Crossi submit failed:", err));
 
-      // Notify followers (fire-and-forget) - only if approved immediately
-      if (!needsAnalysis) {
-        supabase.functions.invoke("notify-followers", {
-          body: { creatorId: userId, videoTitle: title.trim() },
-        }).catch((err) => console.error("Failed to notify followers:", err));
-      }
+      // Notify followers (fire-and-forget)
+      supabase.functions.invoke("notify-followers", {
+        body: { creatorId: userId, videoTitle: title.trim() },
+      }).catch((err) => console.error("Failed to notify followers:", err));
 
-      // Trigger AI analysis for unverified creators with non-18+ videos
-      if (needsAnalysis && insertedVideo) {
-        setUploading(false);
-        setAnalyzing(true);
-        toast.info("🔍 Your video is being analyzed for content compliance...", { duration: 10000 });
+      toast.success("Video uploaded!");
 
-        try {
-          const { data: analyzerResult, error: analyzerError } = await supabase.functions.invoke("video-content-analyzer", {
-            body: { videoId: (insertedVideo as any).id },
-          });
-
-          if (analyzerError) {
-            console.error("Analyzer error:", analyzerError);
-            toast.warning("Content analysis couldn't complete. Your video has been published.");
-          } else if (analyzerResult?.struck) {
-            toast.error(
-              `⚠️ Your video has been struck for: ${analyzerResult.violations?.join(', ')}. You can appeal this decision from your video list.`,
-              { duration: 15000 }
-            );
-          } else if (analyzerResult?.autoMarked18Plus) {
-            toast.warning("Your video was auto-marked as 18+ content based on AI analysis.", { duration: 8000 });
-            // Notify followers now that it's approved
-            supabase.functions.invoke("notify-followers", {
-              body: { creatorId: userId, videoTitle: title.trim() },
-            }).catch((err) => console.error("Failed to notify followers:", err));
-          } else {
-            toast.success("✅ Video approved and published!");
-            // Notify followers
-            supabase.functions.invoke("notify-followers", {
-              body: { creatorId: userId, videoTitle: title.trim() },
-            }).catch((err) => console.error("Failed to notify followers:", err));
-          }
-        } catch (err) {
-          console.error("Analyzer invocation error:", err);
-          toast.warning("Content analysis couldn't complete. Your video has been published.");
-        }
-        setAnalyzing(false);
-      } else {
-        toast.success("Video uploaded!");
-      }
 
       setTitle("");
       setDescription("");
