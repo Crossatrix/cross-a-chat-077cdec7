@@ -11,6 +11,7 @@ import FileExplorer, { FileItem } from "@/components/admin/FileExplorer";
 import FilePreview from "@/components/admin/FilePreview";
 import { useLanguage } from "@/contexts/LanguageContext";
 import CreatorVerificationManager from "@/components/admin/CreatorVerificationManager";
+import RadioBroadcasterManager from "@/components/admin/RadioBroadcasterManager";
 import {
   Dialog,
   DialogContent,
@@ -999,6 +1000,16 @@ const Admin = () => {
           </div>
         </div>
       )}
+
+      {/* Radio Broadcaster Manager - admin only */}
+      {isAtLeast(staffRole, "admin") && (
+        <div className="border-b border-border bg-card/50 p-3 shrink-0">
+          <div className="max-w-7xl mx-auto">
+            <RadioBroadcasterManager />
+          </div>
+        </div>
+      )}
+
 
       {/* Ad Manager - admin only */}
       {CAN.manageVersion(staffRole) && (

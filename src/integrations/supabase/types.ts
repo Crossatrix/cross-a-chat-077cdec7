@@ -1619,6 +1619,113 @@ export type Database = {
           },
         ]
       }
+      radio_broadcasters: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      radio_news: {
+        Row: {
+          broadcaster_id: string
+          created_at: string
+          id: string
+          text: string
+        }
+        Insert: {
+          broadcaster_id: string
+          created_at?: string
+          id?: string
+          text: string
+        }
+        Update: {
+          broadcaster_id?: string
+          created_at?: string
+          id?: string
+          text?: string
+        }
+        Relationships: []
+      }
+      radio_now_playing: {
+        Row: {
+          id: number
+          news_started_at: string | null
+          news_text: string | null
+          song_id: string | null
+          started_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          news_started_at?: string | null
+          news_text?: string | null
+          song_id?: string | null
+          started_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          news_started_at?: string | null
+          news_text?: string | null
+          song_id?: string | null
+          started_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radio_now_playing_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "radio_songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radio_songs: {
+        Row: {
+          artist: string | null
+          audio_url: string
+          cover_url: string | null
+          created_at: string
+          duration_seconds: number
+          id: string
+          title: string
+          uploader_id: string
+        }
+        Insert: {
+          artist?: string | null
+          audio_url: string
+          cover_url?: string | null
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          title: string
+          uploader_id: string
+        }
+        Update: {
+          artist?: string | null
+          audio_url?: string
+          cover_url?: string | null
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          title?: string
+          uploader_id?: string
+        }
+        Relationships: []
+      }
       render_jobs: {
         Row: {
           created_at: string
@@ -2737,6 +2844,7 @@ export type Database = {
         Returns: boolean
       }
       is_moderator_or_above: { Args: { _user_id: string }; Returns: boolean }
+      is_radio_broadcaster: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       leave_group: { Args: { _conversation_id: string }; Returns: boolean }
       owner_boost: {

@@ -8,10 +8,11 @@ import moderatorIcon from "@/assets/roles/moderator.png";
 import modLiteIcon from "@/assets/roles/moderator_lite.png";
 import officialIcon from "@/assets/roles/official_notifications.png";
 import proBadgeIcon from "@/assets/pro-badge.png";
+import radioBroadcasterIcon from "@/assets/roles/radio_broadcaster.png";
 
 const NOTIFICATIONS_SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
 
-type BadgeRole = StaffRole | "official" | "pro";
+type BadgeRole = StaffRole | "official" | "pro" | "radiobroadcaster";
 
 const ROLE_ICONS: Record<BadgeRole, string> = {
   admin: adminIcon,
@@ -20,6 +21,7 @@ const ROLE_ICONS: Record<BadgeRole, string> = {
   moderator_lite: modLiteIcon,
   official: officialIcon,
   pro: proBadgeIcon,
+  radiobroadcaster: radioBroadcasterIcon,
 };
 
 const ROLE_PRIORITY: StaffRole[] = ["admin", "elder_moderator", "moderator", "moderator_lite"];
@@ -28,6 +30,8 @@ const ROLE_PRIORITY: StaffRole[] = ["admin", "elder_moderator", "moderator", "mo
 const roleCache = new Map<string, BadgeRole | null>();
 const officialCache = new Map<string, boolean>();
 const proCache = new Map<string, boolean>();
+const radioCache = new Map<string, boolean>();
+
 
 interface StaffBadgeProps {
   userId: string;
@@ -47,23 +51,25 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
       return;
     }
 
-    if (roleCache.has(userId) && officialCache.has(userId) && proCache.has(userId)) {
+    if (roleCache.has(userId) && officialCache.has(userId) && proCache.has(userId) && radioCache.has(userId)) {
       const result: BadgeRole[] = [];
       const cachedRole = roleCache.get(userId);
       if (cachedRole) result.push(cachedRole);
       if (officialCache.get(userId)) result.push("official");
       if (proCache.get(userId)) result.push("pro");
+      if (radioCache.get(userId)) result.push("radiobroadcaster");
       setBadges(result);
       setLoaded(true);
       return;
     }
 
     const fetchBadges = async () => {
-      const [rolesRes, officialRes, proRes, creatorProRes] = await Promise.all([
+      const [rolesRes, officialRes, proRes, creatorProRes, radioRes] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", userId),
         supabase.from("official_accounts").select("id").eq("user_id", userId).maybeSingle(),
         supabase.from("pro_subscriptions" as any).select("expires_at").eq("user_id", userId).maybeSingle(),
         supabase.from("creator_pro_subscriptions" as any).select("expires_at").eq("user_id", userId).maybeSingle(),
+        supabase.from("radio_broadcasters" as any).select("user_id").eq("user_id", userId).maybeSingle(),
       ]);
 
       const result: BadgeRole[] = [];
@@ -92,12 +98,18 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
       proCache.set(userId, !!isPro);
       if (isPro) result.push("pro");
 
+      // Radio broadcaster
+      const isRadio = !!radioRes.data;
+      radioCache.set(userId, isRadio);
+      if (isRadio) result.push("radiobroadcaster");
+
       setBadges(result);
       setLoaded(true);
     };
 
     fetchBadges();
   }, [userId]);
+
 
   if (!loaded || badges.length === 0) return null;
 
@@ -107,11 +119,12 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
         <ModImg
           key={badge}
           src={ROLE_ICONS[badge]}
-          alt={badge === "official" ? "Official" : badge === "pro" ? "Pro" : badge}
+          alt={badge === "official" ? "Official" : badge === "pro" ? "Pro" : badge === "radiobroadcaster" ? "Radio Broadcaster" : badge}
           width={size}
           height={size}
           className="inline-block rounded-full"
-          title={badge === "official" ? "Official Account" : badge === "pro" ? "Cross Chat Pro" : badge.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+          title={badge === "official" ? "Official Account" : badge === "pro" ? "Cross Chat Pro" : badge === "radiobroadcaster" ? "Radio Broadcaster" : badge.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+
         />
       ))}
     </span>
