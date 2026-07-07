@@ -8,10 +8,11 @@ import moderatorIcon from "@/assets/roles/moderator.png";
 import modLiteIcon from "@/assets/roles/moderator_lite.png";
 import officialIcon from "@/assets/roles/official_notifications.png";
 import proBadgeIcon from "@/assets/pro-badge.png";
+import radioBroadcasterIcon from "@/assets/roles/radio_broadcaster.png";
 
 const NOTIFICATIONS_SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
 
-type BadgeRole = StaffRole | "official" | "pro";
+type BadgeRole = StaffRole | "official" | "pro" | "radiobroadcaster";
 
 const ROLE_ICONS: Record<BadgeRole, string> = {
   admin: adminIcon,
@@ -20,6 +21,7 @@ const ROLE_ICONS: Record<BadgeRole, string> = {
   moderator_lite: modLiteIcon,
   official: officialIcon,
   pro: proBadgeIcon,
+  radiobroadcaster: radioBroadcasterIcon,
 };
 
 const ROLE_PRIORITY: StaffRole[] = ["admin", "elder_moderator", "moderator", "moderator_lite"];
@@ -28,6 +30,8 @@ const ROLE_PRIORITY: StaffRole[] = ["admin", "elder_moderator", "moderator", "mo
 const roleCache = new Map<string, BadgeRole | null>();
 const officialCache = new Map<string, boolean>();
 const proCache = new Map<string, boolean>();
+const radioCache = new Map<string, boolean>();
+
 
 interface StaffBadgeProps {
   userId: string;
