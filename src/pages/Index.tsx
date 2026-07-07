@@ -1121,6 +1121,11 @@ return (
             onDeepLinkConsumed={() => setInstantSubcrossId(null)}
           />
         </div>
+      ) : activeTab === "radio" ? (
+        <div className="flex-1 min-h-0">
+          <RadioFeed currentUserId={user.id} />
+        </div>
+
       ) : (
       <div className="flex flex-1 min-h-0 overflow-hidden">
       <div className={`${selectedConversationId ? 'hidden' : 'flex'} md:flex flex-col h-full md:h-screen w-full md:w-auto`}>
