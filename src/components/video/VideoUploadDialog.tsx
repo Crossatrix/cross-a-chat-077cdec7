@@ -299,15 +299,14 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
               </div>
             )}
           </div>
-          <Button onClick={handleUpload} disabled={uploading || analyzing || !title.trim() || !videoFile} className="w-full">
-            {analyzing ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Analyzing content...</>
-            ) : uploading ? (
+          <Button onClick={handleUpload} disabled={uploading || !title.trim() || !videoFile} className="w-full">
+            {uploading ? (
               "Uploading..."
             ) : (
               "Upload Video"
             )}
           </Button>
+
         </div>
       </DialogContent>
     </Dialog>
