@@ -69,7 +69,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
         .in("id", authorIds);
       const usernameMap = new Map((profiles || []).map((p: any) => [p.id, p.username]));
       modRows.forEach((m) => {
-        m.author_username = usernameMap.get(m.author_id) || "Unknown";
+        m.author_username = (usernameMap.get(m.author_id) as string) || "Unknown";
       });
     }
     setMods(modRows);
