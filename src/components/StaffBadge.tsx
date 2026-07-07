@@ -119,11 +119,12 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
         <ModImg
           key={badge}
           src={ROLE_ICONS[badge]}
-          alt={badge === "official" ? "Official" : badge === "pro" ? "Pro" : badge}
+          alt={badge === "official" ? "Official" : badge === "pro" ? "Pro" : badge === "radiobroadcaster" ? "Radio Broadcaster" : badge}
           width={size}
           height={size}
           className="inline-block rounded-full"
-          title={badge === "official" ? "Official Account" : badge === "pro" ? "Cross Chat Pro" : badge.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+          title={badge === "official" ? "Official Account" : badge === "pro" ? "Cross Chat Pro" : badge === "radiobroadcaster" ? "Radio Broadcaster" : badge.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+
         />
       ))}
     </span>
