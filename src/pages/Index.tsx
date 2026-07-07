@@ -67,6 +67,9 @@ const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
+  const MESSAGES_PAGE_SIZE = 30;
   const [username, setUsername] = useState<string>("");
   const [isStaff, setIsStaff] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
@@ -365,11 +368,15 @@ const Index = () => {
     if (!user || !selectedConversationId) return;
 
     const fetchMessages = async () => {
+      // Only load the most recent page of messages up front — older
+      // messages are fetched on demand via "Load older messages" to
+      // keep initial render light on slower devices.
       const { data, error } = await supabase
         .from("messages")
         .select("*, profiles(username, avatar_url)")
         .eq("conversation_id", selectedConversationId)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false })
+        .limit(MESSAGES_PAGE_SIZE);
 
       if (error) {
         if (error.code === 'PGRST116' || error.message.includes('permission')) {
@@ -384,7 +391,9 @@ const Index = () => {
       }
 
       setIsKickedFromGroup(false);
-      setMessages(data || []);
+      const ordered = (data || []).slice().reverse();
+      setMessages(ordered);
+      setHasMoreMessages((data || []).length === MESSAGES_PAGE_SIZE);
     };
 
     fetchMessages();
@@ -649,6 +658,37 @@ const Index = () => {
         }
         setTypingUsers((prev) => prev.filter((u) => u.userId !== AI_BOT_ID));
       }
+    }
+  };
+
+  const loadOlderMessages = async () => {
+    if (!selectedConversationId || messages.length === 0 || loadingOlderMessages) return;
+
+    setLoadingOlderMessages(true);
+    try {
+      const oldestCreatedAt = messages[0].created_at;
+
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*, profiles(username, avatar_url)")
+        .eq("conversation_id", selectedConversationId)
+        .lt("created_at", oldestCreatedAt)
+        .order("created_at", { ascending: false })
+        .limit(MESSAGES_PAGE_SIZE);
+
+      if (error) {
+        if (import.meta.env.DEV) {
+          console.error("Error fetching older messages:", error);
+        }
+        toast.error("Failed to load older messages");
+        return;
+      }
+
+      const olderOrdered = (data || []).slice().reverse();
+      setMessages((prev) => [...olderOrdered, ...prev]);
+      setHasMoreMessages((data || []).length === MESSAGES_PAGE_SIZE);
+    } finally {
+      setLoadingOlderMessages(false);
     }
   };
 
@@ -1296,6 +1336,9 @@ return (
                 onUpdateMessage={handleUpdateMessage}
                 typingUsers={typingUsers}
                 conversationId={selectedConversationId}
+                hasMoreMessages={hasMoreMessages}
+                loadingOlderMessages={loadingOlderMessages}
+                onLoadOlderMessages={loadOlderMessages}
               />
               <MessageInput 
                 onSend={handleSendMessage} 
