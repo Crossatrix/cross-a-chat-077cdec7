@@ -153,7 +153,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
       toast.error("Upload failed: " + err.message);
     } finally {
       setUploading(false);
-      setAnalyzing(false);
+      
     }
   };
 
