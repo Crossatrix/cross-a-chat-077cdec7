@@ -51,23 +51,25 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
       return;
     }
 
-    if (roleCache.has(userId) && officialCache.has(userId) && proCache.has(userId)) {
+    if (roleCache.has(userId) && officialCache.has(userId) && proCache.has(userId) && radioCache.has(userId)) {
       const result: BadgeRole[] = [];
       const cachedRole = roleCache.get(userId);
       if (cachedRole) result.push(cachedRole);
       if (officialCache.get(userId)) result.push("official");
       if (proCache.get(userId)) result.push("pro");
+      if (radioCache.get(userId)) result.push("radiobroadcaster");
       setBadges(result);
       setLoaded(true);
       return;
     }
 
     const fetchBadges = async () => {
-      const [rolesRes, officialRes, proRes, creatorProRes] = await Promise.all([
+      const [rolesRes, officialRes, proRes, creatorProRes, radioRes] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", userId),
         supabase.from("official_accounts").select("id").eq("user_id", userId).maybeSingle(),
         supabase.from("pro_subscriptions" as any).select("expires_at").eq("user_id", userId).maybeSingle(),
         supabase.from("creator_pro_subscriptions" as any).select("expires_at").eq("user_id", userId).maybeSingle(),
+        supabase.from("radio_broadcasters" as any).select("user_id").eq("user_id", userId).maybeSingle(),
       ]);
 
       const result: BadgeRole[] = [];
@@ -96,12 +98,18 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
       proCache.set(userId, !!isPro);
       if (isPro) result.push("pro");
 
+      // Radio broadcaster
+      const isRadio = !!radioRes.data;
+      radioCache.set(userId, isRadio);
+      if (isRadio) result.push("radiobroadcaster");
+
       setBadges(result);
       setLoaded(true);
     };
 
     fetchBadges();
   }, [userId]);
+
 
   if (!loaded || badges.length === 0) return null;
 
