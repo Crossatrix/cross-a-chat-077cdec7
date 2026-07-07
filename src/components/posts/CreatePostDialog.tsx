@@ -7,6 +7,7 @@ import { Plus, Image, Video, BarChart3, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { assertNotBlocked } from "@/utils/contentBlock";
+import { emitModEvent } from "@/utils/modEvents";
 
 interface CreatePostDialogProps {
   currentUserId: string;
@@ -102,6 +103,7 @@ const CreatePostDialog = ({ currentUserId, onPostCreated }: CreatePostDialogProp
       if (error) throw error;
 
       toast.success("Post created!");
+      emitModEvent("posting");
       reset();
       setOpen(false);
       onPostCreated();
