@@ -45,6 +45,8 @@ import PostsFeed from "@/components/posts/PostsFeed";
 import MusicFeed from "@/components/music/MusicFeed";
 import LiveFeed from "@/components/live/LiveFeed";
 import CrossunityFeed from "@/components/crossunity/CrossunityFeed";
+import RadioFeed from "@/components/radio/RadioFeed";
+
 
 interface Message {
   id: string;
@@ -88,7 +90,7 @@ const Index = () => {
   const [aiCredits, setAiCredits] = useState<number>(15);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity">("chats");
+  const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity" | "radio">("chats");
   const [creatorProfileId, setCreatorProfileId] = useState<string | null>(null);
   const [croinBalance, setCroinBalance] = useState<number>(0);
   const [betaDialogOpen, setBetaDialogOpen] = useState(false);
@@ -1064,7 +1066,17 @@ return (
           <Music className="h-5 w-5" />
           <span>Music</span>
         </button>
+        <button
+          onClick={() => { setActiveTab("radio"); setSelectedConversationId(null); setActiveConversation(null); }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            activeTab === "radio" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Radio className="h-5 w-5" />
+          <span>Radio</span>
+        </button>
       </div>
+
 
       {creatorProfileId ? (
         <div className="flex-1 min-h-0">
