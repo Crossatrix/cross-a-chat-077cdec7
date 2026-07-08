@@ -37,20 +37,24 @@ export default function RadioUploadSongDialog({ userId, onUploaded }: Props) {
     setUploading(true);
     try {
       const duration = await getDuration(audioFile);
-      const audioExt = audioFile.name.split(".").pop() || "mp3";
+      const rawExt = (audioFile.name.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const audioExt = rawExt || (audioFile.type.includes("mpeg") ? "mp3" : audioFile.type.split("/")[1] || "mp3");
+      const audioContentType = audioFile.type && audioFile.type !== "application/octet-stream"
+        ? audioFile.type
+        : (audioExt === "mp3" ? "audio/mpeg" : audioExt === "m4a" ? "audio/mp4" : audioExt === "wav" ? "audio/wav" : audioExt === "ogg" ? "audio/ogg" : "audio/mpeg");
       const audioPath = `${userId}/${crypto.randomUUID()}.${audioExt}`;
       const { error: aErr } = await supabase.storage
         .from("radio-audio")
-        .upload(audioPath, audioFile, { upsert: false });
+        .upload(audioPath, audioFile, { upsert: false, contentType: audioContentType });
       if (aErr) throw aErr;
 
       let coverPath: string | null = null;
       if (coverFile) {
-        const coverExt = coverFile.name.split(".").pop() || "jpg";
+        const coverExt = (coverFile.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
         coverPath = `${userId}/${crypto.randomUUID()}.${coverExt}`;
         const { error: cErr } = await supabase.storage
           .from("radio-covers")
-          .upload(coverPath, coverFile, { upsert: false });
+          .upload(coverPath, coverFile, { upsert: false, contentType: coverFile.type || "image/jpeg" });
         if (cErr) throw cErr;
       }
 
@@ -100,7 +104,7 @@ export default function RadioUploadSongDialog({ userId, onUploaded }: Props) {
           </div>
           <div>
             <Label>Audio file</Label>
-            <Input type="file" accept="audio/*" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
+            <Input type="file" accept="audio/*,audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/wav,audio/ogg,.mp3,.m4a,.wav,.ogg,.aac,.flac" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
           </div>
           <div>
             <Label>Cover art (optional)</Label>
