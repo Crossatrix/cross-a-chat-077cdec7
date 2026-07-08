@@ -77,14 +77,57 @@ const Docs = () => {
             <div>
               <h2 className="font-semibold text-base mb-1">Scripts</h2>
               <p>
-                <code>scripts/*.js</code> or <code>scripts/*.ts</code> run in a small sandbox with a
-                <code> mod </code> API: <code>mod.toast(msg)</code>, <code>mod.log(...)</code>,
-                <code> mod.event</code>, <code>mod.payload</code>. TypeScript is stripped naively — keep it
-                simple (no imports, no generics).
+                <code>scripts/*.js</code> or <code>scripts/*.ts</code> run in a small sandbox with an async
+                <code> mod </code> API. Top-level <code>await</code> is supported. TypeScript is stripped
+                naively — keep it simple (no imports, no generics).
               </p>
               <pre className="bg-muted rounded p-3 text-xs overflow-x-auto">{`// scripts/hello.ts
 mod.toast("Welcome back!");
-mod.log("event:", mod.event, mod.payload);`}</pre>
+mod.log("event:", mod.event, mod.payload);
+
+// Read the last 20 messages of a conversation
+const msgs = await mod.readMessages("<conversation-id>", 20);
+mod.log("messages:", msgs);`}</pre>
+            </div>
+
+            <div>
+              <h2 className="font-semibold text-base mb-1"><code>mod.*</code> API</h2>
+              <p>Available inside <code>scripts/</code> and, via a postMessage bridge, inside UI HTML too:</p>
+              <ul className="list-disc pl-5 text-xs space-y-1">
+                <li><code>mod.event</code> / <code>mod.payload</code> — the trigger that fired</li>
+                <li><code>mod.toast(msg)</code>, <code>mod.log(...)</code>, <code>mod.alert(msg)</code></li>
+                <li><code>await mod.currentUser()</code> — signed-in user id or null</li>
+                <li><code>await mod.currentProfile()</code> — current profile row</li>
+                <li><code>await mod.listConversations()</code> — conversations the user is in</li>
+                <li><code>await mod.readMessages(conversationId, limit?)</code> — read messages (respects RLS)</li>
+                <li><code>await mod.sendMessage(conversationId, content)</code></li>
+                <li><code>mod.storage.get(k)</code>, <code>mod.storage.set(k, v)</code>, <code>mod.storage.del(k)</code> — per-mod localStorage</li>
+                <li><code>mod.on(name, cb)</code>, <code>mod.emit(name, data)</code> — cross-mod messaging</li>
+                <li><code>mod.openUI(path, title?)</code> — open another UI file from the same mod</li>
+                <li><code>mod.fetch(url, init?)</code>, <code>mod.supabase</code> — escape hatches</li>
+              </ul>
+              <p className="mt-2 text-xs">
+                Every call still runs under the signed-in user's Row-Level Security — a mod can only read data
+                the user could read themselves.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-semibold text-base mb-1">UI screens</h2>
+              <p>
+                HTML files under <code>UI/</code> are opened in a sandboxed <code>&lt;iframe&gt;</code> when
+                referenced by a trigger. The same <code>mod</code> object is auto-injected as
+                <code> window.mod</code>, so your HTML can call e.g. <code>await mod.readMessages(id)</code>.
+              </p>
+              <pre className="bg-muted rounded p-3 text-xs overflow-x-auto">{`<!-- UI/panel.html -->
+<button onclick="run()">Load messages</button>
+<pre id="out"></pre>
+<script>
+  async function run() {
+    const msgs = await mod.readMessages("<conversation-id>", 10);
+    document.getElementById('out').textContent = JSON.stringify(msgs, null, 2);
+  }
+</script>`}</pre>
             </div>
 
             <div>
@@ -101,12 +144,22 @@ mod.log("event:", mod.event, mod.payload);`}</pre>
             </div>
 
             <div>
+              <h2 className="font-semibold text-base mb-1">Updating a published mod</h2>
+              <p>
+                Open the Mod Store → <strong>Browse</strong>, find your mod (only visible to you as author),
+                and click the <strong>refresh</strong> icon to upload a new <code>.ccmod</code>. Everyone who
+                already installed it will see an <em>Update available</em> badge and can reinstall.
+              </p>
+            </div>
+
+            <div>
               <h2 className="font-semibold text-base mb-1">Publishing</h2>
               <p>
                 Open the Mod Store → <strong>Upload</strong>, pick your <code>.ccmod</code>, give it a name
                 and description. Everyone can browse and install it from the <strong>Browse</strong> tab.
               </p>
             </div>
+
           </CardContent>
         </Card>
       </div>
