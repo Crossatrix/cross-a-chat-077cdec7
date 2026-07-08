@@ -27,6 +27,7 @@ export interface InstalledMod {
   ui: string[];
   scripts: string[];
   triggers: number;
+  installed_at?: string;
 }
 export interface ModEmoji { name: string; dataUrl: string; modId: string; }
 export interface ModTexture { path: string; dataUrl: string; modId: string; }
