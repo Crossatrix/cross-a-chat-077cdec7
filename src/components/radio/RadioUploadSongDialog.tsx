@@ -104,7 +104,7 @@ export default function RadioUploadSongDialog({ userId, onUploaded }: Props) {
           </div>
           <div>
             <Label>Audio file</Label>
-            <Input type="file" accept="audio/*" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
+            <Input type="file" accept="audio/*,audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/wav,audio/ogg,.mp3,.m4a,.wav,.ogg,.aac,.flac" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
           </div>
           <div>
             <Label>Cover art (optional)</Label>
