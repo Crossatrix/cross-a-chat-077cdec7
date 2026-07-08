@@ -27,6 +27,7 @@ export interface InstalledMod {
   ui: string[];
   scripts: string[];
   triggers: number;
+  installed_at?: string;
 }
 export interface ModEmoji { name: string; dataUrl: string; modId: string; }
 export interface ModTexture { path: string; dataUrl: string; modId: string; }
@@ -192,6 +193,7 @@ export const installMod = async (modId: string, file: Blob) => {
       ui: parsed.ui.map(u => u.path),
       scripts: parsed.scripts.map(s => s.path),
       triggers: parsed.triggers.length,
+      installed_at: new Date().toISOString(),
     },
   ]);
   return parsed.meta;
@@ -244,6 +246,21 @@ export const uploadModFile = async (userId: string, file: File) => {
   const parsed = await parseCcmod(file);
   const path = `${userId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
   const { error } = await supabase.storage.from("mods").upload(path, file, { contentType: "application/zip" });
+  if (error) throw error;
+  return { path, meta: parsed.meta };
+};
+
+/** Creator-only: replace an existing mod's file and bump updated_at. */
+export const updateModFile = async (modId: string, userId: string, file: File) => {
+  const parsed = await parseCcmod(file);
+  const path = `${userId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+  const { error: upErr } = await supabase.storage.from("mods").upload(path, file, { contentType: "application/zip" });
+  if (upErr) throw upErr;
+  const { error } = await (supabase as any)
+    .from("mods")
+    .update({ file_url: path, updated_at: new Date().toISOString() })
+    .eq("id", modId)
+    .eq("author_id", userId);
   if (error) throw error;
   return { path, meta: parsed.meta };
 };
