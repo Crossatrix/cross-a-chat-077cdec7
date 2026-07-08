@@ -193,6 +193,7 @@ export const installMod = async (modId: string, file: Blob) => {
       ui: parsed.ui.map(u => u.path),
       scripts: parsed.scripts.map(s => s.path),
       triggers: parsed.triggers.length,
+      installed_at: new Date().toISOString(),
     },
   ]);
   return parsed.meta;
