@@ -250,6 +250,21 @@ export const uploadModFile = async (userId: string, file: File) => {
   return { path, meta: parsed.meta };
 };
 
+/** Creator-only: replace an existing mod's file and bump updated_at. */
+export const updateModFile = async (modId: string, userId: string, file: File) => {
+  const parsed = await parseCcmod(file);
+  const path = `${userId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+  const { error: upErr } = await supabase.storage.from("mods").upload(path, file, { contentType: "application/zip" });
+  if (upErr) throw upErr;
+  const { error } = await (supabase as any)
+    .from("mods")
+    .update({ file_url: path, updated_at: new Date().toISOString() })
+    .eq("id", modId)
+    .eq("author_id", userId);
+  if (error) throw error;
+  return { path, meta: parsed.meta };
+};
+
 /**
  * Sync installed mods from the user's account. Downloads and installs any mods
  * the user has installed on other devices but that are missing locally, and
