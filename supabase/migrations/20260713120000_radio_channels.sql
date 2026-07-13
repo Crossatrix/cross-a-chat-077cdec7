@@ -147,15 +147,19 @@ FOR EACH ROW EXECUTE FUNCTION public.enforce_radio_news_channel_limit();
 -- ---- radio_now_playing: one row per channel instead of a singleton ----
 ALTER TABLE public.radio_now_playing DROP CONSTRAINT IF EXISTS single_row;
 ALTER TABLE public.radio_now_playing ADD COLUMN channel_id uuid REFERENCES public.radio_channels(id) ON DELETE CASCADE;
-ALTER TABLE public.radio_now_playing ALTER COLUMN id DROP DEFAULT;
+-- id stays an integer; give it a sequence-backed default so new per-channel
+-- rows can be inserted without specifying id explicitly.
+CREATE SEQUENCE IF NOT EXISTS public.radio_now_playing_id_seq OWNED BY public.radio_now_playing.id;
+SELECT setval('public.radio_now_playing_id_seq', COALESCE((SELECT max(id) FROM public.radio_now_playing), 0) + 1, false);
+ALTER TABLE public.radio_now_playing ALTER COLUMN id SET DEFAULT nextval('public.radio_now_playing_id_seq');
 -- Old singleton row (id=1, channel_id null) is left in place but unused by the UI
 -- once channels exist; a fresh row per channel is created below via trigger.
 
 CREATE OR REPLACE FUNCTION public.create_now_playing_for_channel()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  INSERT INTO public.radio_now_playing (id, channel_id)
-  VALUES (gen_random_uuid(), NEW.id)
+  INSERT INTO public.radio_now_playing (channel_id)
+  VALUES (NEW.id)
   ON CONFLICT DO NOTHING;
   RETURN NEW;
 END;
@@ -163,10 +167,6 @@ $$;
 CREATE TRIGGER radio_now_playing_for_channel_trg
 AFTER INSERT ON public.radio_channels
 FOR EACH ROW EXECUTE FUNCTION public.create_now_playing_for_channel();
-
--- id needs a default again for the trigger's explicit inserts to also allow
--- ad-hoc inserts if ever needed directly.
-ALTER TABLE public.radio_now_playing ALTER COLUMN id SET DEFAULT gen_random_uuid();
 
 CREATE UNIQUE INDEX radio_now_playing_channel_unique ON public.radio_now_playing (channel_id) WHERE channel_id IS NOT NULL;
 
