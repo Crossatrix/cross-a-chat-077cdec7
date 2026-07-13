@@ -29,22 +29,29 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { data: bc } = await supabase
-      .from("radio_broadcasters")
-      .select("user_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!bc) {
-      return new Response(JSON.stringify({ error: "Not a broadcaster" }), {
-        status: 403,
+    const { info, channel_id } = await req.json();
+    if (!info || typeof info !== "string") {
+      return new Response(JSON.stringify({ error: "Missing info" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!channel_id || typeof channel_id !== "string") {
+      return new Response(JSON.stringify({ error: "Missing channel_id" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { info } = await req.json();
-    if (!info || typeof info !== "string") {
-      return new Response(JSON.stringify({ error: "Missing info" }), {
-        status: 400,
+    const { data: bc } = await supabase
+      .from("radio_channel_broadcasters")
+      .select("user_id")
+      .eq("user_id", userId)
+      .eq("channel_id", channel_id)
+      .maybeSingle();
+    if (!bc) {
+      return new Response(JSON.stringify({ error: "Not a broadcaster for this channel" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
