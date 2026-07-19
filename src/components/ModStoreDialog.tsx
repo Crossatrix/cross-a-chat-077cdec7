@@ -338,7 +338,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                         <p className="font-medium truncate">{m.name}</p>
                         {m.description && <p className="text-sm text-muted-foreground line-clamp-2">{m.description}</p>}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {m.emojis?.length ?? 0} emoji · {m.textures?.length ?? 0} texture · {m.ui?.length ?? 0} UI · {m.scripts?.length ?? 0} script · {m.triggers ?? 0} trigger · {m.tabs?.length ?? 0} tab
+                          {m.emojis?.length ?? 0} emoji · {m.textures?.length ?? 0} texture · {m.ui?.length ?? 0} UI · {m.scripts?.length ?? 0} script · {m.triggers ?? 0} trigger · {m.tabs?.length ?? 0} tab{m.font ? " · font" : ""}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
