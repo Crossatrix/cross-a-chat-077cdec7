@@ -11,6 +11,7 @@ import AnimatedRoutes from "@/components/AnimatedRoutes";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import BetaPaywall from "@/components/BetaPaywall";
 import ModUIHost from "@/components/ModUIHost";
+import ModFontHost from "@/components/ModFontHost";
 import { supabase } from "@/integrations/supabase/client";
 import { checkBetaStatus, isPreviewDomain } from "@/utils/betaSubscription";
 import { emitModEvent } from "@/utils/modEvents";
@@ -67,6 +68,7 @@ const App = () => {
                 <BrowserRouter>
                   <AnimatedRoutes />
                   <ModUIHost />
+                  <ModFontHost />
                   {needsBetaCheck && !betaUnlocked && (
                     <BetaPaywall onUnlocked={() => { setBetaUnlocked(true); setNeedsBetaCheck(false); }} />
                   )}
