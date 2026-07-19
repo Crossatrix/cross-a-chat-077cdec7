@@ -10,6 +10,7 @@ const TRIGGER_KEY = "installed_mod_triggers";
 const TAB_KEY = "installed_mod_tabs";
 const MODS_KEY = "installed_mods";
 const DISABLED_KEY = "installed_mod_disabled";
+const FONT_KEY = "installed_mod_fonts";
 const EVT = "mods-updated";
 
 export const SUPPORTED_EVENTS = [
@@ -33,6 +34,7 @@ export interface InstalledMod {
   scripts: string[];
   triggers: number;
   tabs: string[];
+  font: boolean;
   installed_at?: string;
 }
 export interface ModEmoji { name: string; dataUrl: string; modId: string; }
@@ -41,6 +43,7 @@ export interface ModUI { path: string; html: string; modId: string; }
 export interface ModScript { path: string; code: string; lang: "js"|"ts"; modId: string; }
 export interface ModTrigger { event: ModEventName; target: string; modId: string; }
 export interface ModTab { id: string; name: string; ui: string; icon?: string; modId: string; }
+export interface ModFont { dataUrl: string; format: string; modId: string; installedAt: number; }
 
 const read = <T,>(key: string, fallback: T): T => {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : fallback; }
@@ -79,6 +82,13 @@ export const getModUI = (): ModUI[] => enabledFilter(read<ModUI[]>(UI_KEY, []));
 export const getModScripts = (): ModScript[] => enabledFilter(read<ModScript[]>(SCRIPT_KEY, []));
 export const getModTriggers = (): ModTrigger[] => enabledFilter(read<ModTrigger[]>(TRIGGER_KEY, []));
 export const getModTabs = (): ModTab[] => enabledFilter(read<ModTab[]>(TAB_KEY, []));
+export const getModFonts = (): ModFont[] => enabledFilter(read<ModFont[]>(FONT_KEY, []));
+/** The font that should actually be applied: the most recently installed enabled mod font. */
+export const getActiveModFont = (): ModFont | null => {
+  const fonts = getModFonts();
+  if (!fonts.length) return null;
+  return fonts.reduce((latest, f) => (f.installedAt > latest.installedAt ? f : latest), fonts[0]);
+};
 
 export const onModsUpdated = (cb: () => void) => {
   window.addEventListener(EVT, cb);
@@ -87,6 +97,21 @@ export const onModsUpdated = (cb: () => void) => {
 
 const stripExt = (p: string) => p.replace(/\.[^./]+$/, "");
 const basename = (p: string) => (p.split("/").pop() || p);
+
+/**
+ * A mod's font.fnt is an actual font file (woff2/woff/ttf/otf) that's simply given a
+ * .fnt extension so it's easy to spot at the root of the mod archive. Sniff the magic
+ * bytes so we can tell the browser (@font-face `format()`) what it actually is.
+ */
+const sniffFontFormat = (bytes: Uint8Array): string => {
+  const sig = (n: number) => Array.from(bytes.slice(0, n)).map(b => b.toString(16).padStart(2, "0")).join("");
+  const s4 = sig(4);
+  if (s4 === "774f4632") return "woff2"; // 'wOF2'
+  if (s4 === "774f4646") return "woff";  // 'wOFF'
+  if (s4 === "4f54544f") return "opentype"; // 'OTTO'
+  if (s4 === "00010000" || s4 === "74727565") return "truetype"; // sfnt v1 or 'true'
+  return "woff2"; // sensible default
+};
 
 /**
  * Resolve a bundled asset URL to an installed mod texture override if any.
@@ -191,6 +216,7 @@ export const parseCcmod = async (file: Blob) => {
   const scripts: { path: string; code: string; lang: "js"|"ts" }[] = [];
   let triggers: { event: ModEventName; target: string }[] = [];
   let tabsRaw: string | null = null;
+  let font: { dataUrl: string; format: string } | null = null;
 
   for (const entry of Object.values(zip.files)) {
     if (entry.dir) continue;
@@ -211,11 +237,17 @@ export const parseCcmod = async (file: Blob) => {
       triggers = parseTriggers(await entry.async("string"));
     } else if (lower === "tabs.json") {
       tabsRaw = await entry.async("string");
+    } else if (lower === "font.fnt") {
+      const dataUrl = await fileToDataUrl(await entry.async("blob"));
+      // font.fnt content is a font file (e.g. woff/woff2/ttf/otf) renamed with a .fnt extension;
+      // sniff the magic bytes to pick a format @font-face will accept.
+      const bytes = await entry.async("uint8array");
+      font = { dataUrl, format: sniffFontFormat(bytes) };
     }
   }
   const uiPaths = new Set(ui.map((u) => u.path.toLowerCase()));
   const tabs = tabsRaw ? parseTabs(tabsRaw, uiPaths) : [];
-  return { meta, emojis, textures, ui, scripts, triggers, tabs };
+  return { meta, emojis, textures, ui, scripts, triggers, tabs, font };
 };
 
 export const installMod = async (modId: string, file: Blob) => {
@@ -233,6 +265,11 @@ export const installMod = async (modId: string, file: Blob) => {
   write(SCRIPT_KEY, [...read<ModScript[]>(SCRIPT_KEY, []), ...parsed.scripts.map(s => ({ ...s, modId }))]);
   write(TRIGGER_KEY, [...read<ModTrigger[]>(TRIGGER_KEY, []), ...parsed.triggers.map(t => ({ ...t, modId }))]);
   write(TAB_KEY, [...read<ModTab[]>(TAB_KEY, []), ...parsed.tabs.map(t => ({ ...t, modId }))]);
+  if (parsed.font) {
+    const fonts = read<ModFont[]>(FONT_KEY, []).filter(f => f.modId !== modId);
+    fonts.push({ ...parsed.font, modId, installedAt: Date.now() });
+    write(FONT_KEY, fonts);
+  }
   // Re-enable on (re)install
   write(DISABLED_KEY, getDisabledIds().filter(id => id !== modId));
   write(MODS_KEY, [
@@ -247,6 +284,7 @@ export const installMod = async (modId: string, file: Blob) => {
       scripts: parsed.scripts.map(s => s.path),
       triggers: parsed.triggers.length,
       tabs: parsed.tabs.map(t => t.id),
+      font: !!parsed.font,
       installed_at: new Date().toISOString(),
     },
   ]);
@@ -261,6 +299,7 @@ export const uninstallMod = async (modId: string, opts?: { silent?: boolean }) =
   write(SCRIPT_KEY, read<ModScript[]>(SCRIPT_KEY, []).filter(s => s.modId !== modId));
   write(TRIGGER_KEY, read<ModTrigger[]>(TRIGGER_KEY, []).filter(t => t.modId !== modId));
   write(TAB_KEY, read<ModTab[]>(TAB_KEY, []).filter(t => t.modId !== modId));
+  write(FONT_KEY, read<ModFont[]>(FONT_KEY, []).filter(f => f.modId !== modId));
   write(DISABLED_KEY, getDisabledIds().filter(id => id !== modId));
   if (opts?.silent) return;
   // Remove from account (best-effort)
@@ -375,4 +414,3 @@ export const syncInstalledModsFromAccount = async (userId: string) => {
     console.warn("[mod sync] failed", e);
   }
 };
-
