@@ -17,6 +17,7 @@ import { emitModEvent } from "@/utils/modEvents";
 import ReportPostButton from "@/components/ReportPostButton";
 import { getBetaSummaryEnabled } from "@/components/BetaDialog";
 import { useBetaStatus } from "@/hooks/useBetaStatus";
+import StaffRemoveButton from "@/components/admin/StaffRemoveButton";
 
 interface Post {
   id: string;
