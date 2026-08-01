@@ -12,6 +12,7 @@ import VideoUploadDialog from "./VideoUploadDialog";
 import VideoPlayer from "./VideoPlayer";
 import CreatorProfile from "./CreatorProfile";
 import StaffBadge from "@/components/StaffBadge";
+import StaffRemoveButton from "@/components/admin/StaffRemoveButton";
 import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
 import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
 import VideoLeaderboard from "./VideoLeaderboard";
@@ -581,6 +582,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
                       <StaffBadge userId={video.user_id} size={12} />
                       <CreatorBadge userId={video.user_id} size={12} />
                       <span className="text-xs text-muted-foreground truncate cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}>{((video.profiles as any)?.creator_username || video.profiles.username)}</span>
+                      <StaffRemoveButton table="videos" id={video.id} onRemoved={() => fetchVideos()} />
                       {isStaff && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
