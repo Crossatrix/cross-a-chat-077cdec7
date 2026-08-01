@@ -1584,6 +1584,33 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       push_tokens: {
         Row: {
           created_at: string
@@ -1637,29 +1664,97 @@ export type Database = {
         }
         Relationships: []
       }
+      radio_channel_broadcasters: {
+        Row: {
+          added_by: string | null
+          channel_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          channel_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          channel_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radio_channel_broadcasters_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "radio_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radio_channels: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       radio_news: {
         Row: {
           broadcaster_id: string
+          channel_id: string | null
           created_at: string
           id: string
           text: string
         }
         Insert: {
           broadcaster_id: string
+          channel_id?: string | null
           created_at?: string
           id?: string
           text: string
         }
         Update: {
           broadcaster_id?: string
+          channel_id?: string | null
           created_at?: string
           id?: string
           text?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "radio_news_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "radio_channels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       radio_now_playing: {
         Row: {
+          channel_id: string | null
           id: number
           news_started_at: string | null
           news_text: string | null
@@ -1668,6 +1763,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          channel_id?: string | null
           id?: number
           news_started_at?: string | null
           news_text?: string | null
@@ -1676,6 +1772,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          channel_id?: string | null
           id?: number
           news_started_at?: string | null
           news_text?: string | null
@@ -1684,6 +1781,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "radio_now_playing_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "radio_channels"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "radio_now_playing_song_id_fkey"
             columns: ["song_id"]
@@ -1697,6 +1801,7 @@ export type Database = {
         Row: {
           artist: string | null
           audio_url: string
+          channel_id: string | null
           cover_url: string | null
           created_at: string
           duration_seconds: number
@@ -1707,6 +1812,7 @@ export type Database = {
         Insert: {
           artist?: string | null
           audio_url: string
+          channel_id?: string | null
           cover_url?: string | null
           created_at?: string
           duration_seconds?: number
@@ -1717,6 +1823,7 @@ export type Database = {
         Update: {
           artist?: string | null
           audio_url?: string
+          channel_id?: string | null
           cover_url?: string | null
           created_at?: string
           duration_seconds?: number
@@ -1724,7 +1831,15 @@ export type Database = {
           title?: string
           uploader_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "radio_songs_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "radio_channels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       render_jobs: {
         Row: {
@@ -2795,6 +2910,7 @@ export type Database = {
         Args: { group_name: string; participant_ids: string[] }
         Returns: string
       }
+      data_api: { Args: { action: string }; Returns: Json }
       deduct_ai_credits: {
         Args: { p_amount: number; p_user_id: string }
         Returns: boolean
@@ -2826,6 +2942,14 @@ export type Database = {
       }
       is_app_admin: { Args: { _user_id: string }; Returns: boolean }
       is_app_owner: { Args: { _user_id: string }; Returns: boolean }
+      is_channel_broadcaster: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_channel_owner: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_content_blocked: { Args: { _user_id: string }; Returns: boolean }
       is_conversation_member: {
         Args: { _conversation_id: string; _user_id: string }
