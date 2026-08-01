@@ -18,6 +18,7 @@ import ShareLinkButton from "@/components/ShareLinkButton";
 import ReportPostButton from "@/components/ReportPostButton";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
 import { assertNotBlocked } from "@/utils/contentBlock";
+import StaffRemoveButton from "@/components/admin/StaffRemoveButton";
 
 interface Subcross {
   id: string;
@@ -236,6 +237,8 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
                 {memberOf.has(activeSub.id) ? "Joined" : "Join"}
               </Button>
               <ShareLinkButton action="subcross" id={activeSub.name} variant="outline" iconOnly className="h-9 w-9" />
+              <StaffRemoveButton table="subcrosses" id={activeSub.id} className="h-9 w-9 text-destructive hover:bg-destructive/10"
+                onRemoved={() => { setActiveSub(null); setView("home"); loadHome(); }} />
             </>
           )}
           <Button size="sm" onClick={() => setCreatePostOpen(true)}>
@@ -358,10 +361,14 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
                     ]}
                     onBoosted={loadHome}
                   />
-                  {p.user_id === currentUserId && (
+                  {p.user_id === currentUserId ? (
                     <Button variant="ghost" size="sm" className="h-7 px-2 ml-auto" onClick={() => deletePost(p.id)}>
                       <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                     </Button>
+                  ) : (
+                    <span className="ml-auto">
+                      <StaffRemoveButton table="subcross_posts" id={p.id} onRemoved={loadHome} />
+                    </span>
                   )}
                 </div>
               </div>
@@ -474,11 +481,15 @@ const PostDetail = ({ post, currentUserId, onBack, onCreatorClick, onDelete, onV
               onClick={() => { onVote(postState, false); }}>
               <ThumbsDown className="h-3.5 w-3.5 mr-1" />{postState.dislikes_count}
             </Button>
-            {postState.user_id === currentUserId && (
+            {postState.user_id === currentUserId ? (
               <Button variant="ghost" size="sm" className="h-7 px-2 ml-auto"
                 onClick={() => onDelete(postState.id)}>
                 <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
+            ) : (
+              <span className="ml-auto">
+                <StaffRemoveButton table="subcross_posts" id={postState.id} onRemoved={onBack} />
+              </span>
             )}
           </div>
         </div>
