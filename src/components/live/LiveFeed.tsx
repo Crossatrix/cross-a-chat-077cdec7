@@ -8,6 +8,7 @@ import GoLiveDialog from "./GoLiveDialog";
 import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "@/components/video/CreatorBadge";
 import FeaturedAvatar from "@/components/video/FeaturedAvatar";
+import StaffRemoveButton from "@/components/admin/StaffRemoveButton";
 
 interface Props {
   currentUserId: string;
@@ -92,6 +93,9 @@ const LiveFeed = ({ currentUserId, onCreatorClick }: Props) => {
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
                       <span className="flex items-center gap-0.5"><ThumbsUp className="h-3 w-3" />{s.likes_count}</span>
+                      {s.user_id !== currentUserId && (
+                        <span className="ml-auto"><StaffRemoveButton table="livestreams" id={s.id} onRemoved={fetch} /></span>
+                      )}
                     </div>
                   </div>
                 </div>
