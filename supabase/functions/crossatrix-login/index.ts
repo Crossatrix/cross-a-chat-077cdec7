@@ -30,23 +30,35 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const identifier =
+      typeof body.email === "string" && body.email.trim().length > 0
+        ? body.email.trim().toLowerCase()
+        : typeof body.username === "string"
+          ? body.username.trim().toLowerCase()
+          : "";
     const password = typeof body.password === "string" ? body.password : "";
     const migrateUserId =
       typeof body.migrate_user_id === "string" && body.migrate_user_id.trim().length > 0
         ? body.migrate_user_id.trim()
         : null;
 
-    if (!email || !password) {
-      return jsonResponse({ error: "Email and password are required" }, 400);
+    if (!identifier || !password) {
+      return jsonResponse({ error: "Email or username and password are required" }, 400);
     }
 
     const supabaseUrl = requireEnv("SUPABASE_URL");
     const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
 
-    const crossatrixUser = await verifyCrossatrixCredentials(email, password);
+    const crossatrixUser = await verifyCrossatrixCredentials(identifier, password);
     const crossatrixUserId = crossatrixUser.id || null;
+    // Local Supabase auth always needs an email. Prefer the email Crossatrix
+    // returns; fall back to a deterministic internal address for username logins.
+    const email = (crossatrixUser.email && crossatrixUser.email.trim().length > 0
+      ? crossatrixUser.email.trim()
+      : identifier.includes("@")
+        ? identifier
+        : `${identifier.replace(/[^a-z0-9_.-]/g, "")}@internal.crosschat.app`).toLowerCase();
     const { username: crossatrixUsername, isExplicit: isExplicitUsername } = extractCrossatrixUsername(crossatrixUser, email);
     const localPassword = await deriveLocalPassword(email, password, serviceRoleKey);
 
@@ -54,6 +66,7 @@ serve(async (req) => {
     const supabaseAuth = createClient(supabaseUrl, anonKey);
 
     const existingLocalUser = await findUserByEmail(supabaseAdmin, email);
+
     const migrationSourceId = await resolveMigrationSourceId(supabaseAdmin, {
       desiredUsername: crossatrixUsername,
       explicitUserId: migrateUserId,
@@ -121,12 +134,16 @@ function requireEnv(name: string) {
   return value;
 }
 
-async function verifyCrossatrixCredentials(email: string, password: string): Promise<CrossatrixUser> {
+async function verifyCrossatrixCredentials(identifier: string, password: string): Promise<CrossatrixUser> {
+  const isEmail = identifier.includes("@");
   const response = await fetch(CROSSATRIX_AUTH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(
+      isEmail ? { email: identifier, password } : { username: identifier, email: identifier, password },
+    ),
   });
+
 
   const data = await response.json().catch(() => ({}));
 
