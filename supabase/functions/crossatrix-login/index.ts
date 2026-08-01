@@ -134,12 +134,16 @@ function requireEnv(name: string) {
   return value;
 }
 
-async function verifyCrossatrixCredentials(email: string, password: string): Promise<CrossatrixUser> {
+async function verifyCrossatrixCredentials(identifier: string, password: string): Promise<CrossatrixUser> {
+  const isEmail = identifier.includes("@");
   const response = await fetch(CROSSATRIX_AUTH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(
+      isEmail ? { email: identifier, password } : { username: identifier, email: identifier, password },
+    ),
   });
+
 
   const data = await response.json().catch(() => ({}));
 
