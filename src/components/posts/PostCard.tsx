@@ -192,16 +192,21 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
             )}
           </div>
         </div>
-        {post.user_id === currentUserId && (
-          <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setEditOpen(true)}>
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleDelete}>
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-0.5">
+          {post.user_id === currentUserId && (
+            <>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleDelete}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+          {post.user_id !== currentUserId && (
+            <StaffRemoveButton table="posts" id={post.id} onRemoved={() => onDeleted?.()} />
+          )}
+        </div>
       </div>
 
       {/* Content */}
