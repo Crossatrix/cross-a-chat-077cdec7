@@ -79,7 +79,7 @@ interface Message {
  * to look up. Falls back to Package if missing/unrecognized.
  */
 const resolveModTabIcon = (iconName?: string): typeof Package =>
-  (iconName && (LucideIcons as Record<string, typeof Package>)[iconName]) || Package;
+  (iconName && (LucideIcons as unknown as Record<string, typeof Package>)[iconName]) || Package;
 
 const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
