@@ -17,13 +17,14 @@ import { checkBetaStatus, purchaseBeta, BETA_PRICE } from "@/utils/betaSubscript
 import ModImg from "@/components/ModImg";
 import { emitModEvent } from "@/utils/modEvents";
 import proBadgeIcon from "@/assets/pro-badge.png";
-import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
+import { useVideoCategories } from "@/utils/videoCategories";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 
 const Settings = () => {
+  const videoCategories = useVideoCategories();
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
   const { theme, setTheme, resetTheme } = useTheme();
@@ -885,7 +886,7 @@ const Settings = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {VIDEO_CATEGORIES.map((cat) => (
+                  {videoCategories.map((cat) => (
                     <div
                       key={cat.value}
                       className="flex items-center justify-between p-3 rounded-lg border bg-card"

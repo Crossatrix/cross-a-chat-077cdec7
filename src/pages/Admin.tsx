@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Upload, Plus, RefreshCw, Save, Bug, Wrench } from "lucide-react";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import ChangelogManager from "@/components/admin/ChangelogManager";
+import VideoCategoryManager from "@/components/admin/VideoCategoryManager";
 import FileExplorer, { FileItem } from "@/components/admin/FileExplorer";
 import FilePreview from "@/components/admin/FilePreview";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -896,6 +897,7 @@ const Admin = () => {
             {CAN.manageChangelog(staffRole) && (
               <ChangelogManager currentVersion={editVersion || currentVersion} />
             )}
+            {CAN.manageVersion(staffRole) && <VideoCategoryManager />}
             {CAN.manageVersion(staffRole) && (
               <Button
                 onClick={async () => {

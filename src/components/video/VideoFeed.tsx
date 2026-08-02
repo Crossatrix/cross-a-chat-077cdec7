@@ -14,7 +14,7 @@ import CreatorProfile from "./CreatorProfile";
 import StaffBadge from "@/components/StaffBadge";
 import StaffRemoveButton from "@/components/admin/StaffRemoveButton";
 import CreatorBadge, { invalidateCreatorCache } from "./CreatorBadge";
-import { VIDEO_CATEGORIES, getCategoryIcon } from "@/utils/videoCategories";
+import { useVideoCategories, getCategoryIcon } from "@/utils/videoCategories";
 import VideoLeaderboard from "./VideoLeaderboard";
 import AgeVerificationDialog from "./AgeVerificationDialog";
 import FeaturedAvatar from "./FeaturedAvatar";
@@ -47,6 +47,7 @@ interface VideoFeedProps {
 }
 
 const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: VideoFeedProps) => {
+  const videoCategories = useVideoCategories();
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
@@ -447,7 +448,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
           >
             All
           </Badge>
-          {VIDEO_CATEGORIES.map((cat) => (
+          {videoCategories.map((cat) => (
             <Badge
               key={cat.value}
               variant={selectedCategory === cat.value ? "default" : "outline"}
