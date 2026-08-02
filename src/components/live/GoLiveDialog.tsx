@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Radio, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
+import { useVideoCategories } from "@/utils/videoCategories";
 import { assertNotBlocked } from "@/utils/contentBlock";
 
 interface Props {
@@ -65,7 +65,7 @@ const GoLiveDialog = ({ userId, onLiveStart, trigger }: Props) => {
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {VIDEO_CATEGORIES.map((c) => (
+              {videoCategories.map((c) => (
                 <SelectItem key={c.value} value={c.value}>{c.icon} {c.label}</SelectItem>
               ))}
             </SelectContent>

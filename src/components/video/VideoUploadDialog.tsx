@@ -10,7 +10,7 @@ import { Upload, X, Image, ShieldAlert, Loader2, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { assertNotBlocked } from "@/utils/contentBlock";
-import { VIDEO_CATEGORIES } from "@/utils/videoCategories";
+import { useVideoCategories } from "@/utils/videoCategories";
 import GoLiveDialog from "@/components/live/GoLiveDialog";
 import LiveBroadcaster from "@/components/live/LiveBroadcaster";
 import { emitModEvent } from "@/utils/modEvents";
@@ -199,7 +199,7 @@ const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              {VIDEO_CATEGORIES.map((cat) => (
+              {videoCategories.map((cat) => (
                 <SelectItem key={cat.value} value={cat.value}>
                   {cat.icon} {cat.label}
                 </SelectItem>
