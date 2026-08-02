@@ -8,6 +8,9 @@ import StaffBadge from "@/components/StaffBadge";
 import CreatorBadge from "@/components/video/CreatorBadge";
 import FeaturedAvatar from "@/components/video/FeaturedAvatar";
 import ShareLinkButton from "@/components/ShareLinkButton";
+import AiTranslateButton from "@/components/AiTranslateButton";
+import { getBetaTranslateEnabled } from "@/components/BetaDialog";
+import { useBetaStatus } from "@/hooks/useBetaStatus";
 
 export interface MusicTrack {
   id: string;
@@ -39,6 +42,8 @@ const MusicCard = ({ track, currentUserId, onCreatorClick, onDeleted }: Props) =
   const [likes, setLikes] = useState(track.likes_count);
   const [dislikes, setDislikes] = useState(track.dislikes_count);
   const [played, setPlayed] = useState(false);
+  const isBeta = useBetaStatus(currentUserId);
+  const canTranslate = isBeta && getBetaTranslateEnabled();
 
   useEffect(() => { fetchLike(); }, [track.id]);
 
@@ -178,6 +183,13 @@ const MusicCard = ({ track, currentUserId, onCreatorClick, onDeleted }: Props) =
           <ThumbsDown className="h-3.5 w-3.5" />{dislikes > 0 && dislikes}
         </Button>
         <ShareLinkButton action="music" id={track.id} variant="ghost" iconOnly className="h-7 w-7" />
+        {canTranslate && (
+          <AiTranslateButton
+            getText={() => `${track.title}${track.description ? `\n\n${track.description}` : ""}`}
+            iconOnly
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+          />
+        )}
         <span className="ml-auto text-[11px] text-muted-foreground">{track.plays_count} plays</span>
         {track.user_id === currentUserId && (
           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleDelete}>

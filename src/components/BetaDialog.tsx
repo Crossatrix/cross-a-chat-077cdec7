@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { FlaskConical, Sparkles, ShieldAlert, Share2, FileText } from "lucide-react";
+import { FlaskConical, Sparkles, ShieldAlert, Share2, FileText, Languages } from "lucide-react";
 import { getBetaLinkShareEnabled, setBetaLinkShareEnabled } from "@/utils/instantLinks";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -14,16 +14,19 @@ interface Props {
 const BETA_AI_KEY = "beta_feat_ai_message";
 const BETA_SCAM_KEY = "beta_feat_scam_detector";
 const BETA_SUMMARY_KEY = "beta_feat_message_summary";
+const BETA_TRANSLATE_KEY = "beta_feat_translate";
 
 export const getBetaAIMessageEnabled = () => localStorage.getItem(BETA_AI_KEY) !== "0";
 export const getBetaScamEnabled = () => localStorage.getItem(BETA_SCAM_KEY) !== "0";
 export const getBetaSummaryEnabled = () => localStorage.getItem(BETA_SUMMARY_KEY) !== "0";
+export const getBetaTranslateEnabled = () => localStorage.getItem(BETA_TRANSLATE_KEY) !== "0";
 
 const BetaDialog = ({ open, onOpenChange }: Props) => {
   const [aiOn, setAiOn] = useState(getBetaAIMessageEnabled());
   const [scamOn, setScamOn] = useState(getBetaScamEnabled());
   const [linkOn, setLinkOn] = useState(getBetaLinkShareEnabled());
   const [sumOn, setSumOn] = useState(getBetaSummaryEnabled());
+  const [transOn, setTransOn] = useState(getBetaTranslateEnabled());
 
   const toggleAi = (v: boolean) => {
     setAiOn(v);
@@ -40,6 +43,10 @@ const BetaDialog = ({ open, onOpenChange }: Props) => {
   const toggleSum = (v: boolean) => {
     setSumOn(v);
     localStorage.setItem(BETA_SUMMARY_KEY, v ? "1" : "0");
+  };
+  const toggleTrans = (v: boolean) => {
+    setTransOn(v);
+    localStorage.setItem(BETA_TRANSLATE_KEY, v ? "1" : "0");
   };
 
   return (
@@ -118,6 +125,22 @@ const BetaDialog = ({ open, onOpenChange }: Props) => {
             <CardContent className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Enabled</span>
               <Switch checked={sumOn} onCheckedChange={toggleSum} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Languages className="h-4 w-4 text-primary" /> AI Translate
+              </CardTitle>
+              <CardDescription>
+                Adds a translate button to posts, video titles/descriptions and music
+                titles/descriptions. Pick any target language.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Enabled</span>
+              <Switch checked={transOn} onCheckedChange={toggleTrans} />
             </CardContent>
           </Card>
         </div>
