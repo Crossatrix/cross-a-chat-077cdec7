@@ -19,6 +19,7 @@ interface Props {
 }
 
 const GoLiveDialog = ({ userId, onLiveStart, trigger }: Props) => {
+  const videoCategories = useVideoCategories();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

@@ -24,6 +24,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 
 const Settings = () => {
+  const videoCategories = useVideoCategories();
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
   const { theme, setTheme, resetTheme } = useTheme();

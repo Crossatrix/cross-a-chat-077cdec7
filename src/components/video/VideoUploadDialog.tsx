@@ -21,6 +21,7 @@ interface VideoUploadDialogProps {
 }
 
 const VideoUploadDialog = ({ userId, onUploaded }: VideoUploadDialogProps) => {
+  const videoCategories = useVideoCategories();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

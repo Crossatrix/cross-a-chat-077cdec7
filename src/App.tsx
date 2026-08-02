@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkBetaStatus, isPreviewDomain } from "@/utils/betaSubscription";
 import { emitModEvent } from "@/utils/modEvents";
 import { syncInstalledModsFromAccount } from "@/utils/mods";
+import { loadVideoCategories } from "@/utils/videoCategories";
 
 const queryClient = new QueryClient();
 

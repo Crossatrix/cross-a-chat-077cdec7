@@ -47,6 +47,7 @@ interface VideoFeedProps {
 }
 
 const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: VideoFeedProps) => {
+  const videoCategories = useVideoCategories();
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
