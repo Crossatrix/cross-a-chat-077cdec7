@@ -13,9 +13,10 @@ import { formatMessageText } from "@/utils/textFormatting";
 import PostComments from "./PostComments";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
+import AiTranslateButton from "@/components/AiTranslateButton";
 import { emitModEvent } from "@/utils/modEvents";
 import ReportPostButton from "@/components/ReportPostButton";
-import { getBetaSummaryEnabled } from "@/components/BetaDialog";
+import { getBetaSummaryEnabled, getBetaTranslateEnabled } from "@/components/BetaDialog";
 import { useBetaStatus } from "@/hooks/useBetaStatus";
 import StaffRemoveButton from "@/components/admin/StaffRemoveButton";
 
@@ -48,6 +49,7 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
   const [liked, setLiked] = useState<boolean | null>(null); // null = no vote, true = like, false = dislike
   const isBeta = useBetaStatus(currentUserId);
   const canSummarize = isBeta && getBetaSummaryEnabled();
+  const canTranslate = isBeta && getBetaTranslateEnabled();
   const [likesCount, setLikesCount] = useState(post.likes_count);
   const [dislikesCount, setDislikesCount] = useState(post.dislikes_count);
   const [commentsCount, setCommentsCount] = useState(post.comments_count);
@@ -289,6 +291,13 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
         </Button>
         {canSummarize && (post.content?.length ?? 0) > 200 && (
           <AiSummaryButton kind="post" getText={() => post.content} iconOnly className="h-7 w-7 p-0" />
+        )}
+        {canTranslate && (post.content || post.poll_question) && (
+          <AiTranslateButton
+            getText={() => [post.content, post.poll_question, ...(post.poll_options || [])].filter(Boolean).join("\n")}
+            iconOnly
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+          />
         )}
         {post.user_id !== currentUserId && (
           <ReportPostButton postId={post.id} currentUserId={currentUserId} iconOnly className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive" />

@@ -9,7 +9,8 @@ import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Fla
 import ShareLinkButton from "@/components/ShareLinkButton";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
-import { getBetaSummaryEnabled } from "@/components/BetaDialog";
+import AiTranslateButton from "@/components/AiTranslateButton";
+import { getBetaSummaryEnabled, getBetaTranslateEnabled } from "@/components/BetaDialog";
 import { useBetaStatus } from "@/hooks/useBetaStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ interface VideoPlayerProps {
 const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlayerProps) => {
   const isBeta = useBetaStatus(currentUserId);
   const canSummarize = isBeta && getBetaSummaryEnabled();
+  const canTranslate = isBeta && getBetaTranslateEnabled();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
@@ -394,6 +396,9 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
               <ShareLinkButton action="video" id={video.id} />
               {canSummarize && video.description && video.description.length > 200 && (
                 <AiSummaryButton kind="video" getText={() => `${video.title}\n\n${video.description}`} label="Summary" />
+              )}
+              {canTranslate && (
+                <AiTranslateButton getText={() => `${video.title}${video.description ? `\n\n${video.description}` : ""}`} label="Translate" />
               )}
               <OwnerBoostButton
                 targetId={video.id}
