@@ -2469,6 +2469,39 @@ export type Database = {
           },
         ]
       }
+      video_categories: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          icon: string
+          id: string
+          label: string
+          sort_order: number
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          icon?: string
+          id?: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          icon?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       video_category_views: {
         Row: {
           category: string
