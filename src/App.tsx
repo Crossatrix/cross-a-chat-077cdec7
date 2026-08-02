@@ -27,6 +27,7 @@ const App = () => {
 
   useEffect(() => {
     emitModEvent("reload");
+    loadVideoCategories();
     if (!isPreviewDomain()) {
       setBetaUnlocked(true);
       return;
