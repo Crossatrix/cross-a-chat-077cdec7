@@ -68,6 +68,45 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const updateFileRef = useRef<HTMLInputElement>(null);
   const [updateTargetMod, setUpdateTargetMod] = useState<ModRow | null>(null);
+  const staffRole = useStaffRole();
+  const canRescan = isAtLeast(staffRole, "moderator");
+  const canSetLevel = isAtLeast(staffRole, "admin");
+  const [rescanning, setRescanning] = useState<string | null>(null);
+  const [detailsFor, setDetailsFor] = useState<string | null>(null);
+
+  const handleRescan = async (mod: ModRow) => {
+    setRescanning(mod.id);
+    try {
+      const report = await rescanMod(mod.id, mod.file_url);
+      toast.success(`${mod.name}: ${levelLabel(report.level)} (${report.findings.length} finding(s))`);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Scan failed");
+    } finally { setRescanning(null); }
+  };
+
+  const handleSetLevel = async (mod: ModRow, level: SecurityLevel) => {
+    const { error } = await (supabase as any)
+      .from("mods")
+      .update({ security_level: level, security_scanned_at: new Date().toISOString(), security_set_by: currentUserId })
+      .eq("id", mod.id);
+    if (error) return toast.error(error.message);
+    toast.success(`Set to ${levelLabel(level)}`);
+    load();
+  };
+
+  const SecurityBadge = ({ mod }: { mod: ModRow }) => (
+    <button
+      type="button"
+      onClick={() => setDetailsFor(detailsFor === mod.id ? null : mod.id)}
+      className={`ml-2 align-middle text-xs px-1.5 py-0.5 rounded inline-flex items-center gap-1 ${levelClass(mod.security_level)}`}
+      title="Security rating — tap for details"
+    >
+      {(mod.security_level ?? 0) >= 3 ? <ShieldAlert className="h-3 w-3" /> : <ShieldCheck className="h-3 w-3" />}
+      {levelLabel(mod.security_level)}
+    </button>
+  );
+
 
   const load = async () => {
     setLoading(true);
