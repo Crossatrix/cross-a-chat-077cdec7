@@ -1132,6 +1132,10 @@ export type Database = {
           file_url: string
           id: string
           name: string
+          security_findings: Json
+          security_level: number | null
+          security_scanned_at: string | null
+          security_set_by: string | null
           updated_at: string
         }
         Insert: {
@@ -1142,6 +1146,10 @@ export type Database = {
           file_url: string
           id?: string
           name: string
+          security_findings?: Json
+          security_level?: number | null
+          security_scanned_at?: string | null
+          security_set_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -1152,6 +1160,10 @@ export type Database = {
           file_url?: string
           id?: string
           name?: string
+          security_findings?: Json
+          security_level?: number | null
+          security_scanned_at?: string | null
+          security_set_by?: string | null
           updated_at?: string
         }
         Relationships: []

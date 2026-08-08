@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Download, Upload, Trash2, Package, Loader2, Search, RefreshCw } from "lucide-react";
+import { Download, Upload, Trash2, Package, Loader2, Search, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
   getInstalledMods,
   onModsUpdated,
@@ -24,6 +24,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { getCreatorDisplayName } from "@/utils/creatorDisplay";
+import { levelClass, levelLabel, rescanMod, SECURITY_LEVELS, SecurityLevel } from "@/utils/modSecurity";
+import useStaffRole from "@/hooks/useStaffRole";
+import { isAtLeast } from "@/utils/roleConfig";
 
 interface ModRow {
   id: string;
@@ -34,8 +37,12 @@ interface ModRow {
   downloads: number;
   created_at: string;
   updated_at: string;
+  security_level: number | null;
+  security_findings: { file: string; rule: string; detail: string; score: number }[] | null;
+  security_scanned_at: string | null;
   author_username?: string;
 }
+
 
 interface Props {
   open: boolean;
@@ -61,6 +68,45 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const updateFileRef = useRef<HTMLInputElement>(null);
   const [updateTargetMod, setUpdateTargetMod] = useState<ModRow | null>(null);
+  const staffRole = useStaffRole();
+  const canRescan = isAtLeast(staffRole, "moderator");
+  const canSetLevel = isAtLeast(staffRole, "admin");
+  const [rescanning, setRescanning] = useState<string | null>(null);
+  const [detailsFor, setDetailsFor] = useState<string | null>(null);
+
+  const handleRescan = async (mod: ModRow) => {
+    setRescanning(mod.id);
+    try {
+      const report = await rescanMod(mod.id, mod.file_url);
+      toast.success(`${mod.name}: ${levelLabel(report.level)} (${report.findings.length} finding(s))`);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Scan failed");
+    } finally { setRescanning(null); }
+  };
+
+  const handleSetLevel = async (mod: ModRow, level: SecurityLevel) => {
+    const { error } = await (supabase as any)
+      .from("mods")
+      .update({ security_level: level, security_scanned_at: new Date().toISOString(), security_set_by: currentUserId })
+      .eq("id", mod.id);
+    if (error) return toast.error(error.message);
+    toast.success(`Set to ${levelLabel(level)}`);
+    load();
+  };
+
+  const SecurityBadge = ({ mod }: { mod: ModRow }) => (
+    <button
+      type="button"
+      onClick={() => setDetailsFor(detailsFor === mod.id ? null : mod.id)}
+      className={`ml-2 align-middle text-xs px-1.5 py-0.5 rounded inline-flex items-center gap-1 ${levelClass(mod.security_level)}`}
+      title="Security rating — tap for details"
+    >
+      {(mod.security_level ?? 0) >= 3 ? <ShieldAlert className="h-3 w-3" /> : <ShieldCheck className="h-3 w-3" />}
+      {levelLabel(mod.security_level)}
+    </button>
+  );
+
 
   const load = async () => {
     setLoading(true);
@@ -119,6 +165,18 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
   };
 
   const handleInstall = async (mod: ModRow) => {
+    const lvl = mod.security_level ?? 0;
+    if (lvl >= 3) {
+      const ok = confirm(
+        `⚠️ Security warning\n\n"${mod.name}" is rated ${levelLabel(lvl)}.\n` +
+        (mod.security_findings || []).slice(0, 5).map(f => `• ${f.detail} (${f.file})`).join("\n") +
+        `\n\nInstall anyway?`
+      );
+      if (!ok) return;
+    } else if (mod.security_level == null) {
+      const ok = confirm(`"${mod.name}" has not been security checked yet. Install anyway?`);
+      if (!ok) return;
+    }
     setInstalling(mod.id);
     try {
       await downloadAndInstallMod(mod);
@@ -129,6 +187,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
       toast.error(e?.message || "Install failed");
     } finally { setInstalling(null); }
   };
+
 
   const handleUninstall = async (id: string, name: string) => {
     await uninstallMod(id);
@@ -161,8 +220,14 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
     setUpdateTargetMod(null);
     setUpdatingMod(mod.id);
     try {
-      await updateModFile(mod.id, currentUserId, file);
+      const { report } = await updateModFile(mod.id, currentUserId, file);
       toast.success(`Updated ${mod.name}`);
+      if (report.level >= 3) {
+        toast.warning(
+          `Security: ${levelLabel(report.level)} — ${report.findings.map(f => f.detail).slice(0, 3).join("; ")}`,
+          { duration: 10000 }
+        );
+      }
       load();
     } catch (err: any) {
       toast.error(err?.message || "Update failed");
@@ -175,15 +240,24 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
     if (!uploadName.trim()) return toast.error("Name required");
     setUploading(true);
     try {
-      const { path } = await uploadModFile(currentUserId, uploadFile);
+      const { path, report } = await uploadModFile(currentUserId, uploadFile);
       const { error } = await (supabase as any).from("mods").insert({
         name: uploadName.trim(),
         description: uploadDesc.trim() || null,
         author_id: currentUserId,
         file_url: path,
+        security_level: report.level,
+        security_findings: report.findings,
+        security_scanned_at: new Date().toISOString(),
       });
       if (error) throw error;
-      toast.success("Mod uploaded");
+      toast.success(`Mod uploaded — security: ${levelLabel(report.level)}`);
+      if (report.level >= 3) {
+        toast.warning(
+          `Your mod was rated ${levelLabel(report.level)}. Users will see a warning before installing. Issues: ${report.findings.map(f => f.detail).slice(0, 3).join("; ")}`,
+          { duration: 12000 }
+        );
+      }
       setUploadName(""); setUploadDesc(""); setUploadFile(null);
       if (fileRef.current) fileRef.current.value = "";
       load();
@@ -191,6 +265,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
       toast.error(e?.message || "Upload failed");
     } finally { setUploading(false); }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -255,10 +330,11 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                 const isAuthor = currentUserId && m.author_id === currentUserId;
                 return (
                   <Card key={m.id}>
-                    <CardContent className="p-3 flex items-start justify-between gap-3">
+                    <CardContent className="p-3 flex items-start justify-between gap-3 flex-wrap">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">
-                          {m.name}
+                        <p className="font-medium">
+                          <span className="align-middle">{m.name}</span>
+                          <SecurityBadge mod={m} />
                           {updateAvailable && (
                             <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary">
                               Update available
@@ -271,7 +347,48 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                         <p className="text-xs text-muted-foreground mt-1">
                           by {m.author_username || "Unknown"} · {m.downloads} downloads
                         </p>
+                        {(m.security_level ?? 0) >= 3 && (
+                          <p className="text-xs text-destructive mt-1">
+                            ⚠️ This mod contains code that may be harmful.
+                          </p>
+                        )}
+                        {detailsFor === m.id && (
+                          <div className="mt-2 rounded bg-muted/50 p-2 text-xs space-y-1">
+                            {m.security_findings && m.security_findings.length > 0 ? (
+                              m.security_findings.map((f, i) => (
+                                <p key={i}>• {f.detail} <span className="text-muted-foreground">({f.file})</span></p>
+                              ))
+                            ) : (
+                              <p className="text-muted-foreground">
+                                {m.security_scanned_at ? "No suspicious code found." : "Not scanned yet."}
+                              </p>
+                            )}
+                            {(canRescan || canSetLevel) && (
+                              <div className="flex flex-wrap items-center gap-2 pt-1">
+                                {canRescan && (
+                                  <Button size="sm" variant="outline" onClick={() => handleRescan(m)} disabled={rescanning === m.id}>
+                                    {rescanning === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Re-evaluate"}
+                                  </Button>
+                                )}
+                                {canSetLevel && (
+                                  <Select
+                                    value={m.security_level ? String(m.security_level) : ""}
+                                    onValueChange={(v) => handleSetLevel(m, Number(v) as SecurityLevel)}
+                                  >
+                                    <SelectTrigger className="h-8 w-36"><SelectValue placeholder="Set level" /></SelectTrigger>
+                                    <SelectContent>
+                                      {([1, 2, 3, 4, 5] as SecurityLevel[]).map((l) => (
+                                        <SelectItem key={l} value={String(l)}>{SECURITY_LEVELS[l].label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
+
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
