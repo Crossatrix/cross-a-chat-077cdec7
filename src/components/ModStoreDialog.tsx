@@ -165,6 +165,18 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
   };
 
   const handleInstall = async (mod: ModRow) => {
+    const lvl = mod.security_level ?? 0;
+    if (lvl >= 3) {
+      const ok = confirm(
+        `⚠️ Security warning\n\n"${mod.name}" is rated ${levelLabel(lvl)}.\n` +
+        (mod.security_findings || []).slice(0, 5).map(f => `• ${f.detail} (${f.file})`).join("\n") +
+        `\n\nInstall anyway?`
+      );
+      if (!ok) return;
+    } else if (mod.security_level == null) {
+      const ok = confirm(`"${mod.name}" has not been security checked yet. Install anyway?`);
+      if (!ok) return;
+    }
     setInstalling(mod.id);
     try {
       await downloadAndInstallMod(mod);
@@ -175,6 +187,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
       toast.error(e?.message || "Install failed");
     } finally { setInstalling(null); }
   };
+
 
   const handleUninstall = async (id: string, name: string) => {
     await uninstallMod(id);
