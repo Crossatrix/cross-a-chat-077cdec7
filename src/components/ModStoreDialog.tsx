@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Download, Upload, Trash2, Package, Loader2, Search, RefreshCw } from "lucide-react";
+import { Download, Upload, Trash2, Package, Loader2, Search, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
   getInstalledMods,
   onModsUpdated,
@@ -24,6 +24,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { getCreatorDisplayName } from "@/utils/creatorDisplay";
+import { levelClass, levelLabel, rescanMod, SECURITY_LEVELS, SecurityLevel } from "@/utils/modSecurity";
+import useStaffRole from "@/hooks/useStaffRole";
+import { CAN, isAtLeast } from "@/utils/roleConfig";
 
 interface ModRow {
   id: string;
@@ -34,8 +37,12 @@ interface ModRow {
   downloads: number;
   created_at: string;
   updated_at: string;
+  security_level: number | null;
+  security_findings: { file: string; rule: string; detail: string; score: number }[] | null;
+  security_scanned_at: string | null;
   author_username?: string;
 }
+
 
 interface Props {
   open: boolean;
