@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import ModImg from "@/components/ModImg";
+import { getModBadgesForUsername, onModsUpdated, type ModBadge } from "@/utils/mods";
 import type { StaffRole } from "@/utils/roleConfig";
 import adminIcon from "@/assets/roles/admin.png";
 import elderModIcon from "@/assets/roles/elder_moderator.png";
@@ -31,6 +32,7 @@ const roleCache = new Map<string, BadgeRole | null>();
 const officialCache = new Map<string, boolean>();
 const proCache = new Map<string, boolean>();
 const radioCache = new Map<string, boolean>();
+const usernameCache = new Map<string, string | null>();
 
 
 interface StaffBadgeProps {
@@ -40,6 +42,7 @@ interface StaffBadgeProps {
 
 const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
   const [badges, setBadges] = useState<BadgeRole[]>([]);
+  const [modBadges, setModBadges] = useState<ModBadge[]>([]);
   const [loaded, setLoaded] = useState(
     userId === NOTIFICATIONS_SYSTEM_USER_ID || (roleCache.has(userId) && officialCache.has(userId) && proCache.has(userId))
   );
@@ -111,7 +114,24 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
   }, [userId]);
 
 
-  if (!loaded || badges.length === 0) return null;
+  useEffect(() => {
+    let active = true;
+    const apply = (username: string | null) => {
+      if (active) setModBadges(getModBadgesForUsername(username));
+    };
+    const load = async () => {
+      if (usernameCache.has(userId)) return apply(usernameCache.get(userId)!);
+      const { data } = await supabase.from("profiles").select("username").eq("id", userId).maybeSingle();
+      const uname = data?.username ?? null;
+      usernameCache.set(userId, uname);
+      apply(uname);
+    };
+    load();
+    const off = onModsUpdated(() => apply(usernameCache.get(userId) ?? null));
+    return () => { active = false; off(); };
+  }, [userId]);
+
+  if (!loaded || (badges.length === 0 && modBadges.length === 0)) return null;
 
   return (
     <span className="inline-flex items-center gap-0.5">
@@ -125,6 +145,16 @@ const StaffBadge = ({ userId, size = 16 }: StaffBadgeProps) => {
           className="inline-block rounded-full"
           title={badge === "official" ? "Official Account" : badge === "pro" ? "Cross Chat Pro" : badge === "radiobroadcaster" ? "Radio Broadcaster" : badge.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
 
+        />
+      ))}
+      {modBadges.map((b) => (
+        <img
+          key={b.uuid}
+          src={b.dataUrl}
+          alt="Badge"
+          width={size}
+          height={size}
+          className="inline-block rounded-full"
         />
       ))}
     </span>

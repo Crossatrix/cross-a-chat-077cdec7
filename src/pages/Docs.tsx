@@ -39,6 +39,8 @@ const Docs = () => {
 ├─ UI/                   (optional)  *.html files opened in a sandboxed dialog
 ├─ scripts/              (optional)  *.js or *.ts run in a small sandbox
 ├─ event.cctrigger       (optional)  hooks scripts/UI to app events
+├─ badges/               (optional)  badge images, e.g. badge.png
+├─ badge.json            (optional)  grants badges to usernames
 └─ tabs.json             (optional)  adds custom tabs to the tab bar`}</pre>
             </div>
 
@@ -182,6 +184,33 @@ mod.log("messages:", msgs);`}</pre>
                 Entries referencing a missing <code>ui</code> file, or missing <code>id</code>/<code>name</code>,
                 are skipped. Tabs disappear automatically while the mod is disabled or uninstalled.
               </p>
+            </div>
+
+            <div>
+              <h2 className="font-semibold text-base mb-1">badge.json</h2>
+              <p>
+                Grants custom badges (images placed in <code>badges/</code>) to users by username.
+                Badges show up next to usernames everywhere normal badges do, for anyone who has the mod
+                installed and enabled.
+              </p>
+              <pre className="bg-muted rounded p-3 text-xs overflow-x-auto">{`[
+  {
+    "uuid": "9fddfd7d-9d80-4a07-85b0-d47d4450d0b7",
+    "icon": "badges/badge.png",
+    "owners": [
+      { "username": "Example" },
+      { "username": "*a" },
+      { "username": "*a*" }
+    ]
+  }
+]`}</pre>
+              <ul className="list-disc pl-5 text-xs space-y-1">
+                <li><code>uuid</code> — unique id for the badge</li>
+                <li><code>icon</code> — path to an image inside <code>badges/</code></li>
+                <li><code>owners</code> — usernames that get the badge. <code>*</code> is a wildcard and
+                  matching is case sensitive: <code>*a</code> = ends with "a", <code>a*</code> = starts with "a",
+                  <code> *a*</code> = contains "a"</li>
+              </ul>
             </div>
 
             <div>
