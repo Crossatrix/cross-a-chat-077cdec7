@@ -1,6 +1,8 @@
 import JSZip from "jszip";
 import * as LucideIcons from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { scanModArchive } from "@/utils/modSecurity";
+
 
 const EMOJI_KEY = "installed_mod_emojis";
 const TEXTURE_KEY = "installed_mod_textures";
