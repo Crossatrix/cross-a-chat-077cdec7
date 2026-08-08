@@ -330,10 +330,11 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                 const isAuthor = currentUserId && m.author_id === currentUserId;
                 return (
                   <Card key={m.id}>
-                    <CardContent className="p-3 flex items-start justify-between gap-3">
+                    <CardContent className="p-3 flex items-start justify-between gap-3 flex-wrap">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">
-                          {m.name}
+                        <p className="font-medium">
+                          <span className="align-middle">{m.name}</span>
+                          <SecurityBadge mod={m} />
                           {updateAvailable && (
                             <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary">
                               Update available
@@ -346,7 +347,48 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                         <p className="text-xs text-muted-foreground mt-1">
                           by {m.author_username || "Unknown"} · {m.downloads} downloads
                         </p>
+                        {(m.security_level ?? 0) >= 3 && (
+                          <p className="text-xs text-destructive mt-1">
+                            ⚠️ This mod contains code that may be harmful.
+                          </p>
+                        )}
+                        {detailsFor === m.id && (
+                          <div className="mt-2 rounded bg-muted/50 p-2 text-xs space-y-1">
+                            {m.security_findings && m.security_findings.length > 0 ? (
+                              m.security_findings.map((f, i) => (
+                                <p key={i}>• {f.detail} <span className="text-muted-foreground">({f.file})</span></p>
+                              ))
+                            ) : (
+                              <p className="text-muted-foreground">
+                                {m.security_scanned_at ? "No suspicious code found." : "Not scanned yet."}
+                              </p>
+                            )}
+                            {(canRescan || canSetLevel) && (
+                              <div className="flex flex-wrap items-center gap-2 pt-1">
+                                {canRescan && (
+                                  <Button size="sm" variant="outline" onClick={() => handleRescan(m)} disabled={rescanning === m.id}>
+                                    {rescanning === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Re-evaluate"}
+                                  </Button>
+                                )}
+                                {canSetLevel && (
+                                  <Select
+                                    value={m.security_level ? String(m.security_level) : ""}
+                                    onValueChange={(v) => handleSetLevel(m, Number(v) as SecurityLevel)}
+                                  >
+                                    <SelectTrigger className="h-8 w-36"><SelectValue placeholder="Set level" /></SelectTrigger>
+                                    <SelectContent>
+                                      {([1, 2, 3, 4, 5] as SecurityLevel[]).map((l) => (
+                                        <SelectItem key={l} value={String(l)}>{SECURITY_LEVELS[l].label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
+
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
