@@ -26,7 +26,7 @@ import {
 import { getCreatorDisplayName } from "@/utils/creatorDisplay";
 import { levelClass, levelLabel, rescanMod, SECURITY_LEVELS, SecurityLevel } from "@/utils/modSecurity";
 import useStaffRole from "@/hooks/useStaffRole";
-import { CAN, isAtLeast } from "@/utils/roleConfig";
+import { isAtLeast } from "@/utils/roleConfig";
 
 interface ModRow {
   id: string;
