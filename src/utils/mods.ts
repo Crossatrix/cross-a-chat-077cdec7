@@ -411,26 +411,36 @@ export const downloadAndInstallMod = async (mod: { id: string; file_url: string 
 
 export const uploadModFile = async (userId: string, file: File) => {
   const parsed = await parseCcmod(file);
+  const report = await scanModArchive(file);
   const path = `${userId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
   const { error } = await supabase.storage.from("mods").upload(path, file, { contentType: "application/zip" });
   if (error) throw error;
-  return { path, meta: parsed.meta };
+  return { path, meta: parsed.meta, report };
 };
 
 /** Creator-only: replace an existing mod's file and bump updated_at. */
 export const updateModFile = async (modId: string, userId: string, file: File) => {
   const parsed = await parseCcmod(file);
+  const report = await scanModArchive(file);
   const path = `${userId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
   const { error: upErr } = await supabase.storage.from("mods").upload(path, file, { contentType: "application/zip" });
   if (upErr) throw upErr;
   const { error } = await (supabase as any)
     .from("mods")
-    .update({ file_url: path, updated_at: new Date().toISOString() })
+    .update({
+      file_url: path,
+      updated_at: new Date().toISOString(),
+      security_level: report.level,
+      security_findings: report.findings,
+      security_scanned_at: new Date().toISOString(),
+      security_set_by: null,
+    })
     .eq("id", modId)
     .eq("author_id", userId);
   if (error) throw error;
-  return { path, meta: parsed.meta };
+  return { path, meta: parsed.meta, report };
 };
+
 
 /**
  * Sync installed mods from the user's account. Downloads and installs any mods
