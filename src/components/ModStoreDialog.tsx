@@ -220,8 +220,14 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
     setUpdateTargetMod(null);
     setUpdatingMod(mod.id);
     try {
-      await updateModFile(mod.id, currentUserId, file);
+      const { report } = await updateModFile(mod.id, currentUserId, file);
       toast.success(`Updated ${mod.name}`);
+      if (report.level >= 3) {
+        toast.warning(
+          `Security: ${levelLabel(report.level)} — ${report.findings.map(f => f.detail).slice(0, 3).join("; ")}`,
+          { duration: 10000 }
+        );
+      }
       load();
     } catch (err: any) {
       toast.error(err?.message || "Update failed");
@@ -234,15 +240,24 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
     if (!uploadName.trim()) return toast.error("Name required");
     setUploading(true);
     try {
-      const { path } = await uploadModFile(currentUserId, uploadFile);
+      const { path, report } = await uploadModFile(currentUserId, uploadFile);
       const { error } = await (supabase as any).from("mods").insert({
         name: uploadName.trim(),
         description: uploadDesc.trim() || null,
         author_id: currentUserId,
         file_url: path,
+        security_level: report.level,
+        security_findings: report.findings,
+        security_scanned_at: new Date().toISOString(),
       });
       if (error) throw error;
-      toast.success("Mod uploaded");
+      toast.success(`Mod uploaded — security: ${levelLabel(report.level)}`);
+      if (report.level >= 3) {
+        toast.warning(
+          `Your mod was rated ${levelLabel(report.level)}. Users will see a warning before installing. Issues: ${report.findings.map(f => f.detail).slice(0, 3).join("; ")}`,
+          { duration: 12000 }
+        );
+      }
       setUploadName(""); setUploadDesc(""); setUploadFile(null);
       if (fileRef.current) fileRef.current.value = "";
       load();
@@ -250,6 +265,7 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
       toast.error(e?.message || "Upload failed");
     } finally { setUploading(false); }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
