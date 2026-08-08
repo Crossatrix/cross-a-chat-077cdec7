@@ -11,6 +11,7 @@ const TAB_KEY = "installed_mod_tabs";
 const MODS_KEY = "installed_mods";
 const DISABLED_KEY = "installed_mod_disabled";
 const FONT_KEY = "installed_mod_fonts";
+const BADGE_KEY = "installed_mod_badges";
 const EVT = "mods-updated";
 
 export const SUPPORTED_EVENTS = [
@@ -34,6 +35,7 @@ export interface InstalledMod {
   scripts: string[];
   triggers: number;
   tabs: string[];
+  badges: string[];
   font: boolean;
   installed_at?: string;
 }
@@ -43,6 +45,7 @@ export interface ModUI { path: string; html: string; modId: string; }
 export interface ModScript { path: string; code: string; lang: "js"|"ts"; modId: string; }
 export interface ModTrigger { event: ModEventName; target: string; modId: string; }
 export interface ModTab { id: string; name: string; ui: string; icon?: string; modId: string; }
+export interface ModBadge { uuid: string; dataUrl: string; owners: string[]; modId: string; }
 export interface ModFont { dataUrl: string; format: string; modId: string; installedAt: number; }
 
 const read = <T,>(key: string, fallback: T): T => {
@@ -82,12 +85,30 @@ export const getModUI = (): ModUI[] => enabledFilter(read<ModUI[]>(UI_KEY, []));
 export const getModScripts = (): ModScript[] => enabledFilter(read<ModScript[]>(SCRIPT_KEY, []));
 export const getModTriggers = (): ModTrigger[] => enabledFilter(read<ModTrigger[]>(TRIGGER_KEY, []));
 export const getModTabs = (): ModTab[] => enabledFilter(read<ModTab[]>(TAB_KEY, []));
+export const getModBadges = (): ModBadge[] => enabledFilter(read<ModBadge[]>(BADGE_KEY, []));
 export const getModFonts = (): ModFont[] => enabledFilter(read<ModFont[]>(FONT_KEY, []));
 /** The font that should actually be applied: the most recently installed enabled mod font. */
 export const getActiveModFont = (): ModFont | null => {
   const fonts = getModFonts();
   if (!fonts.length) return null;
   return fonts.reduce((latest, f) => (f.installedAt > latest.installedAt ? f : latest), fonts[0]);
+};
+
+/**
+ * Owner patterns support `*` wildcards, case sensitive.
+ *  "Example" -> exact, "*a" -> ends with a, "*a*" -> contains a, "a*" -> starts with a
+ */
+export const matchesOwnerPattern = (username: string, pattern: string): boolean => {
+  if (!pattern) return false;
+  if (!pattern.includes("*")) return username === pattern;
+  const rx = new RegExp("^" + pattern.split("*").map(p => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$");
+  return rx.test(username);
+};
+
+/** Badges granted to a username by currently enabled mods. */
+export const getModBadgesForUsername = (username: string | null | undefined): ModBadge[] => {
+  if (!username) return [];
+  return getModBadges().filter(b => b.owners.some(o => matchesOwnerPattern(username, o)));
 };
 
 export const onModsUpdated = (cb: () => void) => {
@@ -204,6 +225,48 @@ const parseTabs = (raw: string, uiPaths: Set<string>): { id: string; name: strin
   return out;
 };
 
+/**
+ * badge.json: array of { uuid, icon, owners: [{ username }] }. Tolerates the
+ * `{ [ ... ] }` shape from the docs example by extracting the first array found.
+ */
+const parseBadges = (raw: string, files: Map<string, string>): { uuid: string; dataUrl: string; owners: string[] }[] => {
+  const out: { uuid: string; dataUrl: string; owners: string[] }[] = [];
+  let parsed: unknown;
+  const clean = raw.replace(/\/\/[^\n\r]*/g, "");
+  try { parsed = JSON.parse(clean); } catch {
+    const m = clean.match(/\[[\s\S]*\]/);
+    if (!m) return out;
+    try { parsed = JSON.parse(m[0]); } catch { return out; }
+  }
+  if (!Array.isArray(parsed) && parsed && typeof parsed === "object") {
+    const arr = Object.values(parsed as Record<string, unknown>).find(Array.isArray);
+    parsed = arr ?? [];
+  }
+  if (!Array.isArray(parsed)) return out;
+  for (const entry of parsed) {
+    if (!entry || typeof entry !== "object") continue;
+    const { uuid, icon, owners } = entry as Record<string, unknown>;
+    if (typeof uuid !== "string" || !uuid.trim()) continue;
+    if (typeof icon !== "string" || !icon.trim()) continue;
+    const key = icon.replace(/^\.?\//, "").trim().toLowerCase();
+    const dataUrl = files.get(key);
+    if (!dataUrl) { console.warn("[mod badge.json] icon not found in mod:", icon); continue; }
+    const list: string[] = [];
+    if (Array.isArray(owners)) {
+      for (const o of owners) {
+        if (typeof o === "string" && o.trim()) list.push(o.trim());
+        else if (o && typeof o === "object") {
+          const u = (o as Record<string, unknown>).username;
+          if (typeof u === "string" && u.trim()) list.push(u.trim());
+        }
+      }
+    }
+    if (!list.length) continue;
+    out.push({ uuid: uuid.trim(), dataUrl, owners: list });
+  }
+  return out;
+};
+
 export const parseCcmod = async (file: Blob) => {
   const zip = await JSZip.loadAsync(file);
   const modJsonEntry = zip.file("mod.json");
@@ -216,6 +279,8 @@ export const parseCcmod = async (file: Blob) => {
   const scripts: { path: string; code: string; lang: "js"|"ts" }[] = [];
   let triggers: { event: ModEventName; target: string }[] = [];
   let tabsRaw: string | null = null;
+  let badgeRaw: string | null = null;
+  const badgeFiles = new Map<string, string>();
   let font: { dataUrl: string; format: string } | null = null;
 
   for (const entry of Object.values(zip.files)) {
@@ -235,6 +300,10 @@ export const parseCcmod = async (file: Blob) => {
       scripts.push({ path, code: await entry.async("string"), lang: lower.endsWith(".ts") ? "ts" : "js" });
     } else if (lower === "event.cctrigger") {
       triggers = parseTriggers(await entry.async("string"));
+    } else if (lower.startsWith("badges/")) {
+      badgeFiles.set(lower, await fileToDataUrl(await entry.async("blob")));
+    } else if (lower === "badge.json") {
+      badgeRaw = await entry.async("string");
     } else if (lower === "tabs.json") {
       tabsRaw = await entry.async("string");
     } else if (lower === "font.fnt") {
@@ -247,7 +316,8 @@ export const parseCcmod = async (file: Blob) => {
   }
   const uiPaths = new Set(ui.map((u) => u.path.toLowerCase()));
   const tabs = tabsRaw ? parseTabs(tabsRaw, uiPaths) : [];
-  return { meta, emojis, textures, ui, scripts, triggers, tabs, font };
+  const badges = badgeRaw ? parseBadges(badgeRaw, badgeFiles) : [];
+  return { meta, emojis, textures, ui, scripts, triggers, tabs, badges, font };
 };
 
 export const installMod = async (modId: string, file: Blob) => {
@@ -265,6 +335,7 @@ export const installMod = async (modId: string, file: Blob) => {
   write(SCRIPT_KEY, [...read<ModScript[]>(SCRIPT_KEY, []), ...parsed.scripts.map(s => ({ ...s, modId }))]);
   write(TRIGGER_KEY, [...read<ModTrigger[]>(TRIGGER_KEY, []), ...parsed.triggers.map(t => ({ ...t, modId }))]);
   write(TAB_KEY, [...read<ModTab[]>(TAB_KEY, []), ...parsed.tabs.map(t => ({ ...t, modId }))]);
+  write(BADGE_KEY, [...read<ModBadge[]>(BADGE_KEY, []), ...parsed.badges.map(b => ({ ...b, modId }))]);
   if (parsed.font) {
     const fonts = read<ModFont[]>(FONT_KEY, []).filter(f => f.modId !== modId);
     fonts.push({ ...parsed.font, modId, installedAt: Date.now() });
@@ -284,6 +355,7 @@ export const installMod = async (modId: string, file: Blob) => {
       scripts: parsed.scripts.map(s => s.path),
       triggers: parsed.triggers.length,
       tabs: parsed.tabs.map(t => t.id),
+      badges: parsed.badges.map(b => b.uuid),
       font: !!parsed.font,
       installed_at: new Date().toISOString(),
     },
@@ -299,6 +371,7 @@ export const uninstallMod = async (modId: string, opts?: { silent?: boolean }) =
   write(SCRIPT_KEY, read<ModScript[]>(SCRIPT_KEY, []).filter(s => s.modId !== modId));
   write(TRIGGER_KEY, read<ModTrigger[]>(TRIGGER_KEY, []).filter(t => t.modId !== modId));
   write(TAB_KEY, read<ModTab[]>(TAB_KEY, []).filter(t => t.modId !== modId));
+  write(BADGE_KEY, read<ModBadge[]>(BADGE_KEY, []).filter(b => b.modId !== modId));
   write(FONT_KEY, read<ModFont[]>(FONT_KEY, []).filter(f => f.modId !== modId));
   write(DISABLED_KEY, getDisabledIds().filter(id => id !== modId));
   if (opts?.silent) return;
