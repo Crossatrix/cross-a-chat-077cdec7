@@ -363,30 +363,31 @@ const ModStoreDialog = ({ open, onOpenChange, currentUserId }: Props) => {
                                 {m.security_scanned_at ? "No suspicious code found." : "Not scanned yet."}
                               </p>
                             )}
-                            {(canRescan || canSetLevel) && (
-                              <div className="flex flex-wrap items-center gap-2 pt-1">
-                                {canRescan && (
-                                  <Button size="sm" variant="outline" onClick={() => handleRescan(m)} disabled={rescanning === m.id}>
-                                    {rescanning === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Re-evaluate"}
-                                  </Button>
-                                )}
-                                {canSetLevel && (
-                                  <Select
-                                    value={m.security_level ? String(m.security_level) : ""}
-                                    onValueChange={(v) => handleSetLevel(m, Number(v) as SecurityLevel)}
-                                  >
-                                    <SelectTrigger className="h-8 w-36"><SelectValue placeholder="Set level" /></SelectTrigger>
-                                    <SelectContent>
-                                      {([1, 2, 3, 4, 5] as SecurityLevel[]).map((l) => (
-                                        <SelectItem key={l} value={String(l)}>{SECURITY_LEVELS[l].label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              </div>
+                          </div>
+                        )}
+                        {(canRescan || canSetLevel) && (
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            {canRescan && (
+                              <Button size="sm" variant="outline" onClick={() => handleRescan(m)} disabled={rescanning === m.id}>
+                                {rescanning === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Re-evaluate"}
+                              </Button>
+                            )}
+                            {canSetLevel && (
+                              <Select
+                                value={m.security_level ? String(m.security_level) : ""}
+                                onValueChange={(v) => handleSetLevel(m, Number(v) as SecurityLevel)}
+                              >
+                                <SelectTrigger className="h-8 w-36"><SelectValue placeholder="Set level" /></SelectTrigger>
+                                <SelectContent>
+                                  {([1, 2, 3, 4, 5] as SecurityLevel[]).map((l) => (
+                                    <SelectItem key={l} value={String(l)}>{SECURITY_LEVELS[l].label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             )}
                           </div>
                         )}
+
                       </div>
 
                       <div className="flex items-center gap-2">
