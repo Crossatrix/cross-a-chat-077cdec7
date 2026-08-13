@@ -21,6 +21,7 @@ const InstantLink = lazy(() => import("@/pages/InstantLink"));
 const PublicPosts = lazy(() => import("@/pages/PublicPosts"));
 const CreatorDashboard = lazy(() => import("@/pages/CreatorDashboard"));
 const Docs = lazy(() => import("@/pages/Docs"));
+const Support = lazy(() => import("@/pages/Support"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -152,6 +153,17 @@ const AnimatedRoutes = () => {
               </PageTransition>
             }
           />
+
+          <Route
+            path="/support"
+            element={
+              <PageTransition>
+                <Support />
+              </PageTransition>
+            }
+          />
+
+
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route
