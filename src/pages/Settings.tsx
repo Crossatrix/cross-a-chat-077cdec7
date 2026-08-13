@@ -449,8 +449,15 @@ const Settings = () => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           {t("settings.back")}
         </Button>
-        <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
+          <Button variant="outline" size="sm" onClick={() => navigate("/support")}>
+            <LifeBuoy className="mr-2 h-4 w-4" />
+            Support
+          </Button>
+        </div>
       </div>
+
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 h-auto gap-1 p-1">
