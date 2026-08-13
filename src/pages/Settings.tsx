@@ -453,23 +453,24 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="profile">{t("settings.profile")}</TabsTrigger>
-          <TabsTrigger value="creator" className="gap-1">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 h-auto gap-1 p-1">
+          <TabsTrigger value="profile" className="whitespace-normal">{t("settings.profile")}</TabsTrigger>
+          <TabsTrigger value="creator" className="gap-1 whitespace-normal">
             <Palette className="h-3 w-3 hidden sm:inline text-primary" />
             Creator
           </TabsTrigger>
-          <TabsTrigger value="pro" className="gap-1">
+          <TabsTrigger value="pro" className="gap-1 whitespace-normal">
             <Crown className="h-3 w-3 hidden sm:inline text-yellow-500" />
             Pro
           </TabsTrigger>
-          <TabsTrigger value="privacy" className="gap-1">
+          <TabsTrigger value="privacy" className="gap-1 whitespace-normal">
             <Shield className="h-3 w-3 hidden sm:inline" />
             {t("settings.privacy")}
           </TabsTrigger>
-          <TabsTrigger value="appearance">{t("settings.appearance")}</TabsTrigger>
-          <TabsTrigger value="language">{t("settings.language")}</TabsTrigger>
+          <TabsTrigger value="appearance" className="whitespace-normal">{t("settings.appearance")}</TabsTrigger>
+          <TabsTrigger value="language" className="whitespace-normal">{t("settings.language")}</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="pro" className="space-y-4">
           <Card>
