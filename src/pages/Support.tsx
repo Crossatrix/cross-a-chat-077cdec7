@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Mail, BookOpen, MessageSquare, Bug, ShieldAlert } from "lucide-react";
-import FeedbackDialog from "@/components/FeedbackDialog";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 
 const SUPPORT_EMAIL = "cross.a.trix.chat@hotmail.com";
 
