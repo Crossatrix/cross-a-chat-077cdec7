@@ -154,6 +154,17 @@ const AnimatedRoutes = () => {
             }
           />
 
+          <Route
+            path="/support"
+            element={
+              <PageTransition>
+                <Support />
+              </PageTransition>
+            }
+          />
+
+
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route
             path="*"
