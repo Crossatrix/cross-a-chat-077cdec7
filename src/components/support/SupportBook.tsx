@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import useSupportPages, { SupportPage } from "@/hooks/useSupportPages";
+import SupportContent from "@/components/support/SupportContent";
 
 interface Props { canEdit: boolean; editMode: boolean }
 
