@@ -1,13 +1,20 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Mail, BookOpen, MessageSquare, Bug, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Mail, BookOpen, MessageSquare, Sparkles, Pencil, Eye } from "lucide-react";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import SupportAssistantDialog from "@/components/support/SupportAssistantDialog";
+import SupportBook from "@/components/support/SupportBook";
+import useStaffRole from "@/hooks/useStaffRole";
 
 const SUPPORT_EMAIL = "cross.a.trix.chat@hotmail.com";
 
 const Support = () => {
   const navigate = useNavigate();
+  const role = useStaffRole();
+  const canEdit = role === "admin";
+  const [editMode, setEditMode] = useState(false);
 
   return (
     <div className="container max-w-3xl mx-auto p-4 md:p-6">
@@ -16,34 +23,29 @@ const Support = () => {
         Back to Settings
       </Button>
 
-      <h1 className="text-3xl font-bold mb-2">Support</h1>
-      <p className="text-muted-foreground mb-6">
-        Need help with Cross Chat? Find answers below or reach out to our team.
-      </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Support</h1>
+          <p className="text-muted-foreground">
+            Browse the support book, ask the assistant or contact our team.
+          </p>
+        </div>
+        {canEdit && (
+          <Button variant={editMode ? "default" : "outline"} onClick={() => setEditMode(v => !v)}>
+            {editMode ? <Eye className="mr-2 h-4 w-4" /> : <Pencil className="mr-2 h-4 w-4" />}
+            {editMode ? "Done editing" : "Edit"}
+          </Button>
+        )}
+      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Mail className="h-5 w-5 text-primary" />
-              Email us
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MessageSquare className="h-4 w-4 text-primary" />
+              Feedback
             </CardTitle>
-            <CardDescription>We usually reply within a few days.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="outline" className="w-full break-all">
-              <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              Send feedback
-            </CardTitle>
-            <CardDescription>Report an issue or suggest a feature in-app.</CardDescription>
+            <CardDescription>Report an issue or suggest a feature.</CardDescription>
           </CardHeader>
           <CardContent>
             <FeedbackDialog />
@@ -51,9 +53,9 @@ const Support = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BookOpen className="h-5 w-5 text-primary" />
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BookOpen className="h-4 w-4 text-primary" />
               Documentation
             </CardTitle>
             <CardDescription>Guides for mods, badges and scripting.</CardDescription>
@@ -66,50 +68,34 @@ const Support = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ShieldAlert className="h-5 w-5 text-primary" />
-              Report content or a user
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-4 w-4 text-primary" />
+              AI Assistant
             </CardTitle>
-            <CardDescription>
-              Use the report button on any message, post or video — reports go straight to our staff team.
-            </CardDescription>
+            <CardDescription>Answers based on the support pages.</CardDescription>
           </CardHeader>
+          <CardContent>
+            <SupportAssistantDialog />
+          </CardContent>
         </Card>
       </div>
+
+      <h2 className="text-xl font-semibold mt-8 mb-3">Support book</h2>
+      <SupportBook canEdit={canEdit} editMode={canEdit && editMode} />
 
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Bug className="h-5 w-5 text-primary" />
-            Common questions
+            <Mail className="h-5 w-5 text-primary" />
+            Still stuck?
           </CardTitle>
+          <CardDescription>We usually reply within a few days.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <div>
-            <p className="font-medium">I can't post videos, posts or comments.</p>
-            <p className="text-muted-foreground">
-              Your account may be temporarily blocked by staff. Blocks expire automatically; permanent blocks can be appealed by email.
-            </p>
-          </div>
-          <div>
-            <p className="font-medium">My Croins or Pro/Beta purchase didn't apply.</p>
-            <p className="text-muted-foreground">
-              Reload the app first. If it still doesn't show up in Settings → Pro, contact us with your username.
-            </p>
-          </div>
-          <div>
-            <p className="font-medium">A mod broke my app.</p>
-            <p className="text-muted-foreground">
-              Open the Mods menu and disable or uninstall the mod. Mods rated Risky or High Risk can affect stability.
-            </p>
-          </div>
-          <div>
-            <p className="font-medium">I forgot my password.</p>
-            <p className="text-muted-foreground">
-              Cross Chat uses your Crossatrix account — reset your password there and sign in again.
-            </p>
-          </div>
+        <CardContent>
+          <Button asChild variant="outline" className="w-full break-all">
+            <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+          </Button>
         </CardContent>
       </Card>
     </div>
