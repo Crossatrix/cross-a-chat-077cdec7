@@ -126,6 +126,17 @@ export const SupportBook = ({ canEdit, editMode }: Props) => {
         placeholder="Page content…"
         className="resize-y"
       />
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={insertImage}>
+          <ImageIcon className="mr-2 h-4 w-4" />Image
+        </Button>
+        <Button size="sm" variant="outline" onClick={insertLink}>
+          <LinkIcon className="mr-2 h-4 w-4" />Link
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Images: <code>![alt](https://…)</code> · Links: <code>[label](https://…)</code>
+      </p>
       <div className="flex gap-2">
         <Button size="sm" onClick={saveEdit}><Save className="mr-2 h-4 w-4" />Save</Button>
         <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}><X className="mr-2 h-4 w-4" />Cancel</Button>
