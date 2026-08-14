@@ -97,9 +97,9 @@ export const SupportBook = ({ canEdit, editMode }: Props) => {
           <CardTitle className="text-2xl">{active.title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed">
-            {active.content?.trim() || "This page is empty."}
-          </p>
+          {active.content?.trim()
+            ? <SupportContent text={active.content} />
+            : <p className="text-sm text-muted-foreground">This page is empty.</p>}
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
             <Button variant="outline" disabled={!prev} onClick={() => prev && setActiveId(prev.id)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
