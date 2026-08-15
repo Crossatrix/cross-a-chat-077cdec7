@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ArrowLeft, ArrowRight, ChevronDown, ChevronRight, Plus, Pencil, Trash2,
-  ArrowUp, ArrowDown, Save, X, BookOpen,
+  ArrowUp, ArrowDown, Save, X, BookOpen, Image as ImageIcon, Link as LinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import useSupportPages, { SupportPage } from "@/hooks/useSupportPages";
@@ -115,6 +115,20 @@ export const SupportBook = ({ canEdit, editMode }: Props) => {
       </Card>
     );
   }
+
+  const insertImage = () => {
+    const url = window.prompt("Image URL (https://…)");
+    if (!url?.trim()) return;
+    const alt = window.prompt("Alt text (optional)") || "image";
+    setDraftContent(prev => `${prev}${prev && !prev.endsWith("\n") ? "\n" : ""}![${alt}](${url.trim()})\n`);
+  };
+
+  const insertLink = () => {
+    const url = window.prompt("Link URL (https://…)");
+    if (!url?.trim()) return;
+    const label = window.prompt("Link text") || url.trim();
+    setDraftContent(prev => `${prev}${prev && !prev.endsWith("\n") ? "\n" : ""}[${label}](${url.trim()})\n`);
+  };
 
   const renderEditor = (p: SupportPage) => (
     <div className="space-y-2 p-3">
