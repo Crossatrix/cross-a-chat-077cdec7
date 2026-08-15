@@ -1,1 +1,0 @@
-ALTER TABLE public.videos ADD COLUMN IF NOT EXISTS allowed_membership_ids uuid[] NOT NULL DEFAULT '{}';
