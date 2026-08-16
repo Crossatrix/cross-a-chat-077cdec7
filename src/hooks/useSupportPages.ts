@@ -45,13 +45,13 @@ export function useSupportPages() {
     const { error } = await supabase.from("support_pages").insert({
       parent_id, title, content: "", sort_order, created_by: auth.user?.id ?? null,
     });
-    await load();
+    await load(true);
     return error;
   };
 
   const updatePage = async (id: string, patch: Partial<Pick<SupportPage, "title" | "content" | "sort_order">>) => {
     const { error } = await supabase.from("support_pages").update(patch).eq("id", id);
-    await load();
+    await load(true);
     return error;
   };
 
@@ -59,7 +59,7 @@ export function useSupportPages() {
     const kids = childrenOf(id);
     if (kids.length) await supabase.from("support_pages").delete().in("id", kids.map(k => k.id));
     const { error } = await supabase.from("support_pages").delete().eq("id", id);
-    await load();
+    await load(true);
     return error;
   };
 
@@ -72,10 +72,10 @@ export function useSupportPages() {
     if (!target) return;
     await supabase.from("support_pages").update({ sort_order: target.sort_order }).eq("id", page.id);
     await supabase.from("support_pages").update({ sort_order: page.sort_order }).eq("id", target.id);
-    await load();
+    await load(true);
   };
 
-  return { pages, chapters, childrenOf, loading, reload: load, createPage, updatePage, deletePage, movePage };
+  return { pages, chapters, childrenOf, loading, reload: load, refresh, createPage, updatePage, deletePage, movePage };
 }
 
 export default useSupportPages;
