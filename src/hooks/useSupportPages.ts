@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { readCache, writeCache, clearCache } from "@/utils/localCache";
 
 export interface SupportPage {
   id: string;
@@ -9,18 +10,28 @@ export interface SupportPage {
   sort_order: number;
 }
 
-export function useSupportPages() {
-  const [pages, setPages] = useState<SupportPage[]>([]);
-  const [loading, setLoading] = useState(true);
+const CACHE_KEY = "support_pages";
 
-  const load = useCallback(async () => {
+export function useSupportPages() {
+  const [pages, setPages] = useState<SupportPage[]>(() => readCache<SupportPage[]>(CACHE_KEY) || []);
+  const [loading, setLoading] = useState(() => !readCache<SupportPage[]>(CACHE_KEY));
+
+  const load = useCallback(async (force = false) => {
+    if (!force) {
+      const cached = readCache<SupportPage[]>(CACHE_KEY);
+      if (cached) { setPages(cached); setLoading(false); return; }
+    }
     const { data } = await supabase
       .from("support_pages")
       .select("id,parent_id,title,content,sort_order")
       .order("sort_order", { ascending: true });
-    setPages((data || []) as SupportPage[]);
+    const rows = (data || []) as SupportPage[];
+    setPages(rows);
+    writeCache(CACHE_KEY, rows);
     setLoading(false);
   }, []);
+
+  const refresh = useCallback(() => { clearCache(CACHE_KEY); return load(true); }, [load]);
 
   useEffect(() => { load(); }, [load]);
 
