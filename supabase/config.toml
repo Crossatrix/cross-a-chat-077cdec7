@@ -1,0 +1,22 @@
+project_id = "kwewkdolmnrjmgplzxrk"
+
+[functions.bots-tick]
+verify_jwt = false
+
+[functions.bot-admin]
+verify_jwt = false
+
+[functions.croins-proxy]
+verify_jwt = false
+
+[functions.beta-ai-message]
+verify_jwt = false
+
+[functions.beta-scam-check]
+verify_jwt = false
+
+[functions.data-api]
+verify_jwt = false
+
+[functions.send-push]
+verify_jwt = false
