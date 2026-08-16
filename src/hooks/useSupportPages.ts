@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { readCache, writeCache, clearCache } from "@/utils/localCache";
 
 export interface SupportPage {
   id: string;
@@ -9,18 +10,28 @@ export interface SupportPage {
   sort_order: number;
 }
 
-export function useSupportPages() {
-  const [pages, setPages] = useState<SupportPage[]>([]);
-  const [loading, setLoading] = useState(true);
+const CACHE_KEY = "support_pages";
 
-  const load = useCallback(async () => {
+export function useSupportPages() {
+  const [pages, setPages] = useState<SupportPage[]>(() => readCache<SupportPage[]>(CACHE_KEY) || []);
+  const [loading, setLoading] = useState(() => !readCache<SupportPage[]>(CACHE_KEY));
+
+  const load = useCallback(async (force = false) => {
+    if (!force) {
+      const cached = readCache<SupportPage[]>(CACHE_KEY);
+      if (cached) { setPages(cached); setLoading(false); return; }
+    }
     const { data } = await supabase
       .from("support_pages")
       .select("id,parent_id,title,content,sort_order")
       .order("sort_order", { ascending: true });
-    setPages((data || []) as SupportPage[]);
+    const rows = (data || []) as SupportPage[];
+    setPages(rows);
+    writeCache(CACHE_KEY, rows);
     setLoading(false);
   }, []);
+
+  const refresh = useCallback(() => { clearCache(CACHE_KEY); return load(true); }, [load]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -34,13 +45,13 @@ export function useSupportPages() {
     const { error } = await supabase.from("support_pages").insert({
       parent_id, title, content: "", sort_order, created_by: auth.user?.id ?? null,
     });
-    await load();
+    await load(true);
     return error;
   };
 
   const updatePage = async (id: string, patch: Partial<Pick<SupportPage, "title" | "content" | "sort_order">>) => {
     const { error } = await supabase.from("support_pages").update(patch).eq("id", id);
-    await load();
+    await load(true);
     return error;
   };
 
@@ -48,7 +59,7 @@ export function useSupportPages() {
     const kids = childrenOf(id);
     if (kids.length) await supabase.from("support_pages").delete().in("id", kids.map(k => k.id));
     const { error } = await supabase.from("support_pages").delete().eq("id", id);
-    await load();
+    await load(true);
     return error;
   };
 
@@ -61,10 +72,10 @@ export function useSupportPages() {
     if (!target) return;
     await supabase.from("support_pages").update({ sort_order: target.sort_order }).eq("id", page.id);
     await supabase.from("support_pages").update({ sort_order: page.sort_order }).eq("id", target.id);
-    await load();
+    await load(true);
   };
 
-  return { pages, chapters, childrenOf, loading, reload: load, createPage, updatePage, deletePage, movePage };
+  return { pages, chapters, childrenOf, loading, reload: load, refresh, createPage, updatePage, deletePage, movePage };
 }
 
 export default useSupportPages;
