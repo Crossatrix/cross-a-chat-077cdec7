@@ -451,10 +451,28 @@ const Settings = () => {
         </Button>
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
-          <Button variant="outline" size="sm" onClick={() => navigate("/support")}>
-            <LifeBuoy className="mr-2 h-4 w-4" />
-            Support
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/support")}>
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              Support
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await clearAllCaches();
+                if ("serviceWorker" in navigator) {
+                  navigator.serviceWorker.controller?.postMessage({ type: "CLEAR_MEDIA_CACHE" });
+                }
+                toast.success("Cached data refreshed");
+                window.location.reload();
+              }}
+              aria-label="Refresh cached data"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
       </div>
 
