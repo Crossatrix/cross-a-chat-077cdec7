@@ -151,6 +151,12 @@ export const SupportBook = ({ canEdit, editMode }: Props) => {
       <p className="text-xs text-muted-foreground">
         Images: <code>![alt](https://…)</code> · Links: <code>[label](https://…)</code>
       </p>
+      <div className="rounded-md border bg-background p-3">
+        <p className="mb-2 text-xs font-medium text-muted-foreground">Live preview</p>
+        {draftContent.trim()
+          ? <SupportContent text={draftContent} />
+          : <p className="text-sm text-muted-foreground">Nothing to preview yet.</p>}
+      </div>
       <div className="flex gap-2">
         <Button size="sm" onClick={saveEdit}><Save className="mr-2 h-4 w-4" />Save</Button>
         <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}><X className="mr-2 h-4 w-4" />Cancel</Button>
