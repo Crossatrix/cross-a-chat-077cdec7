@@ -35,9 +35,21 @@ let loadingPromise: Promise<void> | null = null;
 
 const notify = () => listeners.forEach((l) => l());
 
+const CACHE_KEY = "video_categories";
+
 export const loadVideoCategories = async (force = false) => {
   if (loaded && !force) return;
   if (loadingPromise && !force) return loadingPromise;
+  if (!force) {
+    const cached = readCache<VideoCategoryItem[]>(CACHE_KEY);
+    if (cached && cached.length) {
+      VIDEO_CATEGORIES.length = 0;
+      cached.forEach((c) => VIDEO_CATEGORIES.push(c));
+      loaded = true;
+      notify();
+      return;
+    }
+  }
   loadingPromise = (async () => {
     const { data, error } = await supabase
       .from("video_categories" as any)
@@ -45,10 +57,10 @@ export const loadVideoCategories = async (force = false) => {
       .order("sort_order", { ascending: true })
       .order("label", { ascending: true });
     if (!error && data && data.length) {
+      const items = (data as any[]).map((c) => ({ value: c.value, label: c.label, icon: c.icon || "📦" }));
       VIDEO_CATEGORIES.length = 0;
-      (data as any[]).forEach((c) =>
-        VIDEO_CATEGORIES.push({ value: c.value, label: c.label, icon: c.icon || "📦" })
-      );
+      items.forEach((c) => VIDEO_CATEGORIES.push(c));
+      writeCache(CACHE_KEY, items);
       notify();
     }
     loaded = true;
