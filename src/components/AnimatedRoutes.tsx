@@ -22,6 +22,7 @@ const PublicPosts = lazy(() => import("@/pages/PublicPosts"));
 const CreatorDashboard = lazy(() => import("@/pages/CreatorDashboard"));
 const Docs = lazy(() => import("@/pages/Docs"));
 const Support = lazy(() => import("@/pages/Support"));
+const ServerError = lazy(() => import("@/pages/ServerError"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -39,8 +40,9 @@ const AnimatedRoutes = () => {
   const isMaintenancePage = location.pathname === "/maintenance";
   const isAuthPage = location.pathname === "/auth";
   const isAdminPage = location.pathname === "/admin";
+  const isServerErrorPage = location.pathname === "/server-error";
 
-  if (isMaintenanceMode && !isAdmin && !isMaintenancePage && !isAuthPage) {
+  if (isMaintenanceMode && !isAdmin && !isMaintenancePage && !isAuthPage && !isServerErrorPage) {
     return <Navigate to="/maintenance" replace />;
   }
 
@@ -163,7 +165,14 @@ const AnimatedRoutes = () => {
             }
           />
 
-
+          <Route
+            path="/server-error"
+            element={
+              <PageTransition>
+                <ServerError />
+              </PageTransition>
+            }
+          />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route
