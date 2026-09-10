@@ -200,3 +200,11 @@ export const stopAutoTranslate = () => {
   observer?.disconnect();
   observer = null;
 };
+
+/** Mark strings as already translated (identity), so they are never sent to the AI. */
+export const seedIdentity = (values: string[]) => {
+  values.forEach((v) => {
+    const s = v.trim();
+    if (s && !dict[s]) dict[s] = s;
+  });
+};
