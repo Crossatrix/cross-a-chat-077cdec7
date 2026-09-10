@@ -214,7 +214,7 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
 
       {/* Content */}
       <div className="px-3 py-2">
-        {post.content && <p className="text-sm whitespace-pre-wrap break-words">{formatMessageText(post.content)}</p>}
+        {post.content && <p data-no-translate className="text-sm whitespace-pre-wrap break-words">{formatMessageText(post.content)}</p>}
       </div>
 
       {/* Media */}
