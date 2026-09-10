@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { startAutoTranslate, stopAutoTranslate } from "@/utils/autoTranslate";
 
 type Language = "en" | "de";
 
