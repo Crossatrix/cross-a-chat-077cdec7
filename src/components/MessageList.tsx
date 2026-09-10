@@ -297,7 +297,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                 )}
                 <div className="flex justify-center my-2">
                   <div className="bg-muted/50 text-muted-foreground text-xs md:text-sm px-3 py-1 rounded-full border border-border">
-                    {formatMessageText(message.content)}
+                    <span data-no-translate>{formatMessageText(message.content)}</span>
                   </div>
                 </div>
               </div>
@@ -427,7 +427,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                         preload="metadata"
                       />
                     )}
-                    {message.content && <div>{formatMessageText(message.content)}</div>}
+                    {message.content && <div data-no-translate>{formatMessageText(message.content)}</div>}
                   </div>
                 )}
                 <div className="flex items-center gap-2 mt-0.5 md:mt-1">
