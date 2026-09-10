@@ -142,7 +142,7 @@ const MusicCard = ({ track, currentUserId, onCreatorClick, onDeleted }: Props) =
           </button>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold truncate">{track.title}</h3>
+          <h3 data-no-translate className="text-sm font-semibold truncate">{track.title}</h3>
           <div className="flex items-center gap-1 mt-0.5">
             <FeaturedAvatar
               userId={track.user_id}
@@ -160,7 +160,7 @@ const MusicCard = ({ track, currentUserId, onCreatorClick, onDeleted }: Props) =
               {((track.profiles as any)?.creator_username || track.profiles.username)}
             </span>
           </div>
-          {track.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{track.description}</p>}
+          {track.description && <p data-no-translate className="text-xs text-muted-foreground line-clamp-2 mt-1">{track.description}</p>}
           {/* Progress bar */}
           <div className="mt-2 cursor-pointer" onClick={seek}>
             <div className="h-1.5 bg-muted rounded-full overflow-hidden">

@@ -85,7 +85,7 @@ const LiveFeed = ({ currentUserId, onCreatorClick }: Props) => {
                     avatarClassName="h-8 w-8 shrink-0" fallbackClassName="bg-secondary text-foreground text-xs"
                     className="shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{s.title}</h3>
+                    <h3 data-no-translate className="text-sm font-semibold line-clamp-2 leading-tight">{s.title}</h3>
                     <div className="flex items-center gap-1 mt-1">
                       <StaffBadge userId={s.user_id} size={12} />
                       <CreatorBadge userId={s.user_id} size={12} />

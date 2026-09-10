@@ -257,7 +257,7 @@ const FeedbackList = () => {
                 ))}
               </div>
             )}
-            <div className="text-sm mb-4 whitespace-pre-wrap">{formatMessageText(item.message)}</div>
+            <div data-no-translate className="text-sm mb-4 whitespace-pre-wrap">{formatMessageText(item.message)}</div>
             
             {/* Admin Response Display */}
             {item.admin_response && (
