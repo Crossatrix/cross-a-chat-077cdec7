@@ -413,7 +413,7 @@ const ConversationsList = ({
                     </div>
                     <div className="flex-1 text-left overflow-hidden min-w-0 max-w-full">
                       <div className="flex items-center gap-2">
-                        <div className={`font-medium truncate flex items-center gap-1 ${conv.isKicked ? 'line-through text-muted-foreground' : ''}`}>
+                        <div data-no-translate className={`font-medium truncate flex items-center gap-1 ${conv.isKicked ? 'line-through text-muted-foreground' : ''}`}>
                           {displayName}
                           {conv.otherUser && !conv.is_ai_chat && <StaffBadge userId={conv.otherUser.id} size={14} />}
                         </div>
@@ -436,7 +436,7 @@ const ConversationsList = ({
                           You were removed from this group
                         </div>
                       ) : conv.lastMessage && (
-                        <div className="text-xs text-muted-foreground truncate mt-1 max-w-[60vw] md:max-w-full">
+                        <div data-no-translate className="text-xs text-muted-foreground truncate mt-1 max-w-[60vw] md:max-w-full">
                           {formatMessageText(conv.lastMessage)}
                         </div>
                       )}

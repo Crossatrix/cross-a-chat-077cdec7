@@ -291,7 +291,7 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
           <div className="min-w-0 flex-1">
             <h3 className="font-bold">{activeSub.display_name}</h3>
             <p className="text-xs text-muted-foreground">c/{activeSub.name} · {activeSub.members_count} members</p>
-            {activeSub.description && <p className="text-xs mt-1">{activeSub.description}</p>}
+            {activeSub.description && <p data-no-translate className="text-xs mt-1">{activeSub.description}</p>}
           </div>
         </div>
       )}
@@ -332,8 +332,8 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
                   <span>·</span><span>{formatTime(p.created_at)}</span>
                 </div>
                 <button onClick={() => { setActivePost(p); setView("post"); }} className="text-left w-full">
-                  <h3 className="font-semibold mb-1">{p.title}</h3>
-                  {p.content && <p className="text-sm text-muted-foreground line-clamp-3 whitespace-pre-wrap">{p.content}</p>}
+                  <h3 data-no-translate className="font-semibold mb-1">{p.title}</h3>
+                  {p.content && <p data-no-translate className="text-sm text-muted-foreground line-clamp-3 whitespace-pre-wrap">{p.content}</p>}
                   {p.image_url && <img src={p.image_url} alt="" className="rounded-lg mt-2 max-h-80 w-full object-cover" />}
                 </button>
                 <div className="flex items-center gap-1 mt-2">
@@ -469,8 +469,8 @@ const PostDetail = ({ post, currentUserId, onBack, onCreatorClick, onDelete, onV
             <button onClick={() => onCreatorClick?.(postState.user_id)} className="hover:underline">u/{postState.profiles?.username || "deleted"}</button>
             <span>·</span><span>{formatTime(postState.created_at)}</span>
           </div>
-          <h1 className="text-lg font-bold mb-2">{postState.title}</h1>
-          {postState.content && <p className="text-sm whitespace-pre-wrap">{postState.content}</p>}
+          <h1 data-no-translate className="text-lg font-bold mb-2">{postState.title}</h1>
+          {postState.content && <p data-no-translate className="text-sm whitespace-pre-wrap">{postState.content}</p>}
           {postState.image_url && <img src={postState.image_url} alt="" className="rounded-lg mt-2 w-full" />}
           <div className="flex items-center gap-1 mt-3">
             <Button variant="ghost" size="sm" className={`h-7 px-2 ${votes[`p:${postState.id}`] === true ? "text-primary" : ""}`}
@@ -509,7 +509,7 @@ const PostDetail = ({ post, currentUserId, onBack, onCreatorClick, onDelete, onV
                     </span>
                     <span className="text-muted-foreground">{formatTime(c.created_at)}</span>
                   </div>
-                  <p className="text-sm break-words">{c.content}</p>
+                  <p data-no-translate className="text-sm break-words">{c.content}</p>
                   <div className="flex items-center gap-0.5 mt-0.5">
                     <Button variant="ghost" size="sm" className={`h-6 px-1.5 text-xs ${cVotes[c.id] === true ? "text-primary" : ""}`}
                       onClick={() => voteComment(c, true)}>

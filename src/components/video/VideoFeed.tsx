@@ -517,7 +517,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
                     className="shrink-0 mt-0.5"
                   />
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{video.title}</h3>
+                    <h3 data-no-translate className="text-sm font-semibold line-clamp-2 leading-tight">{video.title}</h3>
                     <div className="flex items-center gap-1 mt-1">
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500/50 text-amber-500">
                         <Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" /> Pending review
@@ -578,7 +578,7 @@ const VideoFeed = ({ currentUserId, deepLinkVideoId, onDeepLinkConsumed }: Video
                     onClick={(e) => { e.stopPropagation(); setSelectedCreatorId(video.user_id); }}
                   />
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{video.title}</h3>
+                    <h3 data-no-translate className="text-sm font-semibold line-clamp-2 leading-tight">{video.title}</h3>
                     <div className="flex items-center gap-1 mt-1">
                       <StaffBadge userId={video.user_id} size={12} />
                       <CreatorBadge userId={video.user_id} size={12} />

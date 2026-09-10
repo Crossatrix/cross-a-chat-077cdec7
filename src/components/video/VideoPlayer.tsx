@@ -343,7 +343,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
         <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-sm font-semibold truncate flex-1">{video.title}</h2>
+        <h2 data-no-translate className="text-sm font-semibold truncate flex-1">{video.title}</h2>
       </div>
 
       <ScrollArea className="flex-1">
@@ -364,7 +364,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
           {/* Info */}
           <div className="p-3 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-bold">{video.title}</h1>
+              <h1 data-no-translate className="text-lg font-bold">{video.title}</h1>
               <VideoStarRating
                 videoId={video.id}
                 currentUserId={currentUserId}
@@ -524,7 +524,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
             </div>
 
             {video.description && (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{video.description}</p>
+              <p data-no-translate className="text-sm text-muted-foreground whitespace-pre-wrap">{video.description}</p>
             )}
 
             {/* Comments */}
@@ -572,7 +572,7 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                               <span className="text-xs font-medium">{((comment.profiles as any)?.creator_username || comment.profiles.username)}</span>
                               <span className="text-[10px] text-muted-foreground">{formatDate(comment.created_at)}</span>
                             </div>
-                            <p className="text-sm break-words">{comment.content}</p>
+                            <p data-no-translate className="text-sm break-words">{comment.content}</p>
                             <button
                               type="button"
                               onClick={() => setReplyingTo(comment)}

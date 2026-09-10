@@ -94,7 +94,7 @@ const PostComments = ({ postId, currentUserId, onCommentsCountChange, onCreatorC
               </span>
               <span className="text-[10px] text-muted-foreground">{formatDate(c.created_at)}</span>
             </div>
-            <p className="text-xs break-words">{c.content}</p>
+            <p data-no-translate className="text-xs break-words">{c.content}</p>
             <button
               type="button"
               onClick={() => setReplyingTo(c)}
