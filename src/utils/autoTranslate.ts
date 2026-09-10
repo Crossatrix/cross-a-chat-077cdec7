@@ -184,12 +184,13 @@ const scheduleScan = () => {
 };
 
 /** Start/refresh auto translation for the given language. */
-export const startAutoTranslate = (lang: string) => {
+export const startAutoTranslate = (lang: string, identity: string[] = []) => {
   currentLang = lang;
   observer?.disconnect();
   observer = null;
   if (lang === "en") return;
   loadDict(lang);
+  seedIdentity(identity);
   apply();
   observer = new MutationObserver(() => scheduleScan());
   observer.observe(document.body, { childList: true, subtree: true, characterData: true });
