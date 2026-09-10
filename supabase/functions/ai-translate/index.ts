@@ -1,6 +1,6 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
-const MODEL = "inclusionai/ling-3.0-flash:free";
+const MODEL = "google/gemini-2.5-flash";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -14,16 +14,16 @@ Deno.serve(async (req) => {
     }
     const lang = typeof target === "string" && target.trim() ? target.trim().slice(0, 40) : "English";
 
-    const key = Deno.env.get("OPENROUTER_KEY");
+    const key = Deno.env.get("LOVABLE_API_KEY");
     if (!key) {
-      return new Response(JSON.stringify({ error: "Missing OpenRouter key" }), {
+      return new Response(JSON.stringify({ error: "Missing AI key" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const sys = `You are a translation engine. Translate the user's text into ${lang}. Output ONLY the translation, preserving line breaks, emoji codes like :name:, formatting characters and URLs exactly. No notes, no quotes, no explanations.`;
 
-    const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
