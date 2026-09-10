@@ -340,13 +340,30 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Language>(() => {
+  const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem("language");
     return (saved as Language) || "en";
   });
 
+  const setLanguage = (lang: Language) => {
+    const previous = localStorage.getItem("language") || "en";
+    localStorage.setItem("language", lang);
+    setLanguageState(lang);
+    // Switching back to English needs a clean render of the original texts.
+    if (previous !== "en" && lang === "en") window.location.reload();
+  };
+
   useEffect(() => {
     localStorage.setItem("language", language);
+    if (language === "en") {
+      stopAutoTranslate();
+      return;
+    }
+    const known = Object.values(translations)
+      .map((v) => v[language])
+      .filter(Boolean);
+    startAutoTranslate(language, known);
+    return () => stopAutoTranslate();
   }, [language]);
 
   const t = (key: string): string => {
