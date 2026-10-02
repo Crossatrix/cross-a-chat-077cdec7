@@ -18,7 +18,13 @@ serve(async (req) => {
 
   const now = Date.now();
 
-  const { data: channels } = await supabase.from("radio_channels").select("id");
+  // Called by listeners' players when a song/news is due (no background timer).
+  let body: any = {};
+  try { body = await req.json(); } catch { /* empty */ }
+  const onlyChannel = typeof body?.channelId === "string" ? body.channelId : null;
+  const { data: channels } = onlyChannel
+    ? await supabase.from("radio_channels").select("id").eq("id", onlyChannel)
+    : await supabase.from("radio_channels").select("id");
   const results: any[] = [];
 
   for (const channel of channels || []) {
@@ -77,7 +83,10 @@ serve(async (req) => {
 
     if (Object.keys(patch).length > 1) {
       if (state) {
-        await supabase.from("radio_now_playing").update(patch).eq("channel_id", channelId);
+        // Guard against several listeners advancing at the same moment
+        let q = supabase.from("radio_now_playing").update(patch).eq("channel_id", channelId);
+        q = state.updated_at ? q.eq("updated_at", state.updated_at) : q;
+        await q;
       } else {
         await supabase.from("radio_now_playing").insert({ channel_id: channelId, ...patch });
       }
