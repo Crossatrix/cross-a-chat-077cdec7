@@ -33,6 +33,31 @@ const LiveBroadcaster = ({ streamId, userId, onEnd }: Props) => {
     let mounted = true;
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
+    const send = (payload: any) => {
+      channel?.send({ type: "broadcast", event: "sig", payload: { ...payload, from: userId } });
+    };
+
+    const createPeerForViewer = async (viewerId: string) => {
+      const existing = peersRef.current.get(viewerId);
+      if (existing) { existing.close(); peersRef.current.delete(viewerId); }
+      const pc = new RTCPeerConnection(ICE);
+      peersRef.current.set(viewerId, pc);
+      streamRef.current?.getTracks().forEach(t => pc.addTrack(t, streamRef.current!));
+      pc.onicecandidate = (ev) => {
+        if (ev.candidate) send({ type: "ice", to: viewerId, data: ev.candidate.toJSON() });
+      };
+      pc.onconnectionstatechange = () => {
+        if (peersRef.current.get(viewerId) !== pc) return;
+        if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
+          peersRef.current.delete(viewerId);
+        }
+        setViewerCount(Array.from(peersRef.current.values()).filter(p => p.connectionState === "connected").length);
+      };
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      send({ type: "offer", to: viewerId, data: { type: offer.type, sdp: offer.sdp } });
+    };
+
     (async () => {
       try {
         const ms = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -45,63 +70,40 @@ const LiveBroadcaster = ({ streamId, userId, onEnd }: Props) => {
         return;
       }
 
-      // Subscribe to incoming signals (viewer joins, answers, ICE)
       channel = supabase
-        .channel(`livestream-${streamId}-host`)
-        .on("postgres_changes", {
-          event: "INSERT", schema: "public", table: "livestream_signals",
-          filter: `stream_id=eq.${streamId}`,
-        }, async (payload: any) => {
-          const sig = payload.new;
-          if (sig.from_user_id === userId) return;
-
-          if (sig.signal_type === "viewer_join") {
-            await createPeerForViewer(sig.from_user_id);
-          } else if (sig.to_user_id === userId && sig.signal_type === "answer") {
-            const pc = peersRef.current.get(sig.from_user_id);
-            if (pc) await pc.setRemoteDescription(JSON.parse(sig.signal_data));
-          } else if (sig.to_user_id === userId && sig.signal_type === "ice") {
-            const pc = peersRef.current.get(sig.from_user_id);
-            if (pc) {
-              try { await pc.addIceCandidate(JSON.parse(sig.signal_data)); } catch {}
-            }
+        .channel(`live-${streamId}`, { config: { broadcast: { self: false } } })
+        .on("broadcast", { event: "sig" }, async ({ payload }: any) => {
+          if (!payload || payload.from === userId) return;
+          if (payload.type === "takedown") {
+            toast.error("Your stream was taken down by staff");
+            onEnd();
+            return;
+          }
+          if (payload.type === "join") {
+            await createPeerForViewer(payload.from);
+            return;
+          }
+          if (payload.to !== userId) return;
+          const pc = peersRef.current.get(payload.from);
+          if (!pc) return;
+          if (payload.type === "answer") {
+            try { await pc.setRemoteDescription(payload.data); } catch {}
+          } else if (payload.type === "ice") {
+            try { await pc.addIceCandidate(payload.data); } catch {}
           }
         })
-        .subscribe();
+        .subscribe((status) => {
+          // Ask any waiting viewers to (re)join
+          if (status === "SUBSCRIBED") send({ type: "host_ready" });
+        });
     })();
-
-    const createPeerForViewer = async (viewerId: string) => {
-      if (peersRef.current.has(viewerId)) return;
-      const pc = new RTCPeerConnection(ICE);
-      peersRef.current.set(viewerId, pc);
-      streamRef.current?.getTracks().forEach(t => pc.addTrack(t, streamRef.current!));
-      pc.onicecandidate = (ev) => {
-        if (ev.candidate) {
-          supabase.from("livestream_signals").insert({
-            stream_id: streamId, from_user_id: userId, to_user_id: viewerId,
-            signal_type: "ice", signal_data: JSON.stringify(ev.candidate),
-          } as any);
-        }
-      };
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") setViewerCount(c => c + 1);
-        if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
-          setViewerCount(c => Math.max(0, c - 1));
-          peersRef.current.delete(viewerId);
-        }
-      };
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      await supabase.from("livestream_signals").insert({
-        stream_id: streamId, from_user_id: userId, to_user_id: viewerId,
-        signal_type: "offer", signal_data: JSON.stringify(offer),
-      } as any);
-    };
 
     return () => {
       mounted = false;
       if (channel) supabase.removeChannel(channel);
       streamRef.current?.getTracks().forEach(t => t.stop());
+      cameraStreamRef.current?.getTracks().forEach(t => t.stop());
+      screenStreamRef.current?.getTracks().forEach(t => t.stop());
       peersRef.current.forEach(p => p.close());
       peersRef.current.clear();
     };

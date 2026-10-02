@@ -78,45 +78,56 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
     if (ended) return;
     let mounted = true;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let pc: RTCPeerConnection | null = null;
+    let gotOffer = false;
+    let joinTimer: ReturnType<typeof setInterval> | null = null;
 
-    const pc = new RTCPeerConnection(ICE);
-    pcRef.current = pc;
-
-    pc.ontrack = (ev) => {
-      if (videoRef.current && ev.streams[0]) {
-        videoRef.current.srcObject = ev.streams[0];
-        setConnected(true);
-      }
+    const send = (payload: any) => {
+      channel?.send({ type: "broadcast", event: "sig", payload: { ...payload, from: currentUserId } });
     };
-    pc.onicecandidate = (ev) => {
-      if (ev.candidate) {
-        supabase.from("livestream_signals").insert({
-          stream_id: stream.id, from_user_id: currentUserId, to_user_id: stream.user_id,
-          signal_type: "ice", signal_data: JSON.stringify(ev.candidate),
-        } as any);
-      }
+
+    const newPeer = () => {
+      pc?.close();
+      const p = new RTCPeerConnection(ICE);
+      pc = p;
+      pcRef.current = p;
+      p.ontrack = (ev) => {
+        if (videoRef.current && ev.streams[0]) {
+          videoRef.current.srcObject = ev.streams[0];
+          videoRef.current.play().catch(() => {});
+          setConnected(true);
+        }
+      };
+      p.onicecandidate = (ev) => {
+        if (ev.candidate) send({ type: "ice", to: stream.user_id, data: ev.candidate.toJSON() });
+      };
+      p.onconnectionstatechange = () => {
+        if (p.connectionState === "failed" || p.connectionState === "disconnected") {
+          setConnected(false);
+          gotOffer = false;
+          send({ type: "join" });
+        }
+      };
+      return p;
     };
 
     channel = supabase
-      .channel(`livestream-${stream.id}-viewer-${currentUserId}`)
-      .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "livestream_signals",
-        filter: `stream_id=eq.${stream.id}`,
-      }, async (payload: any) => {
-        const sig = payload.new;
-        if (sig.to_user_id !== currentUserId) return;
-        if (sig.from_user_id !== stream.user_id) return;
-
-        if (sig.signal_type === "offer") {
-          await pc.setRemoteDescription(JSON.parse(sig.signal_data));
-          const ans = await pc.createAnswer();
-          await pc.setLocalDescription(ans);
-          await supabase.from("livestream_signals").insert({
-            stream_id: stream.id, from_user_id: currentUserId, to_user_id: stream.user_id,
-            signal_type: "answer", signal_data: JSON.stringify(ans),
-          } as any);
-        } else if (sig.signal_type === "ice") {
-          try { await pc.addIceCandidate(JSON.parse(sig.signal_data)); } catch {}
+      .channel(`live-${stream.id}`, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "sig" }, async ({ payload }: any) => {
+        if (!mounted || !payload) return;
+        if (payload.type === "takedown") { setEnded(true); return; }
+        if (payload.from !== stream.user_id) return;
+        if (payload.type === "host_ready") { gotOffer = false; send({ type: "join" }); return; }
+        if (payload.to !== currentUserId) return;
+        if (payload.type === "offer") {
+          gotOffer = true;
+          const p = newPeer();
+          await p.setRemoteDescription(payload.data);
+          const ans = await p.createAnswer();
+          await p.setLocalDescription(ans);
+          send({ type: "answer", to: stream.user_id, data: { type: ans.type, sdp: ans.sdp } });
+        } else if (payload.type === "ice" && pc) {
+          try { await pc.addIceCandidate(payload.data); } catch {}
         }
       })
       .on("postgres_changes", {
@@ -125,22 +136,37 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
       }, (payload: any) => {
         if (payload.new.status === "ended") setEnded(true);
       })
-      .subscribe(async () => {
-        // Tell broadcaster we joined
-        await supabase.from("livestream_signals").insert({
-          stream_id: stream.id, from_user_id: currentUserId, to_user_id: null,
-          signal_type: "viewer_join", signal_data: "join",
-        } as any);
+      .subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        send({ type: "join" });
+        // Keep asking until the host answers
+        joinTimer = setInterval(() => { if (!gotOffer) send({ type: "join" }); }, 4000);
       });
 
     fetchLike();
 
     return () => {
       mounted = false;
+      if (joinTimer) clearInterval(joinTimer);
       if (channel) supabase.removeChannel(channel);
-      pc.close();
+      pc?.close();
     };
   }, [stream.id, ended]);
+
+  const takeDown = async () => {
+    if (!confirm("Take down this stream now?")) return;
+    const ch = supabase.channel(`live-${stream.id}-td`);
+    await new Promise<void>((res) => ch.subscribe((s) => { if (s === "SUBSCRIBED") res(); }));
+    // Send on the main stream channel
+    const main = supabase.channel(`live-${stream.id}`);
+    supabase.removeChannel(ch);
+    await main.send({ type: "broadcast", event: "sig", payload: { type: "takedown", from: currentUserId } });
+    const { error } = await supabase.from("livestreams").delete().eq("id", stream.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Stream taken down");
+    setEnded(true);
+    onBack();
+  };
 
   const fetchLike = async () => {
     const { data } = await supabase.from("livestream_likes").select("is_like")
