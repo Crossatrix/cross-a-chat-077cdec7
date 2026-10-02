@@ -102,6 +102,22 @@ export default function RadioPlayer({ channelId, channelName }: Props) {
     };
   }, [state?.song_id]);
 
+  // Ask the server to advance song/news only when due (replaces the every-minute timer)
+  useEffect(() => {
+    const tick = () => { supabase.functions.invoke("radio-tick", { body: { channelId } }).catch(() => {}); };
+    const now = Date.now();
+    const songEnd = state?.started_at && song?.id === state.song_id
+      ? new Date(state.started_at).getTime() + ((song as any).duration_seconds || 180) * 1000
+      : null;
+    const newsDue = state?.news_started_at ? new Date(state.news_started_at).getTime() + 30 * 60 * 1000 : now;
+    if (!state) return;
+    if (!state.song_id || (songEnd !== null && songEnd <= now) || newsDue <= now) tick();
+    const next = Math.min(songEnd && songEnd > now ? songEnd : Infinity, newsDue > now ? newsDue : Infinity);
+    if (!isFinite(next)) return;
+    const t: ReturnType<typeof setTimeout> = setTimeout(tick, next - now + 500);
+    return () => clearTimeout(t);
+  }, [channelId, state?.song_id, state?.started_at, state?.news_started_at, song?.id]);
+
   // Sync audio playback with server-started_at offset
   useEffect(() => {
     const a = audioRef.current;
