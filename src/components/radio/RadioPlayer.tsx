@@ -110,9 +110,8 @@ export default function RadioPlayer({ channelId, channelName }: Props) {
       ? new Date(state.started_at).getTime() + ((song as any).duration_seconds || 180) * 1000
       : null;
     const newsDue = state?.news_started_at ? new Date(state.news_started_at).getTime() + 30 * 60 * 1000 : now;
-    if (!state || !state.song_id || (songEnd !== null && songEnd <= now) || newsDue <= now) {
-      if (state || state === null) tick();
-    }
+    if (!state) return;
+    if (!state.song_id || (songEnd !== null && songEnd <= now) || newsDue <= now) tick();
     const next = Math.min(songEnd && songEnd > now ? songEnd : Infinity, newsDue > now ? newsDue : Infinity);
     if (!isFinite(next)) return;
     const t: ReturnType<typeof setTimeout> = setTimeout(tick, next - now + 500);
