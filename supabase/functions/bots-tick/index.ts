@@ -140,7 +140,7 @@ async function runBot(bot: any, onlyConvId?: string) {
     }
   }
 
-  await sb.from("bots").update({ last_run_at: new Date().toISOString() }).eq("id", bot.id);
+  if (bot.comment_posts) await sb.from("bots").update({ last_run_at: new Date().toISOString() }).eq("id", bot.id);
 }
 
 const json = (body: unknown, status = 200) =>
