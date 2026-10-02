@@ -56,15 +56,20 @@ async function recordAction(botId: string, type: string, targetId: string) {
   await sb.from("bot_actions").insert({ bot_id: botId, action_type: type, target_id: targetId });
 }
 
-async function runBot(bot: any) {
+async function runBot(bot: any, onlyConvId?: string) {
   const persona = bot.persona || "A friendly Cross Chat user.";
   const sysPrompt = `${bot.system_prompt || ""}\nYou are roleplaying as a real human user on Cross Chat. Keep replies short, casual, lowercase-ish, like a real chat user. Never reveal you are an AI or a bot. Persona: ${persona}`.trim();
 
   // 1) Reply to recent unread DMs sent to this bot
   if (bot.reply_chats) {
-    const { data: parts } = await sb.from("conversation_participants")
-      .select("conversation_id").eq("user_id", bot.id);
-    const convIds = (parts || []).map((p: any) => p.conversation_id);
+    let convIds: string[];
+    if (onlyConvId) {
+      convIds = [onlyConvId];
+    } else {
+      const { data: parts } = await sb.from("conversation_participants")
+        .select("conversation_id").eq("user_id", bot.id);
+      convIds = (parts || []).map((p: any) => p.conversation_id);
+    }
     for (const convId of convIds.slice(0, 10)) {
       // Get last few messages in convo
       const { data: msgs } = await sb.from("messages")
@@ -138,36 +143,49 @@ async function runBot(bot: any) {
   await sb.from("bots").update({ last_run_at: new Date().toISOString() }).eq("id", bot.id);
 }
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Restrict to authorized invokers: scheduled cron + admin panel must
-  // pass the service role key as Bearer token. Random internet callers
-  // cannot trigger bot work / burn AI credits.
-  const authHeader = req.headers.get("authorization") || "";
-  const token = authHeader.replace(/^Bearer\s+/i, "");
-  if (token !== SUPABASE_SERVICE_ROLE_KEY) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  // Event-driven: callers can only trigger work that is already due.
+  // - mode "reply": fired by a DB trigger when someone messages a bot. Deduped per message.
+  // - mode "comments": fired once a day by the scheduler. Each bot comments at most once per ~20h.
+  // - service role (admin "run now"): runs everything.
+  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  const isAdmin = token === SUPABASE_SERVICE_ROLE_KEY;
+  let body: any = {};
+  try { body = await req.json(); } catch { /* empty */ }
+  const mode = body?.mode as string | undefined;
 
   try {
-    const { data: bots } = await sb.from("bots").select("*").eq("active", true);
-    const all = bots || [];
-    // Each bot has a 50% chance to act this tick (15-30 min effective cadence with 15-min cron)
-    const acting = all.filter(() => Math.random() < 0.5);
-    console.log(`Bots tick: ${all.length} active, ${acting.length} acting`);
-    for (const b of acting) {
-      try { await runBot(b); } catch (e) { console.error("Bot failed", b.id, e); }
+    if (mode === "reply") {
+      const convId = String(body.conversationId || "");
+      if (!convId) return json({ error: "conversationId required" }, 400);
+      const { data: parts } = await sb.from("conversation_participants").select("user_id").eq("conversation_id", convId);
+      const ids = (parts || []).map((p: any) => p.user_id);
+      if (!ids.length) return json({ ok: true, acted: 0 });
+      const { data: bots } = await sb.from("bots").select("*").eq("active", true).eq("reply_chats", true).in("id", ids);
+      for (const b of bots || []) {
+        try { await runBot({ ...b, comment_posts: false }, convId); } catch (e) { console.error("Bot failed", b.id, e); }
+      }
+      return json({ ok: true, acted: (bots || []).length });
     }
-    return new Response(JSON.stringify({ ok: true, acted: acting.length }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+
+    if (mode === "comments" || isAdmin) {
+      const { data: bots } = await sb.from("bots").select("*").eq("active", true);
+      const cutoff = Date.now() - 20 * 60 * 60 * 1000;
+      const due = (bots || []).filter((b: any) => isAdmin || !b.last_run_at || new Date(b.last_run_at).getTime() < cutoff);
+      for (const b of due) {
+        try { await runBot({ ...b, reply_chats: isAdmin ? b.reply_chats : false }); } catch (e) { console.error("Bot failed", b.id, e); }
+      }
+      return json({ ok: true, acted: due.length });
+    }
+
+    return json({ error: "Unauthorized" }, 401);
   } catch (e) {
     console.error(e);
-    return new Response(JSON.stringify({ error: String(e) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: String(e) }, 500);
   }
 });
