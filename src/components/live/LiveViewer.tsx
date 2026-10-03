@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Radio, ThumbsUp, ThumbsDown, Loader2, Settings } from "lucide-react";
+import { ArrowLeft, Radio, ThumbsUp, ThumbsDown, Loader2, Settings, ShieldX } from "lucide-react";
+import { useIsStaff } from "@/hooks/useIsStaff";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { creditCroins } from "@/utils/croins";
@@ -48,6 +49,7 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
   const [quality, setQuality] = useState<"low" | "medium" | "high">("high");
   const [giftOpen, setGiftOpen] = useState(false);
   const [emojis, setEmojis] = useState<CreatorEmoji[]>([]);
+  const isStaff = useIsStaff();
 
   useEffect(() => {
     (async () => {
@@ -155,11 +157,8 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
 
   const takeDown = async () => {
     if (!confirm("Take down this stream now?")) return;
-    const ch = supabase.channel(`live-${stream.id}-td`);
-    await new Promise<void>((res) => ch.subscribe((s) => { if (s === "SUBSCRIBED") res(); }));
-    // Send on the main stream channel
+    // Reuses the already-subscribed stream channel
     const main = supabase.channel(`live-${stream.id}`);
-    supabase.removeChannel(ch);
     await main.send({ type: "broadcast", event: "sig", payload: { type: "takedown", from: currentUserId } });
     const { error } = await supabase.from("livestreams").delete().eq("id", stream.id);
     if (error) { toast.error(error.message); return; }
@@ -209,6 +208,11 @@ const LiveViewer = ({ stream, currentUserId, onBack, onCreatorClick }: Props) =>
           <Radio className="h-3 w-3" /> {ended ? "ENDED" : "LIVE"}
         </span>
         <span className="text-xs text-muted-foreground ml-auto">{stream.viewer_count} watching</span>
+        {isStaff && !ended && stream.user_id !== currentUserId && (
+          <Button variant="destructive" size="sm" className="h-8 px-2 text-xs gap-1" onClick={takeDown} title="Staff: take down stream">
+            <ShieldX className="h-3.5 w-3.5" /> Take down
+          </Button>
+        )}
         <Select value={quality} onValueChange={(v) => setQuality(v as any)}>
           <SelectTrigger className="h-8 w-24 text-xs">
             <Settings className="h-3 w-3 mr-1" />

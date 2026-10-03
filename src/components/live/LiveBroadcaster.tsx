@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Radio, X, MicOff, VideoOff, Mic, Video as VideoIcon, MonitorUp, MonitorOff } from "lucide-react";
+import { Radio, X, MicOff, VideoOff, Mic, Video as VideoIcon, MonitorUp, MonitorOff, MessageSquare } from "lucide-react";
+import StreamerChatOverlay from "./StreamerChatOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -27,6 +28,7 @@ const LiveBroadcaster = ({ streamId, userId, onEnd }: Props) => {
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showChat, setShowChat] = useState(true);
   const screenSupported = typeof navigator !== "undefined" && !!(navigator.mediaDevices as any)?.getDisplayMedia;
 
   useEffect(() => {
@@ -193,13 +195,19 @@ const LiveBroadcaster = ({ streamId, userId, onEnd }: Props) => {
           <X className="h-4 w-4 mr-1" /> End Stream
         </Button>
       </div>
-      <video ref={videoRef} autoPlay muted playsInline className="flex-1 w-full object-contain bg-black" />
+      <div className="relative flex-1 min-h-0">
+        <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-contain bg-black" />
+        {showChat && <StreamerChatOverlay streamId={streamId} />}
+      </div>
       <div className="flex items-center justify-center gap-3 p-4 bg-black/70">
         <Button variant={muted ? "destructive" : "secondary"} size="icon" onClick={toggleMute}>
           {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
         </Button>
         <Button variant={camOff ? "destructive" : "secondary"} size="icon" onClick={toggleCam}>
           {camOff ? <VideoOff className="h-5 w-5" /> : <VideoIcon className="h-5 w-5" />}
+        </Button>
+        <Button variant={showChat ? "default" : "secondary"} size="icon" onClick={() => setShowChat(s => !s)} title="Show chat">
+          <MessageSquare className="h-5 w-5" />
         </Button>
         {screenSupported && (
           <Button variant={sharing ? "default" : "secondary"} size="icon" onClick={toggleScreenShare} title="Share screen">
