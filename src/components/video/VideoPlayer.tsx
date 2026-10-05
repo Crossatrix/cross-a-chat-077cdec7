@@ -374,6 +374,35 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
             <p className="text-xs text-muted-foreground">
               {video.views_count + 1} views · {formatDate(video.created_at)}
             </p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {aiCats.map(c => (
+                <span key={c} className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                  {getCategoryLabel(c)}
+                </span>
+              ))}
+              {isElderModOrAbove && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 px-2 text-[11px] gap-1"
+                  disabled={recatLoading}
+                  onClick={async () => {
+                    setRecatLoading(true);
+                    try {
+                      const r = await recategorizeVideo(video.id);
+                      if (r) setAiCats(r);
+                      toast.success("Categories updated");
+                    } catch (e: any) {
+                      toast.error(e.message || "Failed to update categories");
+                    } finally {
+                      setRecatLoading(false);
+                    }
+                  }}
+                >
+                  <RefreshCw className={`h-3 w-3 ${recatLoading ? "animate-spin" : ""}`} /> Re-categorize
+                </Button>
+              )}
+            </div>
 
             {/* Actions row */}
             <div className="flex items-center gap-3 flex-wrap">
