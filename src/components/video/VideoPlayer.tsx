@@ -5,7 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff, Ban, Reply, CornerDownRight, X } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff, Ban, Reply, CornerDownRight, X, RefreshCw } from "lucide-react";
+import { recategorizeVideo, videoCategoriesOf } from "@/utils/categoryScores";
 import ShareLinkButton from "@/components/ShareLinkButton";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
@@ -73,6 +74,8 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
   const [isElderModOrAbove, setIsElderModOrAbove] = useState(false);
+  const [aiCats, setAiCats] = useState<string[]>(videoCategoriesOf(video as any));
+  const [recatLoading, setRecatLoading] = useState(false);
   const [showingAd, setShowingAd] = useState(true);
   const [currentAd, setCurrentAd] = useState<any>(null);
   const [adChecked, setAdChecked] = useState(false);
