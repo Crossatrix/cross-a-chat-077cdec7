@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { fetchCategoryScores, categoryAffinity, recordWatch } from "@/utils/categoryScores";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Play, Eye, ThumbsUp, Sparkles, ShieldAlert, FileText, Radio, Music as MusicIcon } from "lucide-react";
