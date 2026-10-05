@@ -8,6 +8,13 @@
       "when": 1790942020480,
       "tag": "0000_bot_reply_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791199105748,
+      "tag": "0001_video_ai_categories",
+      "breakpoints": true
     }
   ]
 }
