@@ -128,7 +128,9 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
 
     const blockedCats = new Set((blockedCatsRes.data || []).map((d: any) => d.category));
 
-    const preferredCategories = (prefsRes.data || []).slice(0, 5).map(p => p.category);
+    const catScores = await fetchCategoryScores(currentUserId);
+    const scoredCats = Object.entries(catScores).filter(([, s]) => s > 0).sort((a, b) => b[1] - a[1]).map(([c]) => c);
+    const preferredCategories = (scoredCats.length ? scoredCats : (prefsRes.data || []).map(p => p.category)).slice(0, 5);
     setTopCategories(preferredCategories);
 
     // Build not-interested signals
@@ -217,9 +219,10 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
       if (followedCreators.has(video.user_id)) score += 5;
       if (likedCreators.has(video.user_id)) score += 3;
 
-      // Category preference
+      // Category preference: AI multi-category scores (0–20) + legacy view counts
+      score += categoryAffinity(catScores, video);
       const catWeight = (prefMap[video.category] || 0) / totalCatViews;
-      score += catWeight * 4;
+      score += catWeight * 1;
 
       // Verification boost
       const vStatus = verifiedMap.get(video.user_id) || "";
@@ -283,6 +286,7 @@ const ForYouFeed = ({ currentUserId, onCreatorClick }: ForYouFeedProps) => {
     }
     setSelectedVideo(video);
     trackCategoryView(video.category);
+    recordWatch(video);
   };
 
   if (selectedLive) {

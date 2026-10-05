@@ -119,17 +119,14 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
       const { filterAccessibleMembersOnly } = await import("@/utils/memberships");
       filtered = await filterAccessibleMembersOnly(filtered as any, currentUserId) as any;
 
-      const sorted = [...filtered].sort((a, b) => {
-        const aStatus = verifiedMap.get(a.user_id) || "";
-        const bStatus = verifiedMap.get(b.user_id) || "";
-        const priority = (s: string) => s === "verified_plus" ? 3 : s === "verified" ? 2 : 0;
-        const verifyScore = priority(bStatus) - priority(aStatus);
-        if (verifyScore !== 0) return verifyScore;
-        // Boost preferred categories
-        const aPref = (prefMap[a.category] || 0) / totalViews;
-        const bPref = (prefMap[b.category] || 0) / totalViews;
-        return bPref - aPref;
-      });
+      const { fetchCategoryScores, categoryAffinity } = await import("@/utils/categoryScores");
+      const catScores = await fetchCategoryScores(currentUserId);
+      const priority = (s: string) => s === "verified_plus" ? 1.5 : s === "verified" ? 0.75 : 0;
+      const rank = (s: Short) =>
+        priority(verifiedMap.get(s.user_id) || "") +
+        categoryAffinity(catScores, s) +
+        ((prefMap[s.category] || 0) / totalViews) * 0.5;
+      const sorted = [...filtered].sort((a, b) => rank(b) - rank(a));
 
       setShorts(sorted);
       
@@ -215,6 +212,7 @@ const ShortsFeed = ({ currentUserId, onCreatorClick }: ShortsFeedProps) => {
           const newViewCount = short.views_count + 1;
           supabase.from("videos").update({ views_count: newViewCount }).eq("id", short.id);
           trackCategoryView(short.category);
+          import("@/utils/categoryScores").then(m => m.recordWatch(short));
           if (checkViewMilestone(newViewCount, true) && short.user_id !== currentUserId) {
             creditCroins(short.user_id, 1, `Short view milestone (${newViewCount}): ${short.title}`);
           }
