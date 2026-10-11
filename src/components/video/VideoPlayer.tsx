@@ -5,7 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff, Ban, Reply, CornerDownRight, X } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff, Ban, Reply, CornerDownRight, X, RefreshCw } from "lucide-react";
+import { recategorizeVideo, videoCategoriesOf } from "@/utils/categoryScores";
 import ShareLinkButton from "@/components/ShareLinkButton";
 import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
@@ -73,6 +74,8 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
   const [isElderModOrAbove, setIsElderModOrAbove] = useState(false);
+  const [aiCats, setAiCats] = useState<string[]>(videoCategoriesOf(video as any));
+  const [recatLoading, setRecatLoading] = useState(false);
   const [showingAd, setShowingAd] = useState(true);
   const [currentAd, setCurrentAd] = useState<any>(null);
   const [adChecked, setAdChecked] = useState(false);
@@ -374,6 +377,35 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
             <p className="text-xs text-muted-foreground">
               {video.views_count + 1} views · {formatDate(video.created_at)}
             </p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {aiCats.map(c => (
+                <span key={c} className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                  {getCategoryLabel(c)}
+                </span>
+              ))}
+              {isElderModOrAbove && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 px-2 text-[11px] gap-1"
+                  disabled={recatLoading}
+                  onClick={async () => {
+                    setRecatLoading(true);
+                    try {
+                      const r = await recategorizeVideo(video.id);
+                      if (r) setAiCats(r);
+                      toast.success("Categories updated");
+                    } catch (e: any) {
+                      toast.error(e.message || "Failed to update categories");
+                    } finally {
+                      setRecatLoading(false);
+                    }
+                  }}
+                >
+                  <RefreshCw className={`h-3 w-3 ${recatLoading ? "animate-spin" : ""}`} /> Re-categorize
+                </Button>
+              )}
+            </div>
 
             {/* Actions row */}
             <div className="flex items-center gap-3 flex-wrap">
