@@ -2302,6 +2302,27 @@ export type Database = {
           },
         ]
       }
+      user_category_scores: {
+        Row: {
+          category: string
+          score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_changelog_seen: {
         Row: {
           id: string
@@ -2888,8 +2909,10 @@ export type Database = {
       videos: {
         Row: {
           adults_only: boolean
+          ai_categories: string[]
           allowed_membership_ids: string[]
           appeal_status: string
+          categories_analyzed_at: string | null
           category: string
           comments_count: number
           created_at: string
@@ -2912,8 +2935,10 @@ export type Database = {
         }
         Insert: {
           adults_only?: boolean
+          ai_categories?: string[]
           allowed_membership_ids?: string[]
           appeal_status?: string
+          categories_analyzed_at?: string | null
           category?: string
           comments_count?: number
           created_at?: string
@@ -2936,8 +2961,10 @@ export type Database = {
         }
         Update: {
           adults_only?: boolean
+          ai_categories?: string[]
           allowed_membership_ids?: string[]
           appeal_status?: string
+          categories_analyzed_at?: string | null
           category?: string
           comments_count?: number
           created_at?: string
@@ -2983,6 +3010,10 @@ export type Database = {
       add_group_member: {
         Args: { _conversation_id: string; _new_user_id: string }
         Returns: boolean
+      }
+      bump_category_scores: {
+        Args: { _categories: string[] }
+        Returns: undefined
       }
       change_group_role: {
         Args: {
