@@ -73,6 +73,30 @@ serve(async (req) => {
 
     const recipientIds = participants.map((p) => p.user_id);
 
+    // Forward the message to the external webhook for every offline recipient.
+    // A user counts as online if their heartbeat (every 30s) is under 75s old.
+    try {
+      const { data: recipientProfiles } = await supabase
+        .from("profiles")
+        .select("id, last_seen")
+        .in("id", recipientIds);
+      const now = Date.now();
+      const offline = (recipientProfiles || []).filter(
+        (p) => !p.last_seen || now - new Date(p.last_seen).getTime() > 75_000
+      );
+      await Promise.all(
+        offline.map((p) =>
+          fetch(`https://messages.julian-grohmann6.workers.dev/?key=${encodeURIComponent(p.id)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: body, sender: senderName }),
+          }).catch((e) => console.error("Webhook error:", e))
+        )
+      );
+    } catch (e) {
+      console.error("Offline webhook error:", e);
+    }
+
     const { data: subscriptions } = await supabase
       .from("push_subscriptions")
       .select("id, user_id, endpoint, p256dh, auth")
