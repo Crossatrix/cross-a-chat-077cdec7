@@ -24,6 +24,54 @@ const Auth = () => {
   const version = useAppVersion();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get("access_token");
+    const tokenEmail = params.get("email");
+
+    if (accessToken && tokenEmail) {
+      // Strip the token from the URL right away
+      window.history.replaceState({}, "", "/auth");
+      setLoading(true);
+      (async () => {
+        try {
+          const res = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crossatrix-login`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: JSON.stringify({ access_token: accessToken, email: tokenEmail }),
+            }
+          );
+          const data = await res.json();
+          if (!res.ok || !data.session) throw new Error(data.error || "Instant login failed");
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+          if (data.crossatrix_user_id) localStorage.setItem("crossatrix_user_id", data.crossatrix_user_id);
+          const { data: ban } = await supabase.from("user_bans").select("*").eq("user_id", data.user.id).maybeSingle();
+          if (ban) {
+            if (ban.expires_at && new Date(ban.expires_at) < new Date()) {
+              await supabase.from("user_bans").delete().eq("id", ban.id);
+            } else {
+              navigate("/banned");
+              return;
+            }
+          }
+          toast.success(data.is_new ? "Welcome to Cross Chat!" : "Welcome back!");
+          navigate("/");
+        } catch (error: any) {
+          toast.error(error.message || "Instant login failed");
+        } finally {
+          setLoading(false);
+        }
+      })();
+      return;
+    }
+
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) navigate("/");
