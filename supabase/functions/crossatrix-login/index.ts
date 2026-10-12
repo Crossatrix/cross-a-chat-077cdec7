@@ -37,12 +37,17 @@ serve(async (req) => {
           ? body.username.trim().toLowerCase()
           : "";
     const password = typeof body.password === "string" ? body.password : "";
+    const accessToken = typeof body.access_token === "string" ? body.access_token.trim() : "";
     const migrateUserId =
       typeof body.migrate_user_id === "string" && body.migrate_user_id.trim().length > 0
         ? body.migrate_user_id.trim()
         : null;
 
-    if (!identifier || !password) {
+    if (accessToken) {
+      if (!identifier || !identifier.includes("@") || accessToken.length > 8192) {
+        return jsonResponse({ error: "A valid email and access token are required" }, 400);
+      }
+    } else if (!identifier || !password) {
       return jsonResponse({ error: "Email or username and password are required" }, 400);
     }
 
@@ -50,7 +55,9 @@ serve(async (req) => {
     const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
 
-    const crossatrixUser = await verifyCrossatrixCredentials(identifier, password);
+    const crossatrixUser = accessToken
+      ? await verifyCrossatrixToken(identifier, accessToken)
+      : await verifyCrossatrixCredentials(identifier, password);
     const crossatrixUserId = crossatrixUser.id || null;
     // Local Supabase auth always needs an email. Prefer the email Crossatrix
     // returns; fall back to a deterministic internal address for username logins.
@@ -60,7 +67,11 @@ serve(async (req) => {
         ? identifier
         : `${identifier.replace(/[^a-z0-9_.-]/g, "")}@internal.crosschat.app`).toLowerCase();
     const { username: crossatrixUsername, isExplicit: isExplicitUsername } = extractCrossatrixUsername(crossatrixUser, email);
-    const localPassword = await deriveLocalPassword(email, password, serviceRoleKey);
+    const localPassword = await deriveLocalPassword(
+      email,
+      accessToken ? `token::${crossatrixUserId || email}` : password,
+      serviceRoleKey,
+    );
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
     const supabaseAuth = createClient(supabaseUrl, anonKey);
@@ -132,6 +143,22 @@ function requireEnv(name: string) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
+}
+
+async function verifyCrossatrixToken(email: string, accessToken: string): Promise<CrossatrixUser> {
+  // refresh_token is intentionally never sent
+  const response = await fetch(CROSSATRIX_AUTH_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_token: accessToken, email }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Invalid or expired access token");
+  if (!data.user) throw new Error("Invalid response from Crossatrix");
+  if (data.user.email && data.user.email.toLowerCase() !== email.toLowerCase()) {
+    throw new Error("Access token does not match this email");
+  }
+  return data.user;
 }
 
 async function verifyCrossatrixCredentials(identifier: string, password: string): Promise<CrossatrixUser> {
