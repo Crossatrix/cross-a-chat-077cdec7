@@ -78,15 +78,18 @@ serve(async (req) => {
     try {
       const { data: recipientProfiles } = await supabase
         .from("profiles")
-        .select("id, last_seen")
+        .select("id, last_seen, crossatrix_user_id")
         .in("id", recipientIds);
       const now = Date.now();
+      // Only users linked to Crossatrix can be addressed by the worker.
       const offline = (recipientProfiles || []).filter(
-        (p) => !p.last_seen || now - new Date(p.last_seen).getTime() > 75_000
+        (p) =>
+          p.crossatrix_user_id &&
+          (!p.last_seen || now - new Date(p.last_seen).getTime() > 75_000)
       );
       await Promise.all(
         offline.map((p) =>
-          fetch(`https://messages.julian-grohmann6.workers.dev/?key=${encodeURIComponent(p.id)}`, {
+          fetch(`https://messages.julian-grohmann6.workers.dev/?key=${encodeURIComponent(p.crossatrix_user_id)}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: body, sender: senderName }),
