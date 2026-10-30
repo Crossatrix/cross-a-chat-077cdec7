@@ -122,7 +122,7 @@ const { conversationId, userMessage, model = "crossi-6-lite", generateImage = fa
 
     // Use image generation model if requested, otherwise use specified model
     if (generateImage) {
-      requestBody.model = "google/gemini-3.1-flash-image-preview";
+      requestBody.model = "google/gemini-3.1-flash-lite-image";
       requestBody.modalities = ["image", "text"];
     } else {
       requestBody.model = chosen.id;
