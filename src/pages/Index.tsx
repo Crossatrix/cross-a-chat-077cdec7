@@ -103,7 +103,7 @@ const Index = () => {
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
   const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [showClearChatDialog, setShowClearChatDialog] = useState(false);
-  const [aiCredits, setAiCredits] = useState<number>(15);
+  const [aiCredits, setAiCredits] = useState<number | undefined>(undefined);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
   const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity" | "radio" | `modtab:${string}`>("chats");
