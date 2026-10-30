@@ -9,6 +9,7 @@ import MediaPicker from "./MediaPicker";
 import RichTextInput, { type EffectTagInfo } from "./RichTextInput";
 import BetaAIMessageButton from "./BetaAIMessageButton";
 import { getBetaAIMessageEnabled } from "./BetaDialog";
+import { formatCreditBalance, type AiCredits } from "@/utils/aiCredits";
 
 interface CustomEmoji {
   id: string;
@@ -23,7 +24,7 @@ interface MessageInputProps {
   onModelChange?: (model: string) => void;
   selectedModel?: string;
   onTyping?: () => void;
-  aiCredits?: number;
+  aiCredits?: AiCredits;
   onCreditsUpdate?: () => void;
   isSending?: boolean;
   canSendSystemMessage?: boolean;
@@ -147,9 +148,15 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-2 md:p-4 border-t border-border bg-card shrink-0">
       {isAIChat && (
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 px-2 py-1 bg-secondary rounded-md text-sm">
-            <Coins className="h-4 w-4 text-yellow-500" />
-            <span>{aiCredits == null ? '—' : aiCredits.toFixed(1)}</span>
+          <div className="flex flex-wrap items-center gap-1 px-2 py-1 bg-secondary rounded-md text-sm" aria-live="polite">
+            <Coins className="h-4 w-4 text-primary" />
+            <span className={!generateImage ? "font-semibold text-foreground" : "text-muted-foreground"}>
+              Text: <span data-no-translate>{formatCreditBalance(aiCredits?.text)}</span>
+            </span>
+            <span aria-hidden="true" className="text-muted-foreground">·</span>
+            <span className={generateImage ? "font-semibold text-foreground" : "text-muted-foreground"}>
+              Img: <span data-no-translate>{formatCreditBalance(aiCredits?.image)}</span>
+            </span>
           </div>
           {[
             { id: "crossi-6-nano", label: "Crossi 6.0 Nano (0.5)" },

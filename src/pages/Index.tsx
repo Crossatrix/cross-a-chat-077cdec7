@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
+import { parseAiCredits, type AiCredits } from "@/utils/aiCredits";
 import ConversationsList from "@/components/ConversationsList";
 import UserActionsMenu from "@/components/UserActionsMenu";
 import UserInfoDialog from "@/components/UserInfoDialog";
@@ -103,7 +104,7 @@ const Index = () => {
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
   const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [showClearChatDialog, setShowClearChatDialog] = useState(false);
-  const [aiCredits, setAiCredits] = useState<number | undefined>(undefined);
+  const [aiCredits, setAiCredits] = useState<AiCredits | undefined>(undefined);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
   const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity" | "radio" | `modtab:${string}`>("chats");
@@ -139,9 +140,10 @@ const Index = () => {
   const fetchAiCredits = async () => {
     if (!user) return;
     const { data, error } = await supabase.functions.invoke('crossi-credits');
-    if (error || !data) { setCrossiPrompt("login"); return; }
-    const v = data.credits ?? data.balance ?? data.text_credits ?? data.amount;
-    if (typeof v === 'number') setAiCredits(v);
+    const balances = error ? undefined : parseAiCredits(data);
+    setAiCredits(balances);
+    if (!balances) { setCrossiPrompt("login"); return false; }
+    return true;
   };
 
   // Initialize notifications
@@ -663,7 +665,7 @@ const Index = () => {
 
         setTypingUsers((prev) => prev.filter((u) => u.userId !== AI_BOT_ID));
 
-        fetchAiCredits();
+        const creditsUpdated = await fetchAiCredits();
 
         if (aiError) {
           console.error('AI chat error:', aiError);
@@ -673,7 +675,7 @@ const Index = () => {
           else toast.error('AI response failed. Please try again.');
         } else {
           aiReplyCount.current += 1;
-          if (aiReplyCount.current % 2 === 0) setCrossiPrompt("promo");
+          if (creditsUpdated && aiReplyCount.current % 2 === 0) setCrossiPrompt("promo");
         }
       } catch (aiError: any) {
         console.error('AI chat error:', aiError);
