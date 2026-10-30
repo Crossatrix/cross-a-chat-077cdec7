@@ -302,33 +302,6 @@ const Store = () => {
             </CardContent>
           </Card>
 
-          {/* AI Credits */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-purple-500" />
-                <CardTitle className="text-lg">Extra AI Credits</CardTitle>
-              </div>
-              <CardDescription>10 credits per pack</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCreditPacks(Math.max(1, creditPacks - 1))}>-</Button>
-                  <span className="font-bold w-8 text-center">{creditPacks}</span>
-                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCreditPacks(creditPacks + 1)}>+</Button>
-                </div>
-                <div className="flex items-center gap-1 text-sm">
-                  <ModImg src={croinIcon} alt="" className="w-4 h-4" />
-                  <span className="font-bold">{creditPacks * 10}</span>
-                  <span className="text-muted-foreground">for {creditPacks * 10} credits</span>
-                </div>
-                <Button size="sm" className="ml-auto" onClick={handlePurchaseCredits} disabled={purchasing === "credits"}>
-                  {purchasing === "credits" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buy"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Extra AI Chat */}
           <Card>

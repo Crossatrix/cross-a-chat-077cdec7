@@ -38,7 +38,7 @@ const messageSchema = z.string()
     "Message contains invalid content"
   );
 
-const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "openai/gpt-5-mini", onTyping, aiCredits, onCreditsUpdate, isSending = false, canSendSystemMessage = false, isBeta = false }: MessageInputProps) => {
+const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selectedModel = "crossi-6-lite", onTyping, aiCredits, onCreditsUpdate, isSending = false, canSendSystemMessage = false, isBeta = false }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
@@ -149,47 +149,23 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 px-2 py-1 bg-secondary rounded-md text-sm">
             <Coins className="h-4 w-4 text-yellow-500" />
-            <span>{aiCredits?.toFixed(1) ?? '15.0'}/15</span>
+            <span>{aiCredits == null ? '—' : aiCredits.toFixed(1)}</span>
           </div>
-          <Button
-            type="button"
-            variant={selectedModel === "openai/gpt-5-nano" ? "default" : "outline"}
-            size="sm"
-            onClick={() => onModelChange?.("openai/gpt-5-nano")}
-            title="0.5 credits"
-          >
-            Fast (0.5)
-          </Button>
-          <Button
-            type="button"
-            variant={selectedModel === "openai/gpt-5-mini" && !generateImage ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              onModelChange?.("openai/gpt-5-mini");
-              setGenerateImage(false);
-            }}
-            title="1 credit"
-          >
-            Normal (1)
-          </Button>
-          <Button
-            type="button"
-            variant={selectedModel === "openai/gpt-5" ? "default" : "outline"}
-            size="sm"
-            onClick={() => onModelChange?.("openai/gpt-5")}
-            title="1.5 credits"
-          >
-            Detailed (1.5)
-          </Button>
-          <Button
-            type="button"
-            variant={generateImage ? "default" : "outline"}
-            size="sm"
-            onClick={() => setGenerateImage(!generateImage)}
-            title="5 credits"
-          >
+          {[
+            { id: "crossi-6-nano", label: "Crossi 6.0 Nano (0.5)" },
+            { id: "crossi-6-lite", label: "Crossi 6.0 Lite (1)" },
+            { id: "crossi-6", label: "Crossi 6.0 (2)" },
+          ].map((m) => (
+            <Button key={m.id} type="button" size="sm"
+              variant={selectedModel === m.id && !generateImage ? "default" : "outline"}
+              onClick={() => { onModelChange?.(m.id); setGenerateImage(false); }}>
+              {m.label}
+            </Button>
+          ))}
+          <Button type="button" size="sm" variant={generateImage ? "default" : "outline"}
+            onClick={() => setGenerateImage(!generateImage)} title="3 image credits">
             <Sparkles className="h-4 w-4 mr-1" />
-            Image (5)
+            Crossi 6.0 Image Gen Lite (3)
           </Button>
         </div>
       )}

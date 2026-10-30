@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { consumePendingInstantLink } from "@/utils/instantLinks";
@@ -99,11 +99,11 @@ const Index = () => {
   const [groupImageUrl, setGroupImageUrl] = useState<string | undefined>(undefined);
   const [isKickedFromGroup, setIsKickedFromGroup] = useState(false);
   const [isInCall, setIsInCall] = useState(false);
-  const [selectedAIModel, setSelectedAIModel] = useState("openai/gpt-5-mini");
+  const [selectedAIModel, setSelectedAIModel] = useState("crossi-6-lite");
   const [typingUsers, setTypingUsers] = useState<{ userId: string; username: string }[]>([]);
   const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [showClearChatDialog, setShowClearChatDialog] = useState(false);
-  const [aiCredits, setAiCredits] = useState<number>(15);
+  const [aiCredits, setAiCredits] = useState<number | undefined>(undefined);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
   const [activeTab, setActiveTab] = useState<"chats" | "videos" | "foryou" | "shorts" | "posts" | "music" | "live" | "crossunity" | "radio" | `modtab:${string}`>("chats");
@@ -134,24 +134,14 @@ const Index = () => {
   const isBeta = useBetaStatus(user?.id);
   const navigate = useNavigate();
 
+  const [crossiPrompt, setCrossiPrompt] = useState<null | "promo" | "login">(null);
+  const aiReplyCount = useRef(0);
   const fetchAiCredits = async () => {
     if (!user) return;
-    const { data, error } = await supabase
-      .from('ai_credits')
-      .select('credits_remaining, last_reset_date')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    
-    if (data) {
-      const today = new Date().toISOString().split('T')[0];
-      if (data.last_reset_date < today) {
-        setAiCredits(15);
-      } else {
-        setAiCredits(Number(data.credits_remaining));
-      }
-    } else {
-      setAiCredits(15);
-    }
+    const { data, error } = await supabase.functions.invoke('crossi-credits');
+    if (error || !data) { setCrossiPrompt("login"); return; }
+    const v = data.credits ?? data.balance ?? data.text_credits ?? data.amount;
+    if (typeof v === 'number') setAiCredits(v);
   };
 
   // Initialize notifications
@@ -677,20 +667,17 @@ const Index = () => {
 
         if (aiError) {
           console.error('AI chat error:', aiError);
-          if (aiError.message?.includes('credits') || aiError.message?.includes('402')) {
-            toast.error('Not enough AI credits. Credits reset daily.');
-          } else {
-            toast.error('AI response failed. Please try again.');
-          }
+          let body: any = null;
+          try { body = await (aiError as any).context?.json?.(); } catch {}
+          if (body?.error === 'CROSSI_CREDITS_ERROR' || aiError.message?.includes('402')) setCrossiPrompt("login");
+          else toast.error('AI response failed. Please try again.');
+        } else {
+          aiReplyCount.current += 1;
+          if (aiReplyCount.current % 2 === 0) setCrossiPrompt("promo");
         }
       } catch (aiError: any) {
         console.error('AI chat error:', aiError);
-        fetchAiCredits();
-        if (aiError?.message?.includes('credits')) {
-          toast.error('Not enough AI credits. Credits reset daily.');
-        } else {
-          toast.error('AI response failed. Please try again.');
-        }
+        toast.error('AI response failed. Please try again.');
         setTypingUsers((prev) => prev.filter((u) => u.userId !== AI_BOT_ID));
       }
     }
@@ -1476,6 +1463,24 @@ return (
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleClearAIChat} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Clear Chat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={crossiPrompt !== null} onOpenChange={(o) => !o && setCrossiPrompt(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{crossiPrompt === "login" ? "Log into Crossi AI" : "Want more models?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {crossiPrompt === "login"
+                ? "We couldn't load your AI credits. Please log into Crossi AI with the same email, then come back here."
+                : "Switch to Crossi AI for more models and features."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{crossiPrompt === "login" ? "Close" : "Maybe later"}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => window.open("https://cross-a-ai.lovable.app", "_blank", "noopener")}>
+              Open Crossi AI
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
