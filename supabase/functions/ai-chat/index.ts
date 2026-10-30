@@ -23,7 +23,7 @@ serve(async (req) => {
       );
     }
 
-const { conversationId, userMessage, model = "google/gemini-2.5-flash", generateImage = false } = await req.json();
+const { conversationId, userMessage, model = "crossi-6-lite", generateImage = false } = await req.json();
     console.log('AI Chat request:', { conversationId, userMessage, model, generateImage });
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -31,18 +31,16 @@ const { conversationId, userMessage, model = "google/gemini-2.5-flash", generate
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
 
-    // Calculate credit cost based on model/action
-    let creditCost = 1; // Default for normal (gpt-5-mini)
-    if (generateImage) {
-      creditCost = 5;
-    } else if (model === "openai/gpt-5-nano") {
-      creditCost = 0.5;
-    } else if (model === "openai/gpt-5-mini") {
-      creditCost = 1;
-    } else if (model === "openai/gpt-5") {
-      creditCost = 1.5;
-    }
-    console.log('Credit cost:', creditCost);
+    const MODELS: Record<string, { id: string; cost: number }> = {
+      "crossi-6-nano": { id: "google/gemini-3-flash-preview", cost: 0.5 },
+      "crossi-6-lite": { id: "openai/gpt-5.4-mini", cost: 1 },
+      "crossi-6": { id: "google/gemini-3.1-pro-preview", cost: 2 },
+    };
+    const chosen = MODELS[model] ?? MODELS["crossi-6-lite"];
+    const creditCost = generateImage ? 3 : chosen.cost;
+    const creditType = generateImage ? "image" : "text";
+    const CREDITS_API = "https://hqibtbdovjcocqgwqwbw.supabase.co/functions/v1/credits-api";
+    const CREDITS_KEY = Deno.env.get("CROSSI_CREDITS_KEY") || "";
 
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -65,25 +63,14 @@ const { conversationId, userMessage, model = "google/gemini-2.5-flash", generate
     // Create Supabase client with service role to bypass RLS for bot operations
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Check and deduct AI credits
-    const { data: creditResult, error: creditError } = await supabase.rpc('deduct_ai_credits', {
-      p_user_id: user.id,
-      p_amount: creditCost
-    });
-
-    if (creditError) {
-      console.error('Credit check error:', creditError);
+    // Deduct credits via Crossi AI credits API
+    const decUrl = `${CREDITS_API}?key=${encodeURIComponent(CREDITS_KEY)}&email=${encodeURIComponent(user.email || "")}&action=decrease&amount=${creditCost}&type=${creditType}`;
+    const decRes = await fetch(decUrl, { method: "POST" });
+    if (!decRes.ok) {
+      const t = await decRes.text();
+      console.error("Credits API error:", decRes.status, t);
       return new Response(
-        JSON.stringify({ error: "Failed to check credits" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!creditResult) {
-      // Get current credits to show in error
-      const { data: credits } = await supabase.rpc('get_or_reset_ai_credits', { p_user_id: user.id });
-      return new Response(
-        JSON.stringify({ error: `Not enough credits. You have ${credits ?? 0} credits, but this action costs ${creditCost}.` }),
+        JSON.stringify({ error: "CROSSI_CREDITS_ERROR", detail: t }),
         { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -135,10 +122,10 @@ const { conversationId, userMessage, model = "google/gemini-2.5-flash", generate
 
     // Use image generation model if requested, otherwise use specified model
     if (generateImage) {
-      requestBody.model = "google/gemini-2.5-flash-image-preview";
+      requestBody.model = "google/gemini-3.1-flash-image-preview";
       requestBody.modalities = ["image", "text"];
     } else {
-      requestBody.model = model;
+      requestBody.model = chosen.id;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
