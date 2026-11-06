@@ -444,7 +444,36 @@ export const formatMessageText = (text: string): JSX.Element => {
       }
     });
 
-    return result;
+    // Linkify URLs in remaining string parts
+    const linked: (string | JSX.Element)[] = [];
+    const urlRegex = /((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)\]'"])/gi;
+    result.forEach((r, rIndex) => {
+      if (typeof r !== 'string') { linked.push(r); return; }
+      let last = 0;
+      let m: RegExpExecArray | null;
+      urlRegex.lastIndex = 0;
+      while ((m = urlRegex.exec(r)) !== null) {
+        if (m.index > last) linked.push(r.substring(last, m.index));
+        const url = m[1];
+        const href = url.toLowerCase().startsWith('www.') ? `https://${url}` : url;
+        linked.push(
+          <a
+            key={`link-${partIndex}-${rIndex}-${key++}`}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="underline text-primary break-all hover:opacity-80"
+          >
+            {url}
+          </a>
+        );
+        last = urlRegex.lastIndex;
+      }
+      if (last < r.length) linked.push(r.substring(last));
+    });
+
+    return linked;
   };
 
   // Process all parts
