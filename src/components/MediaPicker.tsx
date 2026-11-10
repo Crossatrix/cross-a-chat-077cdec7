@@ -1,11 +1,12 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import CrossiCloudPicker from "./CrossiCloudPicker";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Paperclip, Image as ImageIcon, Video, Mic } from "lucide-react";
+import { Paperclip, Image as ImageIcon, Video, Mic, Cloud } from "lucide-react";
 import { toast } from "sonner";
 
 interface MediaPickerProps {
@@ -27,6 +28,7 @@ const MediaPicker = ({
 }: MediaPickerProps) => {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const [cloudOpen, setCloudOpen] = useState(false);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -124,9 +126,23 @@ const MediaPicker = ({
               <Mic className="h-4 w-4" />
               Voice Message
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="justify-start gap-2"
+              onClick={() => setCloudOpen(true)}
+            >
+              <Cloud className="h-4 w-4" />
+              Crossi Cloud
+            </Button>
           </div>
         </PopoverContent>
       </Popover>
+      <CrossiCloudPicker
+        open={cloudOpen}
+        onOpenChange={setCloudOpen}
+        onPick={(f) => (f.type.startsWith("video/") ? onVideoSelect(f) : onImageSelect(f))}
+      />
     </>
   );
 };
