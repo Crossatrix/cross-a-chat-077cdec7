@@ -1,0 +1,3 @@
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS file_url text, ADD COLUMN IF NOT EXISTS file_name text, ADD COLUMN IF NOT EXISTS file_size bigint;
+CREATE POLICY "chat-files upload own folder" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'chat-files' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "chat-files delete own" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'chat-files' AND (storage.foldername(name))[1] = auth.uid()::text);
