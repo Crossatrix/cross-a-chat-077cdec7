@@ -540,7 +540,7 @@ const Index = () => {
     }
   };
 
-  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File, generateImage?: boolean, isSystemMessage?: boolean) => {
+  const handleSendMessage = async (content: string, imageFile?: File, voiceBlob?: Blob, videoFile?: File, generateImage?: boolean, isSystemMessage?: boolean, attachedFile?: File) => {
     if (!user || !selectedConversationId) return;
 
     setIsSendingMessage(true);
@@ -621,6 +621,19 @@ const Index = () => {
       videoUrl = publicUrl;
     }
 
+    let fileUrl: string | null = null;
+    if (attachedFile) {
+      const safeName = attachedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100);
+      const filePath = `${user.id}/chat-files/${Date.now()}-${safeName}`;
+      const { error: fileErr } = await supabase.storage.from('post-media').upload(filePath, attachedFile, { contentType: attachedFile.type || 'application/octet-stream' });
+      if (fileErr) {
+        toast.error("Failed to upload file");
+        setIsSendingMessage(false);
+        return;
+      }
+      fileUrl = supabase.storage.from('post-media').getPublicUrl(filePath).data.publicUrl;
+    }
+
     const { escapeUnauthorizedCreatorEmojis } = await import("@/utils/creatorEmojis");
     const safeContent = await escapeUnauthorizedCreatorEmojis(content, user.id);
     const messagePayload: any = {
@@ -630,6 +643,9 @@ const Index = () => {
       image_url: imageUrl,
       voice_url: voiceUrl,
       video_url: videoUrl,
+      file_url: fileUrl,
+      file_name: attachedFile?.name ?? null,
+      file_size: attachedFile?.size ?? null,
     };
 
     if (isSystemMessage && isModerator) {
