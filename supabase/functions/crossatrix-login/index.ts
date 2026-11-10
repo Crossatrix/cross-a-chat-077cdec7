@@ -13,6 +13,7 @@ type CrossatrixUser = {
   id?: string;
   email?: string;
   user_metadata?: Record<string, unknown>;
+  access_token?: string;
 };
 
 type UserActivity = {
@@ -121,6 +122,7 @@ serve(async (req) => {
         is_new: isNew,
         migrated: Boolean(migrationSourceId && migrationSourceId !== targetUserId),
         crossatrix_user_id: crossatrixUserId,
+        crossatrix_access_token: crossatrixUser.access_token || null,
       },
       200,
     );
@@ -158,7 +160,7 @@ async function verifyCrossatrixToken(email: string, accessToken: string): Promis
   if (data.user.email && data.user.email.toLowerCase() !== email.toLowerCase()) {
     throw new Error("Access token does not match this email");
   }
-  return data.user;
+  return { ...data.user, access_token: data.access_token || accessToken };
 }
 
 async function verifyCrossatrixCredentials(identifier: string, password: string): Promise<CrossatrixUser> {
@@ -182,7 +184,7 @@ async function verifyCrossatrixCredentials(identifier: string, password: string)
     throw new Error("Invalid response from Crossatrix");
   }
 
-  return data.user;
+  return { ...data.user, access_token: data.access_token || data.session?.access_token };
 }
 
 function extractCrossatrixUsername(user: CrossatrixUser, email: string): { username: string; isExplicit: boolean } {

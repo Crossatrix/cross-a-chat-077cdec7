@@ -52,6 +52,7 @@ const Auth = () => {
             refresh_token: data.session.refresh_token,
           });
           if (data.crossatrix_user_id) localStorage.setItem("crossatrix_user_id", data.crossatrix_user_id);
+          if (data.crossatrix_access_token) localStorage.setItem("crossatrix_access_token", data.crossatrix_access_token);
           const { data: ban } = await supabase.from("user_bans").select("*").eq("user_id", data.user.id).maybeSingle();
           if (ban) {
             if (ban.expires_at && new Date(ban.expires_at) < new Date()) {
@@ -112,6 +113,9 @@ const Auth = () => {
         // Store Crossatrix user ID for Croins API
         if (data.crossatrix_user_id) {
           localStorage.setItem("crossatrix_user_id", data.crossatrix_user_id);
+        }
+        if (data.crossatrix_access_token) {
+          localStorage.setItem("crossatrix_access_token", data.crossatrix_access_token);
         }
 
         // Check if user is banned
