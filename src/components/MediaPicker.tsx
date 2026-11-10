@@ -6,13 +6,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Paperclip, Image as ImageIcon, Video, Mic, Cloud } from "lucide-react";
+import { Paperclip, Image as ImageIcon, Video, Mic, Cloud, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 interface MediaPickerProps {
   onImageSelect: (file: File) => void;
   onVideoSelect: (file: File) => void;
   onVoiceStart: () => void;
+  onFileSelect?: (file: File) => void;
   disabled?: boolean;
   isRecording?: boolean;
   hasMedia?: boolean;
@@ -22,13 +23,30 @@ const MediaPicker = ({
   onImageSelect,
   onVideoSelect,
   onVoiceStart,
+  onFileSelect,
   disabled,
   isRecording,
   hasMedia,
 }: MediaPickerProps) => {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [cloudOpen, setCloudOpen] = useState(false);
+
+  const handleAnyFile = (file: File) => {
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File must be less than 50MB");
+      return;
+    }
+    onFileSelect?.(file);
+  };
+
+  const routeFile = (f: File) => {
+    const imgTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (imgTypes.includes(f.type) && f.size <= 5 * 1024 * 1024) return onImageSelect(f);
+    if (f.type.startsWith("video/") && f.size <= 50 * 1024 * 1024) return onVideoSelect(f);
+    handleAnyFile(f);
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,6 +102,16 @@ const MediaPicker = ({
         onChange={handleVideoChange}
         className="hidden"
       />
+      <input
+        ref={fileInputRef}
+        type="file"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleAnyFile(f);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }}
+        className="hidden"
+      />
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -126,6 +154,17 @@ const MediaPicker = ({
               <Mic className="h-4 w-4" />
               Voice Message
             </Button>
+            {onFileSelect && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="justify-start gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FileText className="h-4 w-4" />
+                File
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -141,7 +180,8 @@ const MediaPicker = ({
       <CrossiCloudPicker
         open={cloudOpen}
         onOpenChange={setCloudOpen}
-        onPick={(f) => (f.type.startsWith("video/") ? onVideoSelect(f) : onImageSelect(f))}
+        onPick={routeFile}
+        allowAny={!!onFileSelect}
       />
     </>
   );

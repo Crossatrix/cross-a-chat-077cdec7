@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Mic, StopCircle, X, Sparkles, Coins, Loader2, Image as ImageIcon, Video } from "lucide-react";
+import { Send, Mic, StopCircle, X, Sparkles, Coins, Loader2, Image as ImageIcon, Video, FileText } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import EmojiPicker from "./EmojiPicker";
@@ -18,7 +18,7 @@ interface CustomEmoji {
 }
 
 interface MessageInputProps {
-  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean, isSystemMessage?: boolean) => Promise<void> | void;
+  onSend: (message: string, imageFile?: File, voiceFile?: Blob, videoFile?: File, generateImage?: boolean, isSystemMessage?: boolean, attachedFile?: File) => Promise<void> | void;
   disabled?: boolean;
   isAIChat?: boolean;
   onModelChange?: (model: string) => void;
@@ -43,6 +43,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -118,7 +119,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
     e.preventDefault();
     
     // Allow sending media without text
-    if (!message.trim() && !selectedImage && !selectedVideo && !recordedBlob) {
+    if (!message.trim() && !selectedImage && !selectedVideo && !selectedFile && !recordedBlob) {
       toast.error("Please enter a message, select an image/video, or record a voice message");
       return;
     }
@@ -133,11 +134,12 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
     }
 
     // Send with empty string if no text (media only)
-    onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined, generateImage, pendingSystemMessage);
+    onSend(message.trim() || "", selectedImage || undefined, recordedBlob || undefined, selectedVideo || undefined, generateImage, pendingSystemMessage, selectedFile || undefined);
     import("@/utils/modEvents").then(m => m.emitModEvent("messagesend"));
     setMessage("");
     setSelectedImage(null);
     setSelectedVideo(null);
+    setSelectedFile(null);
     setRecordedBlob(null);
     setRecordingTime(0);
     setGenerateImage(false);
@@ -187,6 +189,15 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
             onClick={() => setSelectedImage(null)}
             className="h-6 px-2"
           >
+            Remove
+          </Button>
+        </div>
+      )}
+      {selectedFile && (
+        <div className="flex items-center gap-2 p-2 bg-secondary rounded-md">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm flex-1 truncate" data-no-translate>{selectedFile.name}</span>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedFile(null)} className="h-6 px-2">
             Remove
           </Button>
         </div>
@@ -249,7 +260,8 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
             onVoiceStart={startRecording}
             disabled={disabled}
             isRecording={isRecording}
-            hasMedia={!!selectedImage || !!selectedVideo || !!recordedBlob}
+            hasMedia={!!selectedImage || !!selectedVideo || !!selectedFile || !!recordedBlob}
+            onFileSelect={(file) => setSelectedFile(file)}
           />
         )}
         {isRecording && (
@@ -314,7 +326,7 @@ const MessageInput = ({ onSend, disabled, isAIChat = false, onModelChange, selec
         />
         <Button 
           type="submit" 
-          disabled={disabled || isRecording || isSending || (!message.trim() && !selectedImage && !selectedVideo && !recordedBlob)} 
+          disabled={disabled || isRecording || isSending || (!message.trim() && !selectedImage && !selectedVideo && !selectedFile && !recordedBlob)} 
           size="icon" 
           className="shrink-0"
         >

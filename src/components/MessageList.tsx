@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FeaturedAvatar from "@/components/video/FeaturedAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Edit2, Check, X } from "lucide-react";
+import { Trash2, Edit2, Check, X, FileText, Download } from "lucide-react";
 import UserActionsMenu from "./UserActionsMenu";
 import MessageReactions from "./MessageReactions";
 import TypingIndicator from "./TypingIndicator";
@@ -24,6 +24,9 @@ interface Message {
   image_url?: string;
   voice_url?: string;
   video_url?: string;
+  file_url?: string | null;
+  file_name?: string | null;
+  file_size?: number | null;
   updated_at?: string;
   is_system?: boolean;
   system_type?: string;
@@ -341,7 +344,7 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                   </span>
                   {isCurrentUser && (
                     <>
-                      {!message.image_url && !message.voice_url && !message.video_url && (
+                      {!message.image_url && !message.voice_url && !message.video_url && !message.file_url && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -426,6 +429,26 @@ const MessageList = ({ messages, currentUserId, currentUserDbId, onDeleteMessage
                         className="w-full max-w-xs"
                         preload="metadata"
                       />
+                    )}
+                    {message.file_url && (
+                      <a
+                        href={message.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={message.file_name || undefined}
+                        className="flex items-center gap-2 rounded-lg border border-border bg-background/20 p-2 mb-2 max-w-full hover:opacity-90"
+                      >
+                        <FileText className="h-6 w-6 shrink-0" />
+                        <span className="flex-1 min-w-0">
+                          <span className="block truncate text-sm font-medium" data-no-translate>{message.file_name || "File"}</span>
+                          {message.file_size != null && (
+                            <span className="block text-xs opacity-70">
+                              {message.file_size > 1048576 ? `${(message.file_size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(message.file_size / 1024))} KB`}
+                            </span>
+                          )}
+                        </span>
+                        <Download className="h-4 w-4 shrink-0" />
+                      </a>
                     )}
                     {message.content && <div data-no-translate>{formatMessageText(message.content)}</div>}
                   </div>

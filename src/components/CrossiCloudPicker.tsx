@@ -17,6 +17,7 @@ interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onPick: (file: File) => void;
+  allowAny?: boolean;
 }
 
 const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crossi-cloud`;
@@ -47,7 +48,7 @@ const isImage = (m: string | null) => !!m && ["image/jpeg", "image/png", "image/
 const isVideo = (m: string | null) => !!m && m.startsWith("video/");
 const fmt = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
-const CrossiCloudPicker = ({ open, onOpenChange, onPick }: Props) => {
+const CrossiCloudPicker = ({ open, onOpenChange, onPick, allowAny = false }: Props) => {
   const [stack, setStack] = useState<{ id: string | null; name: string }[]>([{ id: null, name: "My Drive" }]);
   const [items, setItems] = useState<CloudItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,13 +69,13 @@ const CrossiCloudPicker = ({ open, onOpenChange, onPick }: Props) => {
 
   const pick = async (it: CloudItem) => {
     if (it.is_folder) return setStack((s) => [...s, { id: it.id, name: it.name }]);
-    if (isImage(it.mime) && it.size > 5 * 1024 * 1024) return toast.error("Image must be less than 5MB");
-    if (isVideo(it.mime) && it.size > 50 * 1024 * 1024) return toast.error("Video must be less than 50MB");
+    if (it.size > 50 * 1024 * 1024) return toast.error("File must be less than 50MB");
+    if (!allowAny && isImage(it.mime) && it.size > 5 * 1024 * 1024) return toast.error("Image must be less than 5MB");
     setDownloading(it.id);
     try {
       const res = await call({ action: "download", file_id: it.id });
       const blob = await res.blob();
-      onPick(new File([blob], it.name, { type: it.mime || blob.type }));
+      onPick(new File([blob], it.name, { type: it.mime || blob.type || "application/octet-stream" }));
       onOpenChange(false);
     } catch (e: any) {
       e.message === "RELOGIN" ? setNeedLogin(true) : toast.error(e.message);
@@ -107,7 +108,7 @@ const CrossiCloudPicker = ({ open, onOpenChange, onPick }: Props) => {
             <p className="text-sm text-muted-foreground p-4 text-center">This folder is empty.</p>
           ) : (
             items.map((it) => {
-              const usable = it.is_folder || isImage(it.mime) || isVideo(it.mime);
+              const usable = allowAny || it.is_folder || isImage(it.mime) || isVideo(it.mime);
               const Icon = it.is_folder ? Folder : isImage(it.mime) ? FileImage : isVideo(it.mime) ? FileVideo : FileIcon;
               return (
                 <button

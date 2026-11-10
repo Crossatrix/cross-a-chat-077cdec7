@@ -15,6 +15,13 @@
       "when": 1791199105748,
       "tag": "0001_video_ai_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794296564960,
+      "tag": "0002_chat_file_attachments",
+      "breakpoints": true
     }
   ]
 }
