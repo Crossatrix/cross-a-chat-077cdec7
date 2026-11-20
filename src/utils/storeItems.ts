@@ -12,43 +12,12 @@ export const checkCreatorProStatus = async (userId: string): Promise<boolean> =>
 };
 
 export const purchaseCreatorPro = async (userId: string): Promise<{ success: boolean; message: string }> => {
-  const crossatrixId = getCrossatrixUserId(userId);
-  const balance = await getBalance(crossatrixId);
-
-  if (balance < 80) {
-    return { success: false, message: `Not enough Croins! You have ${balance}, need 80.` };
+  const { data, error } = await supabase.functions.invoke("purchase-subscription", {
+    body: { kind: "creator_pro" },
+  });
+  if (error || !data?.success) {
+    return { success: false, message: data?.message || "Purchase failed. Please try again." };
   }
-
-  const debited = await debitCroins(crossatrixId, 80, "Creator Pro - 1 month");
-  if (!debited) {
-    return { success: false, message: "Failed to debit Croins." };
-  }
-
-  const expiresAt = new Date();
-  expiresAt.setMonth(expiresAt.getMonth() + 1);
-
-  const { data: existing } = await supabase
-    .from("creator_pro_subscriptions" as any)
-    .select("id, expires_at")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (existing) {
-    const currentExpiry = new Date((existing as any).expires_at);
-    const base = currentExpiry > new Date() ? currentExpiry : new Date();
-    const newExpiry = new Date(base);
-    newExpiry.setMonth(newExpiry.getMonth() + 1);
-
-    await supabase
-      .from("creator_pro_subscriptions" as any)
-      .update({ expires_at: newExpiry.toISOString(), purchased_at: new Date().toISOString() })
-      .eq("id", (existing as any).id);
-  } else {
-    await supabase
-      .from("creator_pro_subscriptions" as any)
-      .insert({ user_id: userId, expires_at: expiresAt.toISOString() });
-  }
-
   return { success: true, message: "Welcome to Creator Pro! 🎬" };
 };
 

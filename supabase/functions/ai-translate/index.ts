@@ -12,7 +12,9 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const lang = typeof target === "string" && target.trim() ? target.trim().slice(0, 40) : "English";
+    // Only plain language names/codes are allowed so the instruction can't be altered
+    const rawLang = typeof target === "string" ? target.trim() : "";
+    const lang = /^[A-Za-z][A-Za-z \-()]{0,29}$/.test(rawLang) ? rawLang : "English";
 
     const key = Deno.env.get("LOVABLE_API_KEY");
     if (!key) {

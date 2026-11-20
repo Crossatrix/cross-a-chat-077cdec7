@@ -1,5 +1,6 @@
 // Submits a file (typically an uploaded video URL) to Crossi Search.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const CROSSI_KEY = Deno.env.get('Crossi_Search');
 const CROSSI_URL = 'https://crossisearch.lovable.app/api/public/submit';
@@ -14,10 +15,36 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Require a signed-in user
+    const authHeader = req.headers.get('Authorization') || '';
+    const token = authHeader.replace('Bearer ', '');
+    const authClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!);
+    const { data: claims } = await authClient.auth.getClaims(token);
+    const callerId = claims?.claims?.sub as string | undefined;
+    if (!callerId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const body = await req.json().catch(() => ({}));
     const { videoUrl, filename, mimeType } = body ?? {};
     if (!videoUrl || typeof videoUrl !== 'string') {
       return new Response(JSON.stringify({ error: 'videoUrl required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Only allow the caller's own uploads in this app's video storage
+    let allowed = false;
+    try {
+      const base = new URL(Deno.env.get('SUPABASE_URL')!);
+      const u = new URL(videoUrl);
+      allowed = u.protocol === 'https:' && u.host === base.host &&
+        u.pathname.startsWith(`/storage/v1/object/public/videos/${callerId}/`);
+    } catch { allowed = false; }
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Invalid video URL' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

@@ -72,44 +72,11 @@ export const purchaseMembership = async (
   if (userId === membership.creator_id) {
     return { success: false, message: "You can't subscribe to your own channel." };
   }
-  const crossatrixId = getCrossatrixUserId(userId);
-  const balance = await getBalance(crossatrixId);
-  if (balance < membership.price_croins) {
-    return { success: false, message: `Not enough Croins! Need ${membership.price_croins}, have ${balance}.` };
-  }
-  const ok = await debitCroins(crossatrixId, membership.price_croins, `Membership: ${membership.name}`);
-  if (!ok) return { success: false, message: "Failed to debit Croins." };
-
-  // Credit creator
-  await creditCroins(membership.creator_id, membership.price_croins, `Membership from user`);
-
-  const expires = new Date();
-  expires.setMonth(expires.getMonth() + 1);
-
-  const { data: existing } = await supabase
-    .from("channel_subscriptions" as any)
-    .select("id, expires_at")
-    .eq("user_id", userId)
-    .eq("creator_id", membership.creator_id)
-    .maybeSingle();
-
-  if (existing) {
-    const cur = new Date((existing as any).expires_at);
-    const base = cur > new Date() ? cur : new Date();
-    const newExp = new Date(base);
-    newExp.setMonth(newExp.getMonth() + 1);
-    await supabase.from("channel_subscriptions" as any).update({
-      membership_id: membership.id,
-      expires_at: newExp.toISOString(),
-      purchased_at: new Date().toISOString(),
-    }).eq("id", (existing as any).id);
-  } else {
-    await supabase.from("channel_subscriptions" as any).insert({
-      user_id: userId,
-      creator_id: membership.creator_id,
-      membership_id: membership.id,
-      expires_at: expires.toISOString(),
-    });
+  const { data, error } = await supabase.functions.invoke("purchase-subscription", {
+    body: { kind: "channel", membershipId: membership.id },
+  });
+  if (error || !data?.success) {
+    return { success: false, message: data?.message || "Purchase failed. Please try again." };
   }
   return { success: true, message: `Welcome to ${membership.name}! 🎉` };
 };

@@ -165,6 +165,13 @@ serve(async (req) => {
       if (!convId) return json({ error: "conversationId required" }, 400);
       const { data: parts } = await sb.from("conversation_participants").select("user_id").eq("conversation_id", convId);
       const ids = (parts || []).map((p: any) => p.user_id);
+      // Only act on a fresh, real message (as sent by the DB trigger); prevents arbitrary callers
+      // from making bots process older private conversations.
+      const { data: latest } = await sb.from("messages").select("user_id, created_at, is_system")
+        .eq("conversation_id", convId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (!latest || latest.is_system || Date.now() - new Date(latest.created_at).getTime() > 60_000) {
+        return json({ ok: true, acted: 0 });
+      }
       if (!ids.length) return json({ ok: true, acted: 0 });
       const { data: bots } = await sb.from("bots").select("*").eq("active", true).eq("reply_chats", true).in("id", ids);
       for (const b of bots || []) {

@@ -13,8 +13,8 @@ const corsHeaders = {
 // subscription. These are not secret in the way an API key is -- they only
 // let push services route messages to this server -- but the private key
 // must never be exposed to the client.
-const VAPID_PUBLIC_KEY = "BGy1EHCRFfAeLdSP5lxo6ukzpD7ZwUdokPp-tuQmfwTLwPULS4Z49RPnvhI3m4bN4r_W_fXdbepoi3s41l5O1h4";
-const VAPID_PRIVATE_KEY = "RQZIx2YI6zC2lZA3rwNkkTpMHFOoG3aqMKx_UK4i0-M";
+const VAPID_PUBLIC_KEY = "BBY1BFY-huiughUYD4spF7fw_9Bs18tasz5b4VukwlfpuGDdK9zQ-rjYcHo4hjCNfe7BRZw06_3nt8mqOTW6WPY";
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
 
 webpush.setVapidDetails(
   "mailto:support@cross-a-chat.lovable.app",
@@ -33,9 +33,9 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { messageId, conversationId, senderId } = await req.json();
+    const { messageId } = await req.json();
 
-    if (!messageId || !conversationId || !senderId) {
+    if (!messageId || typeof messageId !== "string") {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -43,11 +43,24 @@ serve(async (req) => {
     }
 
     // Load the message content + sender name for the notification body.
+    // Trust only the stored message: sender and conversation come from the row itself,
+    // and only freshly-created messages may trigger a notification (prevents replays).
     const { data: message } = await supabase
       .from("messages")
-      .select("content, image_url, voice_url, video_url")
+      .select("content, image_url, voice_url, video_url, conversation_id, user_id, created_at, is_system")
       .eq("id", messageId)
       .maybeSingle();
+
+    if (
+      !message || !message.conversation_id || message.is_system ||
+      Date.now() - new Date(message.created_at).getTime() > 60_000
+    ) {
+      return new Response(JSON.stringify({ sent: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const conversationId = message.conversation_id as string;
+    const senderId = message.user_id as string;
 
     const { data: senderProfile } = await supabase
       .from("profiles")

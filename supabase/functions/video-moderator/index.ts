@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const isOwnStorageUrl = (u: string) => {
+  try {
+    const base = new URL(Deno.env.get('SUPABASE_URL')!);
+    const url = new URL(u);
+    return url.protocol === 'https:' && url.host === base.host && url.pathname.startsWith('/storage/v1/object/public/videos/');
+  } catch { return false; }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -59,6 +67,17 @@ serve(async (req) => {
       throw new Error(`Failed to fetch report: ${reportError?.message}`);
     }
 
+    // Authorization: staff, or the original reporter on a not-yet-reviewed report
+    {
+      const callerId = claims.claims.sub as string;
+      const { data: isStaff } = await supabase.rpc('is_staff', { _user_id: callerId });
+      if (!isStaff && (report.reporter_id !== callerId || report.ai_reviewed)) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Fetch video details
     const { data: video, error: videoError } = await supabase
       .from('videos')
@@ -94,6 +113,7 @@ serve(async (req) => {
     try {
       console.log(`[Video Moderator] Downloading video from: ${video.video_url}`);
       
+      if (!isOwnStorageUrl(video.video_url)) throw new Error('Video URL is not hosted by this app');
       const videoResponse = await fetch(video.video_url);
       if (videoResponse.ok) {
         const videoBuffer = await videoResponse.arrayBuffer();

@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const isOwnStorageUrl = (u: string) => {
+  try {
+    const base = new URL(Deno.env.get('SUPABASE_URL')!);
+    const url = new URL(u);
+    return url.protocol === 'https:' && url.host === base.host && url.pathname.startsWith('/storage/v1/object/public/videos/');
+  } catch { return false; }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -80,6 +88,7 @@ serve(async (req) => {
 
     try {
       console.log(`[Video Analyzer] Downloading video from: ${video.video_url}`);
+      if (!isOwnStorageUrl(video.video_url)) throw new Error('Video URL is not hosted by this app');
       const videoResponse = await fetch(video.video_url);
 
       if (videoResponse.ok) {

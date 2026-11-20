@@ -28,6 +28,8 @@ const ModTabView = ({ tab }: ModTabViewProps) => {
     <iframe
       key={tab.modId + tab.id}
       sandbox="allow-scripts"
+          data-mod-frame=""
+          data-mod-id={tab.modId}
       srcDoc={srcDoc}
       className="flex-1 w-full h-full border-0"
       title={tab.name}

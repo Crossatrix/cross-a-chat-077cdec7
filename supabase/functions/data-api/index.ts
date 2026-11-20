@@ -46,6 +46,8 @@ serve(async (req) => {
           .select(
             "id, title, description, views_count, likes_count, dislikes_count, comments_count, created_at, user_id, profiles(id, username)"
           )
+          .eq("members_only", false)
+          .eq("adults_only", false)
           .order("created_at", { ascending: false });
         if (error) throw error;
 
@@ -72,6 +74,7 @@ serve(async (req) => {
           .select(
             "id, title, description, plays_count, likes_count, dislikes_count, duration, category, created_at, user_id, profiles(id, username)"
           )
+          .eq("members_only", false)
           .order("created_at", { ascending: false });
         if (error) throw error;
 
@@ -97,6 +100,8 @@ serve(async (req) => {
           .select(
             "id, title, description, viewer_count, likes_count, dislikes_count, status, category, started_at, ended_at, created_at, user_id, profiles(id, username)"
           )
+          .eq("members_only", false)
+          .eq("adults_only", false)
           .order("created_at", { ascending: false });
         if (error) throw error;
 

@@ -22,6 +22,8 @@ const ModUIHost = () => {
         <iframe
           key={(detail?.modId || "") + (detail?.title || "")}
           sandbox="allow-scripts"
+          data-mod-frame=""
+          data-mod-id={detail?.modId || "ui"}
           srcDoc={srcDoc}
           className="flex-1 w-full border-0"
           title="Mod UI"

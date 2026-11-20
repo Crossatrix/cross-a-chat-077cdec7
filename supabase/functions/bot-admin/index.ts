@@ -29,7 +29,10 @@ serve(async (req) => {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if ((user.email || "").toLowerCase() !== "cross.a.trix.owner@hotmail.com") {
+    // Require a server-side admin role (email claims alone are not trusted)
+    const roleCheck = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: isAdmin } = await roleCheck.rpc("is_app_admin", { _user_id: user.id });
+    if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

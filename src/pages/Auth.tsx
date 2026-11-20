@@ -19,6 +19,7 @@ const Auth = () => {
   const [oldUsername, setOldUsername] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [migrateUserId, setMigrateUserId] = useState("");
+  const [migrateToken, setMigrateToken] = useState<string | null>(null);
   const [migrateLoading, setMigrateLoading] = useState(false);
   const navigate = useNavigate();
   const version = useAppVersion();
@@ -162,9 +163,10 @@ const Auth = () => {
 
       const userId = oldSignIn.user.id;
       setMigrateUserId(userId);
+      setMigrateToken(oldSignIn.session?.access_token ?? null);
 
-      // Sign out of the old account
-      await supabase.auth.signOut();
+      // Sign out locally (keep the token valid so the server can verify ownership)
+      await supabase.auth.signOut({ scope: "local" });
 
       toast.success("Old account verified! Your User ID has been copied.");
       navigator.clipboard.writeText(userId).catch(() => {});
@@ -176,7 +178,7 @@ const Auth = () => {
   };
 
   const handleMigrateLogin = async () => {
-    if (!email || !password || !migrateUserId) {
+    if (!email || !password || !migrateUserId || !migrateToken) {
       toast.error("Please enter your Crossatrix email and password, and verify your old account first");
       return;
     }
@@ -191,7 +193,7 @@ const Auth = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ email, password, migrate_user_id: migrateUserId }),
+          body: JSON.stringify({ email, password, migrate_access_token: migrateToken }),
         }
       );
 

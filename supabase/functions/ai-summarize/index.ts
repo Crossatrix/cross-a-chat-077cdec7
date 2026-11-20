@@ -13,6 +13,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    const ALLOWED_KINDS = ["message", "post", "video", "song", "comment", "item"];
+    const safeKind = typeof kind === "string" && ALLOWED_KINDS.includes(kind) ? kind : "item";
+
     const key = Deno.env.get("OPENROUTER_KEY");
     if (!key) {
       return new Response(JSON.stringify({ error: "Missing OpenRouter key" }), {
@@ -20,8 +23,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const sys = `You summarize a SINGLE ${kind || "item"} provided by the user. Output 1-3 short sentences capturing only the key points of the exact text given. Do not invent context, do not assume there are other messages, do not reference a conversation as a whole. No greetings or meta commentary.`;
-    const userMsg = `Summarize ONLY this single ${kind || "item"} (treat it as standalone, ignore any imagined surrounding context):\n\n"""\n${text.slice(0, 12000)}\n"""`;
+    const sys = `You summarize a SINGLE ${safeKind} provided by the user. Output 1-3 short sentences capturing only the key points of the exact text given. Do not invent context, do not assume there are other messages, do not reference a conversation as a whole. No greetings or meta commentary.`;
+    const userMsg = `Summarize ONLY this single ${safeKind} (treat it as standalone, ignore any imagined surrounding context):\n\n"""\n${text.slice(0, 12000)}\n"""`;
 
     const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",

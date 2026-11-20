@@ -39,9 +39,9 @@ serve(async (req) => {
           : "";
     const password = typeof body.password === "string" ? body.password : "";
     const accessToken = typeof body.access_token === "string" ? body.access_token.trim() : "";
-    const migrateUserId =
-      typeof body.migrate_user_id === "string" && body.migrate_user_id.trim().length > 0
-        ? body.migrate_user_id.trim()
+    const migrateAccessToken =
+      typeof body.migrate_access_token === "string" && body.migrate_access_token.trim().length > 0
+        ? body.migrate_access_token.trim()
         : null;
 
     if (accessToken) {
@@ -55,6 +55,17 @@ serve(async (req) => {
     const supabaseUrl = requireEnv("SUPABASE_URL");
     const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
+
+    // Resolve the legacy account only from a valid session token proving ownership of it
+    let migrateUserId: string | null = null;
+    if (migrateAccessToken) {
+      const verifier = createClient(supabaseUrl, serviceRoleKey);
+      const { data: legacyData, error: legacyErr } = await verifier.auth.getUser(migrateAccessToken);
+      if (legacyErr || !legacyData?.user) {
+        return jsonResponse({ error: "Old account verification expired. Please verify it again." }, 401);
+      }
+      migrateUserId = legacyData.user.id;
+    }
 
     const crossatrixUser = accessToken
       ? await verifyCrossatrixToken(identifier, accessToken)

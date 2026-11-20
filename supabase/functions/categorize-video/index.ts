@@ -14,12 +14,15 @@ Deno.serve(async (req) => {
     const videoId = typeof body.videoId === "string" ? body.videoId : null;
     const force = body.force === true;
 
-    if (force) {
+    if (videoId || force) {
+      // Single-video requests always need a signed-in user; forced re-runs need elder moderator+
       const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
       const { data: u } = await admin.auth.getUser(token);
       if (!u?.user) return json({ error: "Not signed in" }, 401);
+      if (!force) { /* signed-in viewers may only refresh stale (10+ day old) categories */ } else {
       const { data: ok } = await admin.rpc("is_elder_moderator_or_above", { _user_id: u.user.id });
       if (!ok) return json({ error: "Only elder moderators and admins can do this" }, 403);
+      }
     }
 
     const { data: cats } = await admin.from("video_categories").select("value, label");

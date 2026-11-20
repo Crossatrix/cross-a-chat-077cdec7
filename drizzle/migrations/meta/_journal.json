@@ -29,6 +29,20 @@
       "when": 1795170906160,
       "tag": "0003_remove_owner_boost",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795172825718,
+      "tag": "0004_security_hardening_batch",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795172874626,
+      "tag": "0005_custom_emojis_storage_listing",
+      "breakpoints": true
     }
   ]
 }

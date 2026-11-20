@@ -55,6 +55,7 @@ serve(async (req) => {
         conversation_id,
         reason,
         status,
+        ai_reviewed,
         profiles!user_reports_reported_user_id_fkey(username)
       `)
       .eq('id', reportId)
@@ -62,6 +63,17 @@ serve(async (req) => {
 
     if (reportError || !report) {
       throw new Error(`Failed to fetch report: ${reportError?.message}`);
+    }
+
+    // Authorization: staff, or the original reporter on a not-yet-reviewed report
+    {
+      const callerId = claims.claims.sub as string;
+      const { data: isStaff } = await supabase.rpc('is_staff', { _user_id: callerId });
+      if (!isStaff && (report.reporter_id !== callerId || report.ai_reviewed)) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     console.log(`[AI Moderator] Processing report against user ID: ${report.reported_user_id} in conversation: ${report.conversation_id}`);

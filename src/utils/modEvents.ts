@@ -201,9 +201,12 @@ if (typeof window !== "undefined" && !(window as any).__modBridgeInstalled) {
   window.addEventListener("message", async (ev: MessageEvent) => {
     const data = ev.data;
     if (!data || typeof data !== "object" || !data.__mod) return;
-    const { id, method, args, modId } = data as {
-      id: number; method: string; args?: unknown[]; modId?: string;
-    };
+    // Only accept calls from our own mod UI iframes; the mod ID comes from the frame, not the message.
+    const frame = Array.from(document.querySelectorAll<HTMLIFrameElement>("iframe[data-mod-frame]"))
+      .find((f) => f.contentWindow === ev.source);
+    if (!frame) return;
+    const modId = frame.dataset.modId || "ui";
+    const { id, method, args } = data as { id: number; method: string; args?: unknown[] };
     const api: any = buildModApi("ui", null, modId || "ui");
     try {
       const fn = api[method];
@@ -225,6 +228,7 @@ export const buildModUIBridge = (modId: string) => `<script>
 (function(){
   var _id = 0, _pending = {};
   window.addEventListener('message', function(ev){
+    if (ev.source !== window.parent) return;
     var d = ev.data; if (!d || !d.__mod || typeof d.id !== 'number') return;
     var p = _pending[d.id]; if (!p) return;
     delete _pending[d.id];
