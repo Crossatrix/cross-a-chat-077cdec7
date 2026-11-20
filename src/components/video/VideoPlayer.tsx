@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { ThumbsUp, ThumbsDown, ArrowLeft, Send, UserPlus, UserMinus, Trash2, Flag, EyeOff, Ban, Reply, CornerDownRight, X, RefreshCw } from "lucide-react";
 import { recategorizeVideo, videoCategoriesOf } from "@/utils/categoryScores";
 import ShareLinkButton from "@/components/ShareLinkButton";
-import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
 import AiTranslateButton from "@/components/AiTranslateButton";
 import { getBetaSummaryEnabled, getBetaTranslateEnabled } from "@/components/BetaDialog";
@@ -432,16 +431,6 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
               {canTranslate && (
                 <AiTranslateButton getText={() => `${video.title}${video.description ? `\n\n${video.description}` : ""}`} label="Translate" />
               )}
-              <OwnerBoostButton
-                targetId={video.id}
-                title="Boost this video"
-                options={[
-                  { kind: "video_views", label: "Add views" },
-                  { kind: "video_likes", label: "Add likes" },
-                  { kind: "video_dislikes", label: "Add dislikes" },
-                ]}
-                onBoosted={() => { setLikesCount(c => c); setDislikesCount(c => c); }}
-              />
               {video.user_id !== currentUserId && (
                 <>
                   <Button
@@ -545,14 +534,6 @@ const VideoPlayer = ({ video, currentUserId, onBack, onCreatorClick }: VideoPlay
                   {isFollowing ? "Unfollow" : "Follow"}
                 </Button>
               )}
-              <OwnerBoostButton
-                targetId={video.user_id}
-                title={`Boost ${((video.profiles as any)?.creator_username || video.profiles.username)}`}
-                iconOnly
-                className="h-8 w-8 p-0 border-amber-500/50 text-amber-400 hover:bg-amber-500/10 shrink-0"
-                options={[{ kind: "followers", label: "Add followers" }]}
-                onBoosted={fetchFollowerCount}
-              />
             </div>
 
             {video.description && (

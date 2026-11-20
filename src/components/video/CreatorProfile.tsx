@@ -13,7 +13,6 @@ import FeaturedAvatar, { invalidateFeaturedCache, type FeaturedTier } from "./Fe
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import PostsFeed from "@/components/posts/PostsFeed";
-import OwnerBoostButton from "@/components/OwnerBoostButton";
 import BlockUserButton from "@/components/admin/BlockUserButton";
 
 interface Video {
@@ -230,12 +229,6 @@ const CreatorProfile = ({ creatorId, currentUserId, onBack, onSelectVideo }: Cre
                     {isFollowing ? "Unfollow" : "Follow"}
                   </Button>
                 )}
-                <OwnerBoostButton
-                  targetId={creatorId}
-                  title={`Boost ${profile?.username ?? "user"}`}
-                  options={[{ kind: "followers", label: "Add followers" }]}
-                  onBoosted={fetchAll}
-                />
                 {creatorId !== currentUserId && (
                   <BlockUserButton targetUserId={creatorId} targetUsername={profile?.username} />
                 )}

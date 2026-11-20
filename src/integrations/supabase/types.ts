@@ -3097,15 +3097,6 @@ export type Database = {
       is_radio_broadcaster: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       leave_group: { Args: { _conversation_id: string }; Returns: boolean }
-      owner_boost: {
-        Args: {
-          p_amount: number
-          p_kind: string
-          p_sub_kind?: string
-          p_target_id: string
-        }
-        Returns: boolean
-      }
       promote_to_admin: { Args: { target_user_id: string }; Returns: undefined }
       remove_group_member: {
         Args: { _conversation_id: string; _target_user_id: string }

@@ -11,7 +11,6 @@ import CreatorBadge from "@/components/video/CreatorBadge";
 import FeaturedAvatar from "@/components/video/FeaturedAvatar";
 import { formatMessageText } from "@/utils/textFormatting";
 import PostComments from "./PostComments";
-import OwnerBoostButton from "@/components/OwnerBoostButton";
 import AiSummaryButton from "@/components/AiSummaryButton";
 import AiTranslateButton from "@/components/AiTranslateButton";
 import { emitModEvent } from "@/utils/modEvents";
@@ -303,22 +302,6 @@ const PostCard = ({ post, currentUserId, onCreatorClick, onDeleted }: PostCardPr
           <ReportPostButton postId={post.id} currentUserId={currentUserId} iconOnly className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive" />
         )}
         <div className="ml-auto">
-          <OwnerBoostButton
-            targetId={post.id}
-            title="Boost this post"
-            iconOnly
-            className="h-7 w-7 p-0 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
-            options={[
-              { kind: "post_likes", label: "Add likes" },
-              { kind: "post_dislikes", label: "Add dislikes" },
-              ...((post.poll_options || []).map((opt, i) => ({
-                kind: "poll_vote" as const,
-                pollOptionIndex: i,
-                label: `Add votes to "${opt}"`,
-              }))),
-            ]}
-            onBoosted={() => { fetchPollVotes(); onDeleted?.(); }}
-          />
         </div>
       </div>
 

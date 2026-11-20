@@ -16,7 +16,6 @@ import PostsFeed from "@/components/posts/PostsFeed";
 import PostCard from "@/components/posts/PostCard";
 import ShareLinkButton from "@/components/ShareLinkButton";
 import ReportPostButton from "@/components/ReportPostButton";
-import OwnerBoostButton from "@/components/OwnerBoostButton";
 import { assertNotBlocked } from "@/utils/contentBlock";
 import StaffRemoveButton from "@/components/admin/StaffRemoveButton";
 
@@ -350,17 +349,6 @@ const CrossunityFeed = ({ currentUserId, onCreatorClick, deepLinkSubcrossId, onD
                     <MessageSquare className="h-3.5 w-3.5 mr-1" />{p.comments_count}
                   </Button>
                   <ReportPostButton subcrossPostId={p.id} currentUserId={currentUserId} className="h-7 px-2 text-muted-foreground hover:text-destructive" iconOnly />
-                  <OwnerBoostButton
-                    targetId={p.id}
-                    title="Boost this post"
-                    iconOnly
-                    className="h-7 w-7 p-0 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
-                    options={[
-                      { kind: "subcross_post_likes" as any, label: "Add likes" },
-                      { kind: "subcross_post_dislikes" as any, label: "Add dislikes" },
-                    ]}
-                    onBoosted={loadHome}
-                  />
                   {p.user_id === currentUserId ? (
                     <Button variant="ghost" size="sm" className="h-7 px-2 ml-auto" onClick={() => deletePost(p.id)}>
                       <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
